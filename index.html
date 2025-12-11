@@ -3714,21 +3714,34 @@ function setupAutocomplete(input, suggestionsContainer, dataList) {
 window.addEventListener('load', initAutocomplete);
         console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
     </script>
-    <script>
+   <script>
 const API_SABG = "https://script.google.com/macros/s/AKfycbwUfAamQ4M03hHHPHmO7tO855Y7EOKjQbWgb1wI7_kGIq-g43VyVnvGCzGUwPWUXAdC/exec";
 
-// 🟦 Esta función guarda ABSOLUTAMENTE TODO en tu hoja
+// Función para guardar TODO en la hoja
 async function guardarTodo(data) {
   try {
     await fetch(API_SABG, {
       method: "POST",
+      mode: "no-cors",                // importante para que no bloquee por CORS
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
-    console.log("Registro guardado:", data);
+    console.log("Registro enviado a Google Sheets:", data);
   } catch (error) {
     console.error("Error al guardar:", error);
   }
 }
+
+// 🔴 PRUEBA RÁPIDA: manda un registro de prueba cuando cargue la página
+document.addEventListener("DOMContentLoaded", () => {
+  guardarTodo({
+    prueba: true,
+    mensaje: "Primer test desde SABG",
+    momento: new Date().toISOString(),
+    pagina: window.location.href,
+    navegador: navigator.userAgent
+  });
+});
 </script>
 </body>
 </html>
