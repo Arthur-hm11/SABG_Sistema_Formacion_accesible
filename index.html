@@ -3715,24 +3715,37 @@ window.addEventListener('load', initAutocomplete);
         console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
     </script>
    <script>
-const API_SABG = "https://script.google.com/macros/s/AKfycbwUfAamQ4M03hHHPHmO7tO855Y7EOKjQbWgb1wI7_kGIq-g43VyVnvGCzGUwPWUXAdC/exec";
+/* ===============================
+   ENDPOINT DE VERCEL (POSTGRES)
+   =============================== */
+const API_SABG = "/api/registro";
 
-// Función para guardar TODO en la hoja
+/* ===============================
+   FUNCIÓN PARA GUARDAR TODO
+   =============================== */
 async function guardarTodo(data) {
   try {
-    await fetch(API_SABG, {
+    const res = await fetch(API_SABG, {
       method: "POST",
-      mode: "no-cors",                // importante para que no bloquee por CORS
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
-    console.log("Registro enviado a Google Sheets:", data);
+
+    const result = await res.json();
+
+    if (!result.ok) {
+      console.error("Error al guardar en BD:", result);
+    } else {
+      console.log("Registro guardado en Postgres:", data);
+    }
   } catch (error) {
-    console.error("Error al guardar:", error);
+    console.error("Error de conexión:", error);
   }
 }
 
-// 🔴 PRUEBA RÁPIDA: manda un registro de prueba cuando cargue la página
+/* ===============================
+   🔴 PRUEBA AUTOMÁTICA AL CARGAR
+   =============================== */
 document.addEventListener("DOMContentLoaded", () => {
   guardarTodo({
     prueba: true,
@@ -3743,5 +3756,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+</body>
+</html>
 </body>
 </html>
