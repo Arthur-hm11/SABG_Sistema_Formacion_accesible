@@ -1,0 +1,3718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Promoción de la Formación Académica - SABG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --guinda: #6B2C40;
+            --vino: #8B3A52;
+            --beige: #D4C4A8;
+            --gold: #E8DCC4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --gradient1: linear-gradient(135deg, #6B2C40 0%, #8B3A52 100%);
+            --gradient2: linear-gradient(135deg, #8B3A52 0%, #A0475E 100%);
+            --gradient3: linear-gradient(135deg, #6B2C40 0%, #D4C4A8 100%);
+            --gradient4: linear-gradient(135deg, #D4C4A8 0%, #E8DCC4 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6B2C40 0%, #8B3A52 25%, #A0475E 50%, #D4C4A8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        #loginScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #6B2C40 0%, #8B3A52 25%, #A0475E 50%, #D4C4A8 100%);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            overflow: hidden;
+        }
+
+        #loginScreen.hidden {
+    display: none;
+}
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid var(--guinda);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    display: none;
+}
+
+.autocomplete-suggestions.show {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+    background: var(--gradient1);
+    color: white;
+    transform: translateX(5px);
+}
+
+.suggestion-item:hover .suggestion-highlight,
+.suggestion-item.active .suggestion-highlight {
+    color: var(--beige);
+}
+
+.suggestion-highlight {
+    font-weight: bold;
+    color: var(--guinda);
+}
+
+.no-suggestions {
+    padding: 1rem;
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+}
+        /* ANIMACIÓN DESACTIVADA
+        @keyframes floatShape {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+            }
+            33% {
+                transform: translate(50px, -50px) rotate(120deg) scale(1.2);
+            }
+            66% {
+                transform: translate(-50px, 50px) rotate(240deg) scale(0.8);
+            }
+        }
+        */
+
+        /* Login Container */
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            max-width: 450px;
+            width: 90%;
+            animation: slideInUp 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(100px) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Login Logo */
+        .login-logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: linear-gradient(135deg, #6B2C40, #8B3A52);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 40px rgba(107, 44, 64, 0.3),
+                        0 0 0 10px rgba(107, 44, 64, 0.1),
+                        0 0 0 20px rgba(107, 44, 64, 0.05);
+            position: relative;
+        }
+
+        @keyframes pulseLogo {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 20px 40px rgba(107, 44, 64, 0.3),
+                            0 0 0 10px rgba(107, 44, 64, 0.1),
+                            0 0 0 20px rgba(107, 44, 64, 0.05);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 25px 50px rgba(107, 44, 64, 0.4),
+                            0 0 0 15px rgba(107, 44, 64, 0.15),
+                            0 0 0 30px rgba(107, 44, 64, 0.08);
+            }
+        }
+
+        .login-logo::before {
+            content: '🎓';
+            font-size: 4rem;
+        }
+
+        @keyframes rotateLogo {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+
+        /* Login Title */
+        .login-title {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .login-title h2 {
+            background: linear-gradient(135deg, #6B2C40, #8B3A52);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes gradientText {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .login-title p {
+            color: #64748b;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Login Form */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--guinda);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            font-size: 1.3rem;
+            color: var(--guinda);
+            transition: all 0.3s ease;
+        }
+
+        @keyframes bounceIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: var(--guinda);
+            box-shadow: 0 10px 30px rgba(107, 44, 64, 0.15),
+                        0 0 0 4px rgba(107, 44, 64, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .login-input:focus + .input-icon {
+            color: var(--vino);
+            transform: scale(1.2) translateY(-5px);
+            animation: none;
+        }
+
+        /* Role Selection */
+        .role-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .role-card {
+            padding: 1.5rem;
+            border: 3px solid #e2e8f0;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .role-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(107, 44, 64, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .role-card:hover::before {
+            left: 100%;
+        }
+
+        .role-card:hover {
+            border-color: var(--guinda);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(107, 44, 64, 0.2);
+        }
+
+        .role-card.selected {
+            border-color: var(--guinda);
+            background: linear-gradient(135deg, #6B2C40, #8B3A52);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(107, 44, 64, 0.3);
+        }
+
+        .role-card .role-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        @keyframes rotateRole {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(360deg) scale(1.2); }
+        }
+
+        .role-card.selected .role-icon {
+            animation: bounceSelected 0.5s ease;
+        }
+
+        @keyframes bounceSelected {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .role-card .role-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* Login Button */
+        .login-btn {
+            background: linear-gradient(135deg, #6B2C40, #8B3A52);
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(107, 44, 64, 0.3);
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .login-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(107, 44, 64, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Test Users Info */
+        .test-users {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1));
+            border-radius: 15px;
+            border: 2px dashed #3b82f6;
+        }
+
+        @keyframes pulseInfo {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+        }
+
+        .test-users h4 {
+            color: #1e40af;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .test-users p {
+            color: #1e3a8a;
+            font-size: 0.85rem;
+            margin: 0.3rem 0;
+            font-weight: 600;
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(212, 196, 168, 0.3);
+            border-top-color: #D4C4A8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            animation: fadeInOut 1.5s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, #E8DCC4, #D4C4A8);
+            border-radius: 50%;
+            opacity: 0.3;
+            box-shadow: 0 0 10px rgba(212, 196, 168, 0.6);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-100px) rotate(180deg); }
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #6B2C40 0%, #8B3A52 100%);
+            padding: 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: slideDown 0.8s ease;
+        }
+        
+        .header-top {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--guinda);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .header-logo-escudo {
+            height: 70px;
+            width: auto;
+            filter: brightness(0.3) contrast(1.8) saturate(0);
+        }
+        
+        .header-logo-sabg {
+            height: 60px;
+            width: auto;
+        }
+        
+        .header-divider {
+            width: 2px;
+            height: 70px;
+            background: linear-gradient(to bottom, transparent, var(--guinda), transparent);
+        }
+        
+        .header-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        
+        .header-title-small {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .header-title-main {
+            font-size: 1.3rem;
+            color: var(--guinda);
+            font-weight: bold;
+        }
+        
+        .header-bottom {
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .subtitle {
+            color: #E8DCC4;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* User Info */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(107, 44, 64, 0.1);
+            padding: 0.7rem 1.2rem;
+            border-radius: 50px;
+            border: 2px solid var(--guinda);
+        }
+        
+        .user-info span {
+            color: var(--guinda);
+            font-weight: 600;
+        }
+
+        .user-info .user-role {
+            background: var(--gradient1);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Main Navigation */
+        .main-nav {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            position: relative;
+            z-index: 100;
+            flex-wrap: wrap;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .main-nav-btn {
+            background: var(--gradient1);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .main-nav-btn:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .main-nav-btn:hover:before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .main-nav-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .main-nav-btn.active {
+            background: var(--gradient3);
+            transform: scale(1.1);
+        }
+
+        .main-nav-btn .arrow {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .main-nav-btn.expanded .arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Dropdown Menu */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1rem;
+            min-width: 250px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-top: 0.5rem;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .dropdown-item {
+            padding: 1rem 1.5rem;
+            color: var(--guinda);
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin: 0.3rem 0;
+            border: 2px solid transparent;
+        }
+
+        .dropdown-item:hover {
+            background: var(--gradient1);
+            color: white;
+            transform: translateX(5px);
+            border-color: var(--guinda);
+        }
+
+        .dropdown-item.admin-only {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px dashed var(--warning);
+        }
+
+        .dropdown-item.admin-only:hover {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            border-style: solid;
+        }
+
+        .dropdown-item .icon {
+            font-size: 1.5rem;
+        }
+
+        .dropdown-item .badge {
+            background: var(--warning);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            margin-left: auto;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Sections */
+        .main-section {
+            display: none;
+        }
+
+        .main-section.active {
+            display: block;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card */
+        .card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+        }
+
+        .card h2 {
+            background: linear-gradient(135deg, #6B2C40 0%, #D4C4A8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid;
+            border-image: var(--gradient1) 1;
+        }
+
+        /* Welcome Section */
+        .welcome-hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .welcome-hero h2 {
+            font-size: 3rem;
+            background: var(--gradient1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+        }
+
+        .welcome-hero p {
+            font-size: 1.3rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            border-top: 5px solid var(--guinda);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .feature-card .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            color: var(--guinda);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #6B2C40 0%, #D4C4A8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: countUp 2s ease;
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: rgba(107, 44, 64, 0.2);
+            border: 2px solid var(--guinda);
+            border-radius: 10px;
+            cursor: pointer;
+            color: var(--guinda);
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: rgba(107, 44, 64, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .tab.active {
+            background: var(--gradient1);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Admin Controls */
+        .admin-panel {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .admin-panel h3 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            color: var(--dark);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        label .required {
+            color: var(--danger);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--guinda);
+            transform: scale(1.01);
+            box-shadow: 0 5px 15px rgba(107, 44, 64, 0.3);
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--gradient1);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            margin: 0.5rem;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover:before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+        }
+
+        .btn-secondary {
+            background: var(--gradient4);
+            color: var(--dark);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin: 2rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 1200px;
+        }
+
+        thead {
+            background: var(--gradient1);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: linear-gradient(90deg, rgba(107, 44, 64, 0.08), rgba(212, 196, 168, 0.08));
+            transform: scale(1.01);
+        }
+
+        .estado-rojo {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        /* Celdas editables */
+        .editable-cell {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .editable-cell:hover {
+            background: #fef3c7 !important;
+            box-shadow: inset 0 0 0 2px var(--warning);
+        }
+
+        .editable-cell.editing {
+            padding: 0.5rem;
+            background: white !important;
+        }
+
+        .editable-cell input,
+        .editable-cell select,
+        .editable-cell textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid var(--guinda);
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .editable-cell textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .edit-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--warning);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .editable-cell:hover .edit-icon {
+            opacity: 1;
+        }
+
+        .editable-disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .editable-disabled:hover {
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        /* Month Grid */
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .month-card {
+            background: var(--gradient1);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .month-card:before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3), transparent);
+            transform: scale(0);
+            transition: transform 0.6s ease;
+        }
+
+        .month-card:hover:before {
+            transform: scale(1);
+        }
+
+        .month-card:hover {
+            transform: translateY(-10px) rotate(2deg);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        .month-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: scaleIn 0.4s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--danger);
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            transform: rotate(90deg) scale(1.2);
+        }
+
+        /* Info Box */
+        .info-box {
+            background: var(--gradient1);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 1.5rem 0;
+            box-shadow: 0 10px 30px rgba(107, 44, 64, 0.4);
+        }
+
+        .info-box h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            padding: 0.5rem 0;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .info-box li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 3px dashed #cbd5e1;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            margin: 1rem 0;
+        }
+
+        .file-upload:hover {
+            border-color: var(--guinda);
+            background: #faf8f3;
+            transform: scale(1.02);
+        }
+
+        /* Search Box */
+        .search-box {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: 2px solid var(--guinda);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: var(--gradient2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            z-index: 1500;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+        }
+
+        footer img {
+            height: 50px;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 5px 15px rgba(212, 196, 168, 0.6));
+        }
+
+        footer p {
+            color: #E8DCC4;
+            margin: 0.5rem 0;
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Subsections */
+        .subsection {
+            display: none;
+        }
+
+        .subsection.active {
+            display: block;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.5rem; }
+            .subtitle { font-size: 0.9rem; }
+            .main-nav-btn { padding: 0.8rem 1.5rem; font-size: 1rem; }
+            .card { padding: 1.5rem; }
+            .month-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+            th, td { padding: 0.5rem; font-size: 0.8rem; }
+            .welcome-hero h2 { font-size: 2rem; }
+            .welcome-hero p { font-size: 1.1rem; }
+            
+            .header-top {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem;
+            }
+            
+            .header-left {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.8rem;
+            }
+            
+            .header-right {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .header-divider {
+                width: 60%;
+                height: 2px;
+                background: linear-gradient(to right, transparent, var(--guinda), transparent);
+            }
+            
+            .header-logo-escudo {
+                height: 50px;
+            }
+            
+            .header-logo-sabg {
+                height: 45px;
+            }
+            
+            .header-title-small {
+                font-size: 0.75rem;
+            }
+            
+            .header-title-main {
+                font-size: 1rem;
+            }
+            
+            .header-bottom {
+                padding: 1rem;
+            }
+            
+            .user-info {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen">
+        <div class="login-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+
+        <div class="login-container">
+            <div class="login-logo"></div>
+            
+            <div class="login-title">
+                <h2>SISTEMA DE FORMACIÓN</h2>
+                <p>Secretaría Anticorrupción y Buen Gobierno</p>
+            </div>
+
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">USUARIO / INSTITUCIÓN</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="username" 
+                            class="login-input" 
+                            placeholder="Ingrese su usuario"
+                            required
+                        >
+                        <span class="input-icon">👤</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">CONTRASEÑA</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            class="login-input" 
+                            placeholder="Ingrese su contraseña"
+                            required
+                        >
+                        <span class="input-icon">🔒</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <span>🚀 INICIAR SESIÓN</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">🚀 Iniciando sesión...</div>
+        </div>
+    </div>
+
+    <div class="particles" id="particles"></div>
+
+    <header>
+        <div class="header-top">
+            <div class="header-left">
+                <img src="data:image/webp;base64,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" alt="Escudo Nacional" class="header-logo-escudo">
+                <div class="header-divider"></div>
+                <div class="header-text">
+                    <div class="header-title-small">Gobierno de México</div>
+                    <div class="header-title-main">Secretaría Anticorrupción y Buen Gobierno</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span id="userName">👤 Usuario</span>
+                    <span class="user-role" id="userRole">Enlace</span>
+                    <button class="logout-btn" onclick="logout()">🚪 Salir</button>
+                </div>
+            </div>
+        </div>
+        <div class="header-bottom">
+            <h1>Sistema de Promoción de la Formación Académica</h1>
+            <p class="subtitle">Dirección de Capacitación y Evaluación del Desempeño</p>
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <div class="nav-item">
+            <button class="main-nav-btn active" onclick="showMainSection('inicio')">
+                🏠 Inicio
+            </button>
+        </div>
+
+        <div class="nav-item">
+            <button class="main-nav-btn" onclick="toggleDropdown('dropdownTrimestral', this)">
+                📊 Reporte Trimestral Formación Académica
+                <span class="arrow">▼</span>
+            </button>
+            <div id="dropdownTrimestral" class="dropdown-menu">
+                <div class="dropdown-item" onclick="showSectionAndTab('trimestral', 'instructivo')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                    <span class="icon">📖</span>
+                    <span>Instructivo</span>
+                </div>
+                <div class="dropdown-item" onclick="showSectionAndTab('trimestral', 'formulario')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                    <span class="icon">📝</span>
+                    <span>Formulario de Registro</span>
+                </div>
+                <div class="dropdown-item admin-only" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                    <span class="icon">📋</span>
+                    <span>Ver Tabla de Registros</span>
+                    <span class="badge">ADMIN</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-item">
+            <button class="main-nav-btn" onclick="toggleDropdown('dropdownEvidencias', this)">
+                📄 Reporte de Evidencias Mensuales
+                <span class="arrow">▼</span>
+            </button>
+            <div id="dropdownEvidencias" class="dropdown-menu">
+                <div class="dropdown-item" onclick="showSectionAndTab('evidencias', 'registro')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                    <span class="icon">📅</span>
+                    <span>Registrar Evidencias</span>
+                </div>
+                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                    <span class="icon">🔍</span>
+                    <span>Panel Revisión DCEVE</span>
+                    <span class="badge">ADMIN</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <!-- PÁGINA DE INICIO -->
+        <div id="inicio" class="main-section active">
+            <div class="welcome-hero">
+                <h2>🎓 Bienvenido al Sistema de Promoción de la Formación Académica</h2>
+                <p>
+                    Este sistema integral permite a las dependencias e instituciones de la Administración Pública Federal 
+                    gestionar, registrar y dar seguimiento a los procesos de formación académica de las personas servidoras públicas.
+                </p>
+                <p style="font-size: 1.1rem; color: var(--guinda); font-weight: bold; margin-top: 1rem;">
+                    Seleccione una opción del menú superior para comenzar
+                </p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">156</div>
+                    <div class="stat-label">Dependencias Registradas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">2,847</div>
+                    <div class="stat-label">Servidores Públicos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">89%</div>
+                    <div class="stat-label">Tasa de Cumplimiento</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">1,245</div>
+                    <div class="stat-label">Registros Activos</div>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon">📊</div>
+                    <h3>Reporte Trimestral</h3>
+                    <p>
+                        Registre y dé seguimiento al avance académico de las personas servidoras públicas de su dependencia. 
+                        Incluye formulario completo con todos los campos requeridos.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📄</div>
+                    <h3>Evidencias Mensuales</h3>
+                    <p>
+                        Cargue y gestione las evidencias documentales mes con mes. El sistema permite adjuntar archivos PDF 
+                        que serán almacenados automáticamente en Google Drive.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🔍</div>
+                    <h3>Panel de Control DCEVE</h3>
+                    <p>
+                        Los administradores pueden revisar, validar y gestionar todos los registros. Control completo sobre 
+                        permisos de edición y exportación de datos.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📈</div>
+                    <h3>Seguimiento en Tiempo Real</h3>
+                    <p>
+                        Visualice el estado de avance de cada registro. Los estados desactualizados se marcan automáticamente 
+                        para facilitar su identificación.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📥</div>
+                    <h3>Exportación de Datos</h3>
+                    <p>
+                        Descargue la información en múltiples formatos: Excel, CSV y SQL. Ideal para generar reportes 
+                        y análisis personalizados.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🔒</div>
+                    <h3>Seguridad y Permisos</h3>
+                    <p>
+                        Sistema de roles que garantiza que cada usuario tenga acceso únicamente a las funciones correspondientes 
+                        a su nivel de autorización.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 3rem;">
+                <h2>📌 Funcionalidades Principales</h2>
+                <div class="info-box">
+                    <ul>
+                        <li>Registro completo de personas servidoras públicas interesadas en formación académica</li>
+                        <li>Seguimiento trimestral del estado de avance educativo</li>
+                        <li>Carga mensual de evidencias documentales en formato PDF</li>
+                        <li>Panel de revisión y validación para la DCEVE</li>
+                        <li>Control de permisos por roles (Enlace, Super Admin)</li>
+                        <li>Actualización automática de estados y registros</li>
+                        <li>Exportación de datos en múltiples formatos</li>
+                        <li>Notificaciones de estados desactualizados</li>
+                        <li>Integración con Google Drive para almacenamiento</li>
+                        <li>Búsqueda y filtrado avanzado en tablas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: REPORTE TRIMESTRAL -->
+        <div id="trimestral" class="main-section">
+            <div class="card">
+                <h2>📊 Reporte Trimestral de Formación Académica</h2>
+                
+                <!-- Panel Admin (solo visible para Super Admin) -->
+                <div id="adminPanelTrimestral" class="admin-panel hidden">
+                    <h3>⚙️ Panel de Control - Super Administrador</h3>
+                    <div class="admin-controls">
+                        <button class="btn btn-warning" onclick="toggleTablaRegistros()">
+                            👁️ Mostrar/Ocultar Tabla de Registros
+                        </button>
+                        <button class="btn btn-success" onclick="desbloquearEdicion()">
+                            🔓 Desbloquear Edición
+                        </button>
+                        <button class="btn btn-danger" onclick="bloquearEdicion()">
+                            🔒 Bloquear Edición
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="showTrimestralTab('instructivo')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                        📖 Instructivo
+                    </div>
+                    <div class="tab" onclick="showTrimestralTab('formulario')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                        📝 Formulario de Registro
+                    </div>
+                    <div id="tabVerTabla" class="tab hidden" onclick="showTrimestralTab('tabla')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                        📋 Ver Tabla de Registros
+                    </div>
+                </div>
+
+                <!-- TAB: INSTRUCTIVO -->
+                <div id="instructivo" class="tab-content active">
+                    <div class="info-box">
+                        <h3>📖 INSTRUCTIVO PARA EL LLENADO DEL FORMATO</h3>
+                        <p style="margin-bottom: 1rem;"><strong>Nota:</strong> Se solicita de la manera más atenta respetar los formatos de cada celda a llenar. En caso de tener duda con el registro de los mismos, favor de contactar a la Subdirectora de Formación y Capacitación Institucional A, al correo correo[arroba]institucional[punto]gob[punto]mx</p>
+                    </div>
+
+                    <div class="card" style="background: white; padding: 2rem; margin: 2rem 0;">
+                        <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 DEFINICIONES DE CAMPOS</h3>
+                        
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">N°</h4>
+                            <p style="color: #64748b;">Corresponde al número consecutivo de registro.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">TRIMESTRE</h4>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">Corresponde al trimestre en que se registró a la persona servidora pública interesada.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">ID RUSP</h4>
+                            <p style="color: #64748b; margin-bottom: 0.5rem;">Corresponde al número de identificación de cada persona servidora pública en el Registro de Servidores Públicos. De no tener el dato, favor de acercarse con el área de Recursos Humanos para su obtención y registro.</p>
+                            <p style="color: #ef4444; font-weight: bold;">*Nota: En caso de ser personal de HONORARIOS, favor de registrar: HONORARIOS.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">PRIMER APELLIDO</h4>
+                            <p style="color: #64748b;">Corresponde al primer apellido de la persona servidora pública interesada.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">SEGUNDO APELLIDO</h4>
+                            <p style="color: #64748b;">Corresponde al segundo apellido de la persona servidora pública interesada.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">NOMBRE(S)</h4>
+                            <p style="color: #64748b;">Corresponde al nombre de la persona servidora pública interesada. En caso de tener dos nombres, favor de registrar ambos.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">CURP</h4>
+                            <p style="color: #64748b;">Corresponde a la Clave Única de Registro de Población que contiene 18 caracteres.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">NIVEL DE PUESTO</h4>
+                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles de puestos. Se deberá seleccionar el nivel de puesto que le corresponda a la persona servidora pública interesada.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">NIVEL TABULAR</h4>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el nivel de puesto, no se desplegará la lista para seleccionar el nivel tabular al que corresponde la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles tabulares. Se deberá seleccionar el nivel tabular que le corresponda a la persona servidora pública interesada.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">RAMO - UR</h4>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el nivel tabular, no se desplegará la lista para seleccionar el Ramo - UR al que corresponde la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los ramos. Se deberá seleccionar el ramo que corresponda a la Institución en la cual esté adscrita la persona servidora pública interesada.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">DEPENDENCIA</h4>
+                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con las Dependencias e Instituciones de la Administración Pública Federal. Se deberá seleccionar la Dependencia o Institución donde esté adscrita la persona servidora pública interesada.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">CORREO INSTITUCIONAL</h4>
+                            <p style="color: #64748b;">Deberá registrar directamente el correo institucional de la persona servidora pública interesada. Favor de corroborar su registro ya que para cualquier comunicación, las Instituciones académicas deberán tener correcto este dato.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">TELÉFONO INSTITUCIONAL CON EXTENSIÓN</h4>
+                            <p style="color: #64748b; margin-bottom: 0.5rem;">Se deberá registrar directamente el teléfono institucional con extensión de la persona servidora pública interesada. Favor de corroborar su registro.</p>
+                            <p style="color: #ef4444; font-weight: bold;">*Nota: En caso de no contar con número telefónico institucional, favor de proporcionar un número de teléfono de contacto directo.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">NIVEL EDUCATIVO</h4>
+                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles educativos. Se deberá seleccionar el nivel educativo que la persona servidora pública esté interesada en continuar y/o concluir.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">INSTITUCIÓN EDUCATIVA</h4>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el nivel educativo, no se desplegará la lista para seleccionar la institución educativa que la persona servidora pública esté interesada.</p>
+                            <p style="color: #64748b;">En la celda de registro se visualizará una flecha que al seleccionarla desplegará una lista con las instituciones educativas. Se deberá seleccionar la Institución educativa de interés de la persona servidora pública.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">MODALIDAD</h4>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona la institución educativa, no se desplegará la lista para seleccionar la modalidad disponible.</p>
+                            <p style="color: #64748b;">En la celda de registro, se visualizará una flecha que al seleccionarla desplegará una lista con las modalidades disponibles de acuerdo a cada Institución educativa. Se deberá seleccionar la modalidad de interés.</p>
+                        </div>
+
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">ESTADO DE AVANCE</h4>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</p>
+                            <p style="color: #64748b; margin-bottom: 0.5rem;">En la celda de registro se visualizará una flecha que al seleccionarla desplegará una lista con los estados de avance académico. Se deberá seleccionar el estado de avance académico en que se encuentra la persona servidora pública.</p>
+                            <p style="color: #f59e0b; font-weight: bold; background: #fef3c7; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
+                                ⚠️ Poner especial atención en la opción que dice: "Cambió la institución académica de interés" (únicamente aplicará para aquellas personas servidoras públicas que cambiaron de parecer al elegir Institución educativa de interés en el trimestre abril-junio y deberán reportar la nueva elección en las casillas: Nivel Educativo, Institución Educativa y Modalidad).
+                            </p>
+                            
+                            <!-- Cuadro de Estados de Avance -->
+                            <div style="margin-top: 1.5rem; background: linear-gradient(135deg, #6B2C40, #8B3A52); color: white; padding: 2rem; border-radius: 15px;">
+                                <h4 style="color: white; font-size: 1.3rem; margin-bottom: 1.5rem;">Estados de Avance:</h4>
+                                
+                                <div style="margin-bottom: 2rem;">
+                                    <h5 style="color: white; font-size: 1.1rem; margin-bottom: 1rem;">Para trimestres pasados:</h5>
+                                    <div style="display: grid; gap: 0.8rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA INTERESADA</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA INSCRITA</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA CURSANDO NIVEL EDUCATIVO</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA QUE CONCLUYÓ SUS ESTUDIOS</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA EN PROCESO DE TITULACIÓN</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA QUE DESERTÓ</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA SUSPENDIDA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h5 style="color: white; font-size: 1.1rem; margin-bottom: 1rem;">Para trimestre actual:</h5>
+                                    <div style="display: grid; gap: 0.8rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA INTERESADA</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA INSCRITA</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA CURSANDO NIVEL EDUCATIVO</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA QUE CONCLUYÓ SUS ESTUDIOS</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA EN PROCESO DE TITULACIÓN</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>PERSONA SUSPENDIDA</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                            <span>OTRA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="background: white; padding: 2rem; margin: 2rem 0;">
+                        <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📊 EJEMPLO DE REGISTRO</h3>
+                        
+                        <div style="overflow-x: auto; margin-top: 1rem;">
+                            <table style="min-width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="background: var(--gradient1); color: white;">
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">N°</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">TRIMESTRE</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">ID RUSP</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">PRIMER APELLIDO</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">SEGUNDO APELLIDO</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">NOMBRE(S)</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">CURP</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">NIVEL DE PUESTO</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">NIVEL TABULAR</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">RAMO - UR</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">DEPENDENCIA</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">CORREO INSTITUCIONAL</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">TELÉFONO</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">NIVEL EDUCATIVO</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">INSTITUCIÓN EDUCATIVA</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">MODALIDAD</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">ESTADO DE AVANCE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="background: #f8fafc;">
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0; text-align: center;">1</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">ABRIL_JUNIO</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">123456</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">RODRÍGUEZ</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">MARTÍNEZ</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">JOSÉ JUAN</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">ABCDE1234</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">ENLACE_U_HOMÓLOGO</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">P13</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">13-J3A</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">abcd@dominioinstitucional.****</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">12345 EXT. 123</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">SECUNDARIA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">INSTITUTO_NACIONAL_PARA_LA_EDUCACIÓN_DE_ADULTOS_INEA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">APRENDE_INEA_EN_LÍNEA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0; color: #ef4444; font-weight: bold;">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</td>
+                                    </tr>
+                                    <tr style="background: white;">
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0; text-align: center;">2</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">JULIO_SEPTIEMBRE</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0; color: #f59e0b; font-weight: bold;">HONORARIOS</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">RODRIGUEZ</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">MARTINEZ</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">JOSÉ JUAN</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">ABCDE1234</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">DIRECTOR_DE_ÁREA_U_HOMÓLOGO</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">P31</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">13-J2R</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">abcd@dominioinstitucional.****</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">12345 EXT. 123</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">LICENCIATURA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">TECNOLÓGICO_NACIONAL_DE_MÉXICO_TECNM</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">MIXTO</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0; color: #10b981; font-weight: bold;">PERSONA INTERESADA</td>
+                                    </tr>
+                                    <tr style="background: #f8fafc;">
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0; text-align: center;">3</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">OCTUBRE_DICIEMBRE</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">567890</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">HERNÁNDEZ</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">LÓPEZ</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">CARLOS</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">CDEFG5678</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">SUBDIRECTOR_DE_ÁREA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">P22</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">09-A0R</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">SECRETARÍA_DE_COMUNICACIONES_Y_TRANSPORTES</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">carlos@sct.****</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">55-1234-5678</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">MAESTRÍA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">UNIVERSIDAD_ABIERTA_Y_A_DISTANCIA_DE_MÉXICO_UNADM</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">A_DISTANCIA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0; color: #10b981; font-weight: bold;">PERSONA INSCRITA</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-left: 5px solid #3b82f6; border-radius: 10px;">
+                            <h4 style="color: #1e40af; margin-bottom: 0.5rem;">💡 Observaciones del Ejemplo:</h4>
+                            <ul style="color: #1e40af; margin-left: 1.5rem; line-height: 1.8;">
+                                <li>El <strong>Registro 1</strong> muestra un caso donde la persona cambió de institución académica de interés (estado en rojo)</li>
+                                <li>El <strong>Registro 2</strong> muestra un caso de personal de HONORARIOS (ID RUSP en amarillo)</li>
+                                <li>Todos los campos deben llenarse de manera completa y correcta</li>
+                                <li>Los campos vinculados deben seguir el orden de selección indicado</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <h3>⚠️ RECORDATORIOS IMPORTANTES</h3>
+                        <ul>
+                            <li>El Enlace de Formación Académica tendrá que actualizar el estado de avance, de lo contrario no podrá cerrar el apartado de Ver Tabla de Registro</li>
+                            <li>Los estados desactualizados se visualizarán en color rojo en la tabla</li>
+                            <li>La DCEVE tiene control para bloquear/desbloquear la edición de datos</li>
+                            <li>Respete el orden de llenado en campos vinculados (cascada de opciones)</li>
+                            <li>Verifique cuidadosamente los datos de contacto (correo y teléfono)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- TAB: FORMULARIO -->
+                <div id="formulario" class="tab-content">
+                    <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">👤 Datos del Enlace de Formación Académica</h3>
+                    
+                    <form id="trimestralForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="enlace_nombre">Nombre(s) <span class="required">*</span></label>
+<input type="text" name="enlace_nombre" required id="enlace_nombre">
+                            </div>
+                            <div class="form-group">
+                                <label for="enlace_apellido1">Primer Apellido <span class="required">*</span></label>
+<input type="text" name="enlace_apellido1" required id="enlace_apellido1">
+                            </div>
+                            <div class="form-group">
+                                <label for="enlace_apellido2">Segundo Apellido <span class="required">*</span></label>
+<input type="text" name="enlace_apellido2" required id="enlace_apellido2">
+                            </div>
+                            <div class="form-group">
+                                <label for="enlace_correo">Correo Institucional <span class="required">*</span></label>
+<input type="email" name="enlace_correo" required id="enlace_correo">
+                            </div>
+                            <div class="form-group">
+                                <label for="enlace_telefono">Teléfono Institucional con Extensión <span class="required">*</span></label>
+<input type="tel" name="enlace_telefono" placeholder="55-1234-5678 ext. 123" required id="enlace_telefono">
+                            </div>
+                        </div>
+
+                        <h3 style="color: var(--guinda); margin: 2rem 0 1.5rem;">📝 Registro de Persona Servidora Pública Interesada</h3>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="id_rusp">Trimestre <span class="required">*</span></label>
+                                <select name="trimestre" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="ABRIL_JUNIO">ABRIL - JUNIO</option>
+                                    <option value="JULIO_SEPTIEMBRE">JULIO - SEPTIEMBRE</option>
+                                    <option value="OCTUBRE_DICIEMBRE">OCTUBRE - DICIEMBRE</option>
+                                    <option value="ENERO_MARZO">ENERO - MARZO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="nivel_puesto">ID RUSP <span class="required">*</span></label>
+<input type="text" name="id_rusp" placeholder="Número de identificación" required id="id_rusp">
+                            </div>
+                            <div class="form-group">
+                                <label for="primer_apellido">Primer Apellido <span class="required">*</span></label>
+<input type="text" name="primer_apellido" required id="primer_apellido">
+                            </div>
+                            <div class="form-group">
+                                <label for="segundo_apellido">Segundo Apellido <span class="required">*</span></label>
+<input type="text" name="segundo_apellido" required id="segundo_apellido">
+                            </div>
+                            <div class="form-group">
+                                <label for="nombre">Nombre(s) <span class="required">*</span></label>
+<input type="text" name="nombre" required id="nombre">
+                            </div>
+                            <div class="form-group">
+                                <label for="curp">CURP <span class="required">*</span></label>
+<input type="text" name="curp" maxlength="18" pattern="[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}" required id="curp">
+                            </div>
+                            <div class="form-group">
+                                <label for="ramoUrInput">Nivel de Puesto <span class="required">*</span></label>
+<select name="nivel_puesto" required id="nivel_puesto">
+                                    <option value="">Seleccione...</option>
+                                    <option value="PUESTO_OPERATIVO_U_HOMÓLOGO">PUESTO OPERATIVO U HOMÓLOGO</option>
+                                    <option value="ENLACE_U_HOMÓLOGO">ENLACE U HOMÓLOGO</option>
+                                    <option value="JEFE_DE_DEPARTAMENTO_U_HOMÓLOGO">JEFE DE DEPARTAMENTO U HOMÓLOGO</option>
+                                    <option value="SUBDIRECTOR_DE_ÁREA_U_HOMÓLOGO">SUBDIRECTOR DE ÁREA U HOMÓLOGO</option>
+                                    <option value="DIRECTOR_DE_ÁREA_U_HOMÓLOGO">DIRECTOR DE ÁREA U HOMÓLOGO</option>
+                                    <option value="COORDINADOR">COORDINADOR</option>
+                                    <option value="DIRECTOR_GENERAL_U_HOMÓLOGO">DIRECTOR GENERAL U HOMÓLOGO</option>
+                                    <option value="TITULAR_DE_UNIDAD_O_SUPERIOR">TITULAR DE UNIDAD O SUPERIOR</option>
+                                    <option value="OTRO">OTRO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="nivel_tabular">Nivel Tabular <span class="required">*</span></label>
+<select name="nivel_tabular" required id="nivel_tabular">
+                                    <option value="">Seleccione...</option>
+                                    <option value="P11">P11</option>
+                                    <option value="P12">P12</option>
+                                    <option value="P13">P13</option>
+                                    <option value="P21">P21</option>
+                                    <option value="P23">P23</option>
+                                    <option value="P31">P31</option>
+                                    <option value="P32">P32</option>
+                                    <option value="P33">P33</option>
+                                    <option value="O11">O11</option>
+                                    <option value="O21">O21</option>
+                                    <option value="O23">O23</option>
+                                    <option value="O31">O31</option>
+                                    <option value="O32">O32</option>
+                                    <option value="O33">O33</option>
+                                    <option value="N11">N11</option>
+                                    <option value="N21">N21</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="position: relative;">
+                                <label for="nivel_educativo">Ramo - UR <span class="required">*</span></label>
+<input type="text" name="ramo_ur" id="ramoUrInput" placeholder="Busque o escriba el Ramo-UR (Ej: 13-J3A)" autocomplete="off" required>
+                                <div id="ramoUrSuggestions" class="autocomplete-suggestions"></div>
+                            </div>
+                            <div class="form-group" style="position: relative;">
+                                <label for="dependenciaInput">Dependencia <span class="required">*</span></label>
+<input type="text" name="dependencia" id="dependenciaInput" placeholder="Busque o escriba la Dependencia" autocomplete="off" required>
+                                <div id="dependenciaSuggestions" class="autocomplete-suggestions"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="correo_institucional">Correo Institucional <span class="required">*</span></label>
+<input type="email" name="correo_institucional" required id="correo_institucional">
+                            </div>
+                            <div class="form-group">
+                                <label for="telefono_institucional">Teléfono Institucional con Extensión <span class="required">*</span></label>
+<input type="tel" name="telefono_institucional" required id="telefono_institucional">
+                            </div>
+                            <div class="form-group">
+                                <label>Nivel Educativo <span class="required">*</span></label>
+<select name="nivel_educativo" required id="nivel_educativo">
+                                    <option value="">Seleccione...</option>
+                                    <option value="PRIMARIA">PRIMARIA</option>
+                                    <option value="SECUNDARIA">SECUNDARIA</option>
+                                    <option value="BACHILLERATO">BACHILLERATO</option>
+                                    <option value="LICENCIATURA">LICENCIATURA</option>
+                                    <option value="ESPECIALIDAD">ESPECIALIDAD</option>
+                                    <option value="MAESTRÍA">MAESTRÍA</option>
+                                    <option value="DOCTORADO">DOCTORADO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="institucion_educativa">Institución Educativa <span class="required">*</span></label>
+<select name="institucion_educativa" required id="institucion_educativa">
+                                    <option value="">Seleccione...</option>
+                                    <option>INSTITUTO NACIONAL PARA LA EDUCACIÓN DE ADULTOS (INEA)</option>
+                                    <option>COLEGIO DE BACHILLERES (COLBACH)</option>
+                                    <option>UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO (UNADM)</option>
+                                    <option>UNIVERSIDAD NACIONAL ROSARIO CASTELLANOS (UNRC)</option>
+                                    <option>TECNOLÓGICO NACIONAL DE MÉXICO (TECNM)</option>
+                                    <option>UNIVERSIDAD INTERNACIONAL DE LA RIOJA (UNIR)</option>
+                                    <option>SECRETARÍA DE EDUCACIÓN PÚBLICA</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="modalidad">Modalidad <span class="required">*</span></label>
+<select name="modalidad" required id="modalidad">
+                                    <option value="">Seleccione...</option>
+                                    <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
+                                    <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
+                                    <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
+                                    <option value="CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)">CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)</option>
+                                    <option value="SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)">SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)</option>
+                                    <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
+                                    <option value="A DISTANCIA">A DISTANCIA</option>
+                                    <option value="PRESENCIAL">PRESENCIAL</option>
+                                    <option value="ESCOLARIZADA">ESCOLARIZADA</option>
+                                    <option value="MIXTO">MIXTO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="estado_avance">Estado de Avance <span class="required">*</span></label>
+<select name="estado_avance" required id="estado_avance">
+                                    <option value="">Seleccione...</option>
+                                    <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
+                                    <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
+                                    <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
+                                    <option value="PERSONA QUE CONCLUYÓ SUS ESTUDIOS">PERSONA QUE CONCLUYÓ SUS ESTUDIOS</option>
+                                    <option value="PERSONA EN PROCESO DE TITULACIÓN">PERSONA EN PROCESO DE TITULACIÓN</option>
+                                    <option value="PERSONA SUSPENDIDA">PERSONA SUSPENDIDA</option>
+                                    <option value="CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</option>
+                                    <option value="PERSONA QUE DESERTÓ">PERSONA QUE DESERTÓ</option>
+                                    <option value="OTRA">OTRA</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="select_field_1">Observaciones</label>
+                            <textarea name="observaciones" rows="4" placeholder="Ingrese observaciones adicionales (opcional)"></textarea>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button type="submit" class="btn">💾 Guardar Registro</button>
+                            <button type="reset" class="btn btn-danger">🔄 Limpiar Formulario</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TAB: TABLA DE REGISTROS (Solo visible para Super Admin) -->
+                <div id="tabla" class="tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                        <h3 style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
+                    </div>
+
+                    <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
+
+                    <div style="margin-bottom: 1rem;">
+                        <button class="btn" onclick="exportData('excel')">📥 Exportar a EXCEL</button>
+                        <button class="btn" onclick="exportData('csv')">📥 Exportar a CSV</button>
+                        <button class="btn" onclick="exportData('sql')">📥 Exportar a SQL</button>
+                    </div>
+
+                    <div id="estadoEdicion" style="padding: 1rem; background: var(--gradient1); color: white; border-radius: 10px; margin-bottom: 1rem; text-align: center; font-weight: bold;">
+                        🔒 Edición BLOQUEADA
+                    </div>
+
+                    <div class="table-container">
+                        <table id="registrosTable">
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>TRIMESTRE</th>
+                                    <th>ID RUSP</th>
+                                    <th>PRIMER APELLIDO</th>
+                                    <th>SEGUNDO APELLIDO</th>
+                                    <th>NOMBRE(S)</th>
+                                    <th>CURP</th>
+                                    <th>NIVEL DE PUESTO</th>
+                                    <th>NIVEL TABULAR</th>
+                                    <th>RAMO - UR</th>
+                                    <th>DEPENDENCIA</th>
+                                    <th>CORREO INSTITUCIONAL</th>
+                                    <th>TELÉFONO</th>
+                                    <th>NIVEL EDUCATIVO</th>
+                                    <th>INSTITUCIÓN EDUCATIVA</th>
+                                    <th>MODALIDAD</th>
+                                    <th>ESTADO DE AVANCE</th>
+                                    <th>OBSERVACIONES</th>
+                                    <th>ENLACE NOMBRE(S)</th>
+                                    <th>ENLACE PRIMER APELLIDO</th>
+                                    <th>ENLACE SEGUNDO APELLIDO</th>
+                                    <th>ENLACE CORREO</th>
+                                    <th>ENLACE TELÉFONO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>ABRIL_JUNIO</td>
+                                    <td>123456</td>
+                                    <td>RODRÍGUEZ</td>
+                                    <td>MARTÍNEZ</td>
+                                    <td>JOSÉ JUAN</td>
+                                    <td>ABCDE1234</td>
+                                    <td>ENLACE U HOMÓLOGO</td>
+                                    <td>P13</td>
+                                    <td>13-J3A</td>
+                                    <td>ADMIN. SIST. PORTUARIO NAL. ALTAMIRA</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>12345 EXT. 123</td>
+                                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        SECUNDARIA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        INEA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        APRENDE INEA EN LÍNEA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell estado-rojo" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        En proceso
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td>María</td>
+                                    <td>González</td>
+                                    <td>Pérez</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-5555-5555</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>JULIO_SEPTIEMBRE</td>
+                                    <td>HONORARIOS</td>
+                                    <td>RODRIGUEZ</td>
+                                    <td>MARTINEZ</td>
+                                    <td>JOSÉ JUAN</td>
+                                    <td>ABCDE1234</td>
+                                    <td>DIRECTOR DE ÁREA U HOMÓLOGO</td>
+                                    <td>P31</td>
+                                    <td>13-J2R</td>
+                                    <td>ADMIN. SIST. PORTUARIO NAL. PROGRESO</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>12345 EXT. 123</td>
+                                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        LICENCIATURA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        TECNM
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        MIXTO
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        PERSONA INTERESADA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        -
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td>Juan</td>
+                                    <td>López</td>
+                                    <td>Ramírez</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-6666-6666</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>OCTUBRE_DICIEMBRE</td>
+                                    <td>789012</td>
+                                    <td>HERNÁNDEZ</td>
+                                    <td>LÓPEZ</td>
+                                    <td>CARLOS ALBERTO</td>
+                                    <td>CDEFG5678</td>
+                                    <td>SUBDIRECTOR DE ÁREA U HOMÓLOGO</td>
+                                    <td>P22</td>
+                                    <td>09-A0R</td>
+                                    <td>SECRETARÍA DE COMUNICACIONES Y TRANSPORTES</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-1234-5678</td>
+                                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        MAESTRÍA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        UNADM
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        A DISTANCIA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        PERSONA INSCRITA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        Inicio de clases enero 2026
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td>Pedro</td>
+                                    <td>Sánchez</td>
+                                    <td>García</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-9876-5432</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>OCTUBRE_DICIEMBRE</td>
+                                    <td>345678</td>
+                                    <td>GARCÍA</td>
+                                    <td>RAMÍREZ</td>
+                                    <td>ANA MARÍA</td>
+                                    <td>EFGH9012</td>
+                                    <td>JEFE DE DEPARTAMENTO U HOMÓLOGO</td>
+                                    <td>P16</td>
+                                    <td>06-B1S</td>
+                                    <td>SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-2468-1357</td>
+                                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        DOCTORADO
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        UNIR
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        NO ESCOLARIZADA/VIRTUAL
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        PERSONA CURSANDO NIVEL EDUCATIVO
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        2do año en curso
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td>Laura</td>
+                                    <td>Fernández</td>
+                                    <td>Díaz</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-3579-2468</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>JULIO_SEPTIEMBRE</td>
+                                    <td>901234</td>
+                                    <td>MORALES</td>
+                                    <td>TORRES</td>
+                                    <td>LUIS FERNANDO</td>
+                                    <td>GHIJ3456</td>
+                                    <td>ENLACE U HOMÓLOGO</td>
+                                    <td>P13</td>
+                                    <td>11-C2T</td>
+                                    <td>SECRETARÍA DE EDUCACIÓN PÚBLICA</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-7531-9642</td>
+                                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        LICENCIATURA
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        UNRC
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        MIXTO
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        PERSONA QUE CONCLUYÓ SUS ESTUDIOS
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                                        En trámite de titulación
+                                        <span class="edit-icon">✏️</span>
+                                    </td>
+                                    <td>Roberto</td>
+                                    <td>Jiménez</td>
+                                    <td>Cruz</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-8642-7531</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 2rem;">
+                        <h3>⚠️ Notas Importantes sobre la Tabla</h3>
+                        
+                        <div style="background: linear-gradient(135deg, #6B2C40, #8B3A52); color: white; padding: 1.5rem; border-radius: 10px; margin: 1rem 0;">
+                            <p style="font-size: 1.1rem; font-weight: bold; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: #4ade80; font-size: 1.5rem;">✔</span>
+                                Los campos editables son: Nivel educativo, Institución educativa, Modalidad, Estado de avance y Observaciones
+                            </p>
+                            <p style="font-size: 0.95rem; margin-left: 2rem;">
+                                Solo el Super Administrador puede editar estos campos cuando la edición está desbloqueada.
+                            </p>
+                        </div>
+                        
+                        <ul>
+                            <li>Los estados de avance desactualizados se visualizan en color ROJO</li>
+                            <li>Las celdas editables muestran un icono de lápiz ✏️ al pasar el mouse</li>
+                            <li>Haga clic en una celda editable para modificar su contenido</li>
+                            <li>Los cambios se guardan automáticamente al presionar Enter o al salir del campo</li>
+                            <li>La DCEVE controla el bloqueo/desbloqueo de edición de datos</li>
+                            <li>Se deben incluir los datos completos del Enlace de Formación Académica que realizó el registro</li>
+                            <li>El Enlace debe actualizar el estado de avance para poder cerrar el sistema</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: EVIDENCIAS MENSUALES -->
+        <div id="evidencias" class="main-section">
+            
+            <!-- Sub-sección: Registro de Evidencias -->
+            <div id="registro" class="subsection active">
+                <div class="card">
+                    <h2>📄 Reporte de Evidencias Mensuales</h2>
+                    
+                    <!-- Panel Admin (solo visible para Super Admin) -->
+                    <div id="adminPanelEvidencias" class="admin-panel hidden">
+                        <h3>⚙️ Panel de Control - Super Administrador</h3>
+                        <div class="admin-controls">
+                            <button class="btn btn-warning" onclick="togglePanelRevision()">
+                                👁️ Mostrar/Ocultar Panel de Revisión
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <h3>📝 Instrucciones</h3>
+                        <ul>
+                            <li>Seleccione el mes para registrar las evidencias correspondientes</li>
+                            <li>Las evidencias serán almacenadas en una carpeta de Google Drive correspondiente al mes de entrega</li>
+                            <li>El archivo debe ser en formato PDF únicamente</li>
+                            <li>Nombrar el archivo con las siglas de la dependencia y el mes (Ejemplo: INALI_noviembre, IMSS_noviembre)</li>
+                            <li>Complete todos los datos del Enlace de Formación Académica</li>
+                        </ul>
+                    </div>
+
+                    <h3 style="color: var(--guinda); margin: 2rem 0 1.5rem;">📅 Seleccione el Mes</h3>
+                    
+                    <div class="month-grid">
+                        <div class="month-card" onclick="openMonthModal('Enero')" style="background: var(--gradient1);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>❄️ Enero</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Febrero')" style="background: var(--gradient2);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>💝 Febrero</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Marzo')" style="background: var(--gradient3);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🌸 Marzo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Abril')" style="background: var(--gradient4);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🌼 Abril</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Mayo')" style="background: var(--gradient1);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🌻 Mayo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Junio')" style="background: var(--gradient2);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>☀️ Junio</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Julio')" style="background: var(--gradient3);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🏖️ Julio</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Agosto')" style="background: var(--gradient4);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🌞 Agosto</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Septiembre')" style="background: var(--gradient1);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🍂 Septiembre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Octubre')" style="background: var(--gradient2);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🎃 Octubre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Noviembre')" style="background: var(--gradient3);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🍁 Noviembre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Diciembre')" style="background: var(--gradient4);" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">
+                            <h3>🎄 Diciembre</h3>
+                            <p>2025</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-sección: Panel de Revisión DCEVE (Solo visible para Super Admin) -->
+            <div id="revision" class="subsection">
+                <div class="card">
+                    <h2>🔍 Revisión de Evidencias Mensuales - Panel DCEVE</h2>
+                    
+                    <div class="info-box">
+                        <h3>📋 Panel de Control DCEVE</h3>
+                        <ul>
+                            <li>Visualice las evidencias registradas por las dependencias</li>
+                            <li>Descargue los archivos PDF adjuntos</li>
+                            <li>Visualización previa del archivo antes de descargar</li>
+                            <li>Marque como "Completado" o "Sin completar" según la revisión</li>
+                            <li>El estado se actualizará automáticamente en el Excel de seguimiento</li>
+                        </ul>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Dependencia/Institución</th>
+                                    <th>Mes</th>
+                                    <th>Enlace Nombre</th>
+                                    <th>Correo Institucional</th>
+                                    <th>Teléfono</th>
+                                    <th>Archivo PDF</th>
+                                    <th>Estado</th>
+                                    <th>Acciones DCEVE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>INALI</td>
+                                    <td>Noviembre</td>
+                                    <td>María García López</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-1234-5678 ext. 101</td>
+                                    <td><button class="btn btn-secondary" style="padding: 0.5rem 1rem;">📥 Descargar PDF</button></td>
+                                    <td><span style="color: #10b981; font-weight: bold;">COMPLETADO</span></td>
+                                    <td>
+                                        <button class="btn btn-success" style="padding: 0.5rem 1rem;" onclick="marcarCompletado(this)">✓ Completado</button>
+                                        <button class="btn btn-danger" style="padding: 0.5rem 1rem;" onclick="marcarSinCompletar(this)">✗ Sin completar</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>IMSS</td>
+                                    <td>Noviembre</td>
+                                    <td>Juan Pérez Martínez</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-2345-6789 ext. 202</td>
+                                    <td><button class="btn btn-secondary" style="padding: 0.5rem 1rem;">📥 Descargar PDF</button></td>
+                                    <td><span style="color: #ef4444; font-weight: bold;">SIN COMPLETAR</span></td>
+                                    <td>
+                                        <button class="btn btn-success" style="padding: 0.5rem 1rem;" onclick="marcarCompletado(this)">✓ Completado</button>
+                                        <button class="btn btn-danger" style="padding: 0.5rem 1rem;" onclick="marcarSinCompletar(this)">✗ Sin completar</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>SEP</td>
+                                    <td>Diciembre</td>
+                                    <td>Ana Rodríguez Sánchez</td>
+                                    <td>correo[arroba]institucional[punto]gob[punto]mx</td>
+                                    <td>55-3456-7890 ext. 303</td>
+                                    <td><button class="btn btn-secondary" style="padding: 0.5rem 1rem;">📥 Descargar PDF</button></td>
+                                    <td><span style="color: #10b981; font-weight: bold;">COMPLETADO</span></td>
+                                    <td>
+                                        <button class="btn btn-success" style="padding: 0.5rem 1rem;" onclick="marcarCompletado(this)">✓ Completado</button>
+                                        <button class="btn btn-danger" style="padding: 0.5rem 1rem;" onclick="marcarSinCompletar(this)">✗ Sin completar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 2rem;">
+                        <h3>📊 Seguimiento en Excel</h3>
+                        <p>Con los datos recabados del formulario y con la opción que los enlaces seleccionaron en el apartado de instituciones, en un Excel se registrarán las instituciones reportadas con los datos de los enlaces y las instituciones faltantes.</p>
+                        <ul>
+                            <li><strong>Columna 1:</strong> Dependencia/Institución (registro automático)</li>
+                            <li><strong>Columna 2:</strong> Envío de evidencias (SÍ/NO según validación DCEVE)</li>
+                            <li>Si la DCEVE da clic en "COMPLETADO": se actualiza a "SÍ"</li>
+                            <li>Si la DCEVE da clic en "SIN COMPLETAR": se actualiza a "NO"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Registro de Evidencias -->
+    <div id="monthModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">&times;</span>
+            <h2 id="modalTitle" style="color: var(--guinda); margin-bottom: 2rem;">Registro de Evidencias Mensuales</h2>
+            
+            <form id="evidenciaForm">
+                <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 Datos del Enlace de Formación Académica que Registra</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nombre(s) <span class="required">*</span></label>
+                        <input type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Primer Apellido <span class="required">*</span></label>
+                        <input type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Segundo Apellido <span class="required">*</span></label>
+                        <input type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Institucional <span class="required">*</span></label>
+                        <input type="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Adicional</label>
+                        <input type="email">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono Institucional con Extensión <span class="required">*</span></label>
+                        <input type="tel" placeholder="55-1234-5678 ext. 123" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Dependencia/Institución <span class="required">*</span></label>
+<select required id="select_field_1">
+                        <option value="">Seleccione una opción...</option>
+                        <option>ADMINISTRACIÓN DEL PATRIMONIO DE LA BENEFICENCIA PÚBLICA</option>
+                        <option>ADMINISTRACIÓN DEL SISTEMA PORTUARIO LÁZARO CÁRDENAS, S.A. DE C.V.</option>
+                        <option>ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.</option>
+                        <option>ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL CABO SAN LUCAS, S.A. DE C.V.</option>
+                        <option>IMSS - Instituto Mexicano del Seguro Social</option>
+                        <option>INALI - Instituto Nacional de Lenguas Indígenas</option>
+                        <option>SEP - Secretaría de Educación Pública</option>
+                        <option>SHCP - Secretaría de Hacienda y Crédito Público</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📎 Carga de Archivo PDF <span class="required">*</span></label>
+                    <div class="file-upload" id="fileUpload">
+                        <p style="font-size: 3rem; margin-bottom: 1rem;">📄</p>
+                        <p style="font-size: 1.2rem; font-weight: bold;">Haga clic o arrastre el archivo PDF aquí</p>
+                        <p style="color: #64748b; margin-top: 0.5rem;">Solo se permiten archivos PDF</p>
+                        <input type="file" id="pdfFile" accept=".pdf" style="display: none;" required>
+                    </div>
+                    <p style="color: #64748b; margin-top: 0.5rem; font-style: italic;">
+                        <strong>Importante:</strong> Nombrar el archivo como: SIGLAS_mes<br>
+                        Ejemplo: INALI_noviembre, IMSS_noviembre
+                    </p>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button type="submit" class="btn">📤 Enviar Evidencia</button>
+                    <button type="button" class="btn btn-danger" onclick="closeModal()">❌ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="fab" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){ this.click(); }">⬆️</div>
+
+    <footer>
+        <img src="data:image/webp;base64,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" alt="Gobierno de México - SABG">
+        <p style="font-size: 1.2rem; font-weight: bold;">Gobierno de México</p>
+        <p>Secretaría de Administración y Buen Gobierno</p>
+        <p>Sistema de Promoción de la Formación Académica</p>
+        <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
+        <p style="font-size: 0.9rem; margin-top: 1rem;">
+            Para soporte técnico: correo[arroba]institucional[punto]gob[punto]mx
+        </p>
+    </footer>
+
+    <script>
+        // Sistema de roles y dependencias
+        let userRole = 'enlace';
+        let edicionBloqueada = true;
+        let userDependencia = null; // Dependencia del usuario logueado
+        let userName = '';
+
+        // Base de datos de usuarios (en producción esto vendría de un backend)
+        const usuarios = {
+            // Super Admin
+            'ADMIN': { 
+                password: 'admin2024', 
+                role: 'superadmin',
+                dependencia: null, // Null = puede ver todas las dependencias
+                nombre: 'Administrador'
+            },
+            // Dependencias (cada una con su usuario único)
+            'SABG': { 
+                password: 'sabg2024', 
+                role: 'enlace',
+                dependencia: 'SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO',
+                nombre: 'Enlace SABG'
+            },
+            'SCT': { 
+                password: 'sct2024', 
+                role: 'enlace',
+                dependencia: 'SECRETARÍA DE COMUNICACIONES Y TRANSPORTES',
+                nombre: 'Enlace SCT'
+            },
+            'SHCP': { 
+                password: 'shcp2024', 
+                role: 'enlace',
+                dependencia: 'SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO',
+                nombre: 'Enlace SHCP'
+            },
+            'SEP': { 
+                password: 'sep2024', 
+                role: 'enlace',
+                dependencia: 'SECRETARÍA DE EDUCACIÓN PÚBLICA',
+                nombre: 'Enlace SEP'
+            },
+            'ALTAMIRA': { 
+                password: 'altamira2024', 
+                role: 'enlace',
+                dependencia: 'ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA',
+                nombre: 'Enlace Altamira'
+            },
+            'PROGRESO': { 
+                password: 'progreso2024', 
+                role: 'enlace',
+                dependencia: 'ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO',
+                nombre: 'Enlace Progreso'
+            }
+        };
+
+        // Handle login
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // Validar credenciales - convertir usuario a mayúsculas para coincidir con las claves
+            const usuario = usuarios[username.toUpperCase()];
+            
+            if (usuario && usuario.password === password) {
+                // Mostrar loading
+                document.getElementById('loadingOverlay').classList.add('active');
+                
+                // Simular carga
+                setTimeout(() => {
+                    userRole = usuario.role;
+                    userDependencia = usuario.dependencia;
+                    userName = usuario.nombre;
+                    
+                    // Configurar interfaz según rol
+                    if (userRole === 'superadmin') {
+                        document.getElementById('userName').textContent = '👤 ' + usuario.nombre;
+                        document.getElementById('userRole').textContent = 'Super Admin';
+                        document.getElementById('userRole').style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
+                        document.getElementById('adminPanelTrimestral').classList.remove('hidden');
+                        document.getElementById('adminPanelEvidencias').classList.remove('hidden');
+                    } else {
+                        document.getElementById('userName').textContent = '👤 ' + usuario.nombre;
+                        document.getElementById('userRole').textContent = 'Enlace - ' + username.toUpperCase();
+                        document.getElementById('dropdownItemTabla').style.display = 'none';
+                        document.getElementById('dropdownItemRevision').style.display = 'none';
+                    }
+                    
+                    // Inicializar estado de celdas editables
+                    if (userRole !== 'superadmin' || edicionBloqueada) {
+                        document.querySelectorAll('.editable-cell').forEach(cell => {
+                            cell.classList.add('editable-disabled');
+                        });
+                    }
+                    
+                    // Filtrar tabla por dependencia si es enlace
+                    if (userRole === 'enlace') {
+                        filtrarTablaPorDependencia();
+                    }
+                    
+                    // Ocultar login y loading
+                    document.getElementById('loadingOverlay').classList.remove('active');
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    
+                    // Mensaje de bienvenida
+                    setTimeout(() => {
+                        const mensaje = userRole === 'superadmin' 
+                            ? `✅ ¡Bienvenido ${usuario.nombre}!\n\nRol: Super Administrador\nAcceso completo al sistema.`
+                            : `✅ ¡Bienvenido ${usuario.nombre}!\n\nRol: Enlace\nDependencia: ${userDependencia}\n\nSolo podrá visualizar información de su dependencia.`;
+                        alert(mensaje);
+                    }, 300);
+                }, 2000);
+            } else {
+                alert('❌ Usuario o contraseña incorrectos.\n\nPor favor verifique sus credenciales e intente nuevamente.');
+            }
+        }
+
+        // Filtrar tabla por dependencia
+        function filtrarTablaPorDependencia() {
+            if (userRole === 'superadmin') {
+                // Super admin ve todo
+                document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
+                    row.style.display = '';
+                });
+                return;
+            }
+            
+            // Enlace solo ve su dependencia
+            const rows = document.querySelectorAll('#registrosTable tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const cells = row.cells;
+                if (cells && cells.length > 10) {
+                    const dependenciaCell = cells[10].textContent.trim(); // Columna DEPENDENCIA
+                    
+                    // Comparación flexible (incluye nombres parciales)
+                    if (dependenciaCell.toUpperCase().includes(userDependencia.toUpperCase()) ||
+                        userDependencia.toUpperCase().includes(dependenciaCell.toUpperCase())) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Si no hay registros visibles, mostrar mensaje
+            if (visibleCount === 0) {
+                console.log('No hay registros para la dependencia:', userDependencia);
+            }
+        }
+
+        // Toggle dropdown menu
+        function toggleDropdown(dropdownId, btn) {
+            // Cerrar otros dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (menu.id !== dropdownId) {
+                    menu.classList.remove('show');
+                }
+            });
+            
+            // Remover clase expanded de otros botones
+            document.querySelectorAll('.main-nav-btn').forEach(button => {
+                if (button !== btn) {
+                    button.classList.remove('expanded');
+                }
+            });
+            
+            // Toggle del dropdown actual
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle('show');
+            btn.classList.toggle('expanded');
+        }
+
+        // Cerrar dropdowns al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.nav-item')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+                document.querySelectorAll('.main-nav-btn').forEach(btn => {
+                    btn.classList.remove('expanded');
+                });
+            }
+        });
+
+        // Show section and tab
+        function showSectionAndTab(sectionId, tabId) {
+            // Cerrar todos los dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            document.querySelectorAll('.main-nav-btn').forEach(btn => {
+                btn.classList.remove('expanded');
+            });
+            
+            // Actualizar botones de navegación
+            document.querySelectorAll('.main-nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Ocultar todas las secciones principales
+            document.querySelectorAll('.main-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Mostrar la sección correspondiente
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Para sección trimestral
+            if (sectionId === 'trimestral') {
+                // Ocultar todos los tab-content
+                document.querySelectorAll('#trimestral .tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Remover active de todos los tabs
+                document.querySelectorAll('#trimestral .tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Mostrar el tab seleccionado
+                document.getElementById(tabId).classList.add('active');
+                
+                // Activar el tab correspondiente en la interfaz
+                const tabs = document.querySelectorAll('#trimestral .tab');
+                tabs.forEach(tab => {
+                    if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
+                        (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
+                        (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
+                        tab.classList.add('active');
+                    }
+                });
+                
+                // Si se muestra la tabla, aplicar filtro por dependencia
+                if (tabId === 'tabla') {
+                    setTimeout(() => {
+                        filtrarTablaPorDependencia();
+                    }, 100);
+                }
+            }
+            
+            // Para sección evidencias
+            if (sectionId === 'evidencias') {
+                // Ocultar todas las subsecciones
+                document.querySelectorAll('#evidencias .subsection').forEach(subsection => {
+                    subsection.classList.remove('active');
+                });
+                
+                // Mostrar la subsección correspondiente
+                document.getElementById(tabId).classList.add('active');
+            }
+        }
+
+        // Create particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.width = Math.random() * 5 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDuration = Math.random() * 20 + 10 + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Show main section
+        function showMainSection(sectionId) {
+            // Cerrar dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            document.querySelectorAll('.main-nav-btn').forEach(btn => {
+                btn.classList.remove('expanded');
+            });
+            
+            const sections = document.querySelectorAll('.main-section');
+            const navButtons = document.querySelectorAll('.main-nav-btn');
+
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            navButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Show trimestral tab
+        function showTrimestralTab(tabId) {
+            const tabs = document.querySelectorAll('#trimestral .tab');
+            const tabContents = document.querySelectorAll('#trimestral .tab-content');
+
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Toggle tabla registros (solo Super Admin)
+        function toggleTablaRegistros() {
+            const tab = document.getElementById('tabVerTabla');
+            const content = document.getElementById('tabla');
+            
+            if (tab.classList.contains('hidden')) {
+                tab.classList.remove('hidden');
+                alert('✅ Pestaña "Ver Tabla de Registros" ahora visible');
+            } else {
+                tab.classList.add('hidden');
+                content.classList.remove('active');
+                alert('🔒 Pestaña "Ver Tabla de Registros" ahora oculta');
+            }
+        }
+
+        // Toggle panel revisión (solo Super Admin)
+        function togglePanelRevision() {
+            const panel = document.getElementById('panelRevision');
+            
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                alert('✅ Panel de Revisión DCEVE ahora visible');
+            } else {
+                panel.classList.add('hidden');
+                alert('🔒 Panel de Revisión DCEVE ahora oculto');
+            }
+        }
+
+        // Desbloquear edición
+        function desbloquearEdicion() {
+            edicionBloqueada = false;
+            const estado = document.getElementById('estadoEdicion');
+            estado.innerHTML = '🔓 Edición DESBLOQUEADA';
+            estado.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            
+            // Habilitar todas las celdas editables
+            document.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.classList.remove('editable-disabled');
+            });
+            
+            alert('✅ Edición desbloqueada. Los Super Administradores pueden ahora modificar los campos editables.');
+        }
+
+        // Bloquear edición
+        function bloquearEdicion() {
+            edicionBloqueada = true;
+            const estado = document.getElementById('estadoEdicion');
+            estado.innerHTML = '🔒 Edición BLOQUEADA';
+            estado.style.background = 'var(--gradient1)';
+            
+            // Deshabilitar todas las celdas editables
+            document.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.classList.add('editable-disabled');
+            });
+            
+            alert('🔒 Edición bloqueada. Los usuarios no pueden modificar los registros.');
+        }
+
+        // Hacer celda editable
+        function makeEditable(cell) {
+            // Verificar permisos
+            if (userRole !== 'superadmin') {
+                alert('⚠️ Solo los Super Administradores pueden editar estos campos.');
+                return;
+            }
+            
+            if (edicionBloqueada) {
+                alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
+                return;
+            }
+            
+            // Si ya está en modo edición, salir
+            if (cell.classList.contains('editing')) {
+                return;
+            }
+            
+            const field = cell.dataset.field;
+            const currentValue = cell.textContent.trim().replace('✏️', '').trim();
+            
+            // Marcar como en edición
+            cell.classList.add('editing');
+            
+            // Crear el control de edición según el campo
+            let editControl;
+            
+            if (field === 'nivel_educativo') {
+                editControl = document.createElement('select');
+                editControl.innerHTML = `
+                    <option value="PRIMARIA">PRIMARIA</option>
+                    <option value="SECUNDARIA">SECUNDARIA</option>
+                    <option value="BACHILLERATO">BACHILLERATO</option>
+                    <option value="LICENCIATURA">LICENCIATURA</option>
+                    <option value="ESPECIALIDAD">ESPECIALIDAD</option>
+                    <option value="MAESTRÍA">MAESTRÍA</option>
+                    <option value="DOCTORADO">DOCTORADO</option>
+                `;
+                editControl.value = currentValue;
+            } else if (field === 'institucion_educativa') {
+                editControl = document.createElement('select');
+                editControl.innerHTML = `
+                    <option value="INSTITUTO NACIONAL PARA LA EDUCACIÓN DE ADULTOS (INEA)">INEA</option>
+                    <option value="COLEGIO DE BACHILLERES (COLBACH)">COLBACH</option>
+                    <option value="UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO (UNADM)">UNADM</option>
+                    <option value="UNIVERSIDAD NACIONAL ROSARIO CASTELLANOS (UNRC)">UNRC</option>
+                    <option value="TECNOLÓGICO NACIONAL DE MÉXICO (TECNM)">TECNM</option>
+                    <option value="UNIVERSIDAD INTERNACIONAL DE LA RIOJA (UNIR)">UNIR</option>
+                    <option value="SECRETARÍA DE EDUCACIÓN PÚBLICA">SEP</option>
+                `;
+                // Buscar valor corto
+                const shortValue = currentValue.includes('INEA') ? 'INSTITUTO NACIONAL PARA LA EDUCACIÓN DE ADULTOS (INEA)' :
+                                   currentValue.includes('COLBACH') ? 'COLEGIO DE BACHILLERES (COLBACH)' :
+                                   currentValue.includes('UNADM') ? 'UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO (UNADM)' :
+                                   currentValue.includes('UNRC') ? 'UNIVERSIDAD NACIONAL ROSARIO CASTELLANOS (UNRC)' :
+                                   currentValue.includes('TECNM') ? 'TECNOLÓGICO NACIONAL DE MÉXICO (TECNM)' :
+                                   currentValue.includes('UNIR') ? 'UNIVERSIDAD INTERNACIONAL DE LA RIOJA (UNIR)' :
+                                   'SECRETARÍA DE EDUCACIÓN PÚBLICA';
+                editControl.value = shortValue;
+            } else if (field === 'modalidad') {
+                editControl = document.createElement('select');
+                editControl.innerHTML = `
+                    <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
+                    <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
+                    <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
+                    <option value="CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)">CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)</option>
+                    <option value="SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)">SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)</option>
+                    <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
+                    <option value="A DISTANCIA">A DISTANCIA</option>
+                    <option value="PRESENCIAL">PRESENCIAL</option>
+                    <option value="ESCOLARIZADA">ESCOLARIZADA</option>
+                    <option value="MIXTO">MIXTO</option>
+                `;
+                editControl.value = currentValue;
+            } else if (field === 'estado_avance') {
+                editControl = document.createElement('select');
+                editControl.innerHTML = `
+                    <option value="CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</option>
+                    <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
+                    <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
+                    <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
+                    <option value="PERSONA QUE CONCLUYÓ SUS ESTUDIOS">PERSONA QUE CONCLUYÓ SUS ESTUDIOS</option>
+                    <option value="PERSONA EN PROCESO DE TITULACIÓN">PERSONA EN PROCESO DE TITULACIÓN</option>
+                    <option value="PERSONA QUE DESERTÓ">PERSONA QUE DESERTÓ</option>
+                    <option value="PERSONA SUSPENDIDA">PERSONA SUSPENDIDA</option>
+                    <option value="OTRA">OTRA</option>
+                `;
+                editControl.value = currentValue;
+            } else if (field === 'observaciones') {
+                editControl = document.createElement('textarea');
+                editControl.value = currentValue;
+                editControl.rows = 3;
+            }
+            
+            // Reemplazar contenido
+            cell.innerHTML = '';
+            cell.appendChild(editControl);
+            editControl.focus();
+            
+            // Función para guardar
+            const saveEdit = () => {
+                const newValue = editControl.value;
+                cell.classList.remove('editing');
+                
+                // Mostrar nuevo valor
+                if (field === 'institucion_educativa') {
+                    // Mostrar versión corta
+                    const shortName = newValue.includes('INEA') ? 'INEA' :
+                                      newValue.includes('COLBACH') ? 'COLBACH' :
+                                      newValue.includes('UNADM') ? 'UNADM' :
+                                      newValue.includes('UNRC') ? 'UNRC' :
+                                      newValue.includes('TECNM') ? 'TECNM' :
+                                      newValue.includes('UNIR') ? 'UNIR' : 'SEP';
+                    cell.innerHTML = `${shortName}<span class="edit-icon">✏️</span>`;
+                } else {
+                    cell.innerHTML = `${newValue}<span class="edit-icon">✏️</span>`;
+                }
+                
+                // Aplicar clase estado-rojo si es necesario
+                if (field === 'estado_avance') {
+                    const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
+                    if (estadosRojos.includes(newValue)) {
+                        cell.classList.add('estado-rojo');
+                    } else {
+                        cell.classList.remove('estado-rojo');
+                    }
+                }
+                
+                alert(`✅ Campo actualizado correctamente!\n\nNuevo valor: ${newValue}`);
+            };
+            
+            // Eventos para guardar
+            editControl.addEventListener('blur', saveEdit);
+            editControl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && field !== 'observaciones') {
+                    e.preventDefault();
+                    saveEdit();
+                } else if (e.key === 'Escape') {
+                    cell.classList.remove('editing');
+                    cell.innerHTML = `${currentValue}<span class="edit-icon">✏️</span>`;
+                }
+            });
+        }
+
+        // Open month modal
+        function openMonthModal(month) {
+            document.getElementById('monthModal').classList.add('active');
+            document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 2025`;
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('monthModal').classList.remove('active');
+        }
+
+        // File upload
+        const fileUpload = document.getElementById('fileUpload');
+        const pdfFile = document.getElementById('pdfFile');
+
+        if (fileUpload && pdfFile) {
+            fileUpload.addEventListener('click', () => {
+                pdfFile.click();
+            });
+
+            fileUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUpload.style.borderColor = 'var(--guinda)';
+                fileUpload.style.background = '#faf8f3';
+            });
+
+            fileUpload.addEventListener('dragleave', () => {
+                fileUpload.style.borderColor = '#cbd5e1';
+                fileUpload.style.background = '#f8fafc';
+            });
+
+            fileUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUpload.style.borderColor = '#cbd5e1';
+                fileUpload.style.background = '#f8fafc';
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].type === 'application/pdf') {
+                    pdfFile.files = files;
+                    updateFileUploadText(files[0].name);
+                } else {
+                    alert('⚠️ Por favor, solo suba archivos PDF');
+                }
+            });
+
+            pdfFile.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    updateFileUploadText(e.target.files[0].name);
+                }
+            });
+        }
+
+        function updateFileUploadText(fileName) {
+            fileUpload.innerHTML = `
+                <p style="font-size: 3rem; margin-bottom: 1rem;">✅</p>
+                <p style="font-size: 1.2rem; font-weight: bold; color: var(--success);">Archivo seleccionado:</p>
+                <p style="color: var(--dark); margin-top: 0.5rem;">${fileName}</p>
+            `;
+        }
+
+        // Form submissions
+        document.getElementById('evidenciaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('✅ Evidencia enviada exitosamente! La DCEVE revisará su registro.');
+            closeModal();
+            e.target.reset();
+            if (fileUpload) {
+                fileUpload.innerHTML = `
+                    <p style="font-size: 3rem; margin-bottom: 1rem;">📄</p>
+                    <p style="font-size: 1.2rem; font-weight: bold;">Haga clic o arrastre el archivo PDF aquí</p>
+                    <p style="color: #64748b; margin-top: 0.5rem;">Solo se permiten archivos PDF</p>
+                `;
+            }
+        });
+
+        document.getElementById('trimestralForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('✅ Registro guardado exitosamente!');
+            e.target.reset();
+        });
+
+        // Search table
+        const searchTableTrimestral = document.getElementById('searchTableTrimestral');
+        if (searchTableTrimestral) {
+            searchTableTrimestral.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('#registrosTable tbody tr');
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+
+        // Export data
+        function exportData(format) {
+            alert(`📥 Exportando datos en formato ${format.toUpperCase()}...\n\nEsta funcionalidad requiere implementación en el backend.`);
+        }
+
+        // Marcar completado/sin completar
+        function marcarCompletado(btn) {
+            const row = btn.closest('tr');
+            const estadoCell = row.cells[6];
+            estadoCell.innerHTML = '<span style="color: #10b981; font-weight: bold;">COMPLETADO</span>';
+            alert('✅ Estado actualizado a COMPLETADO.\n\nSe actualizará "SÍ" en el Excel de seguimiento.');
+        }
+
+        function marcarSinCompletar(btn) {
+            const row = btn.closest('tr');
+            const estadoCell = row.cells[6];
+            estadoCell.innerHTML = '<span style="color: #ef4444; font-weight: bold;">SIN COMPLETAR</span>';
+            alert('⚠️ Estado actualizado a SIN COMPLETAR.\n\nSe actualizará "NO" en el Excel de seguimiento.');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('¿Está seguro que desea cerrar sesión?')) {
+                // Resetear formulario
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                
+                // Resetear variables
+                userRole = 'enlace';
+                userDependencia = null;
+                userName = '';
+                
+                // Mostrar login screen
+                document.getElementById('loginScreen').classList.remove('hidden');
+                
+                // Restaurar visibilidad de todas las filas
+                document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
+                    row.style.display = '';
+                });
+                
+                // Mensaje de despedida
+                setTimeout(() => {
+                    alert('👋 Sesión cerrada exitosamente\n\n¡Hasta pronto!');
+                }, 300);
+            }
+        }
+
+        // Close modal on outside click
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('monthModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            createParticles();
+            // No llamamos initUser porque ahora se maneja con el login screen
+        });
+// ========== AUTOCOMPLETADO RAMO-UR Y DEPENDENCIA ==========
+const ramosUR = [
+    '2-0','4-0','4-A00','4-E2D','4-EZQ','4-F00','4-G00','4-K00','4-N00','4-P00',
+'4-Q00','4-T00','4-X00','5-0','5-I00','5-J00','5-K00','6-0','6-A00','6-B00',
+'6-C00','6-D00','6-E00','6-G0N','6-G1C','6-G1H','6-G2T','6-G3A','6-GSA','6-H00',
+'6-HAT','6-HBW','6-HHN','6-HIU','6-HJO','6-HJY','6-HKA','6-HKI','6-KCZ','7-0',
+'7-H0C','7-H0M','7-HXA','7-HZI','8-0','8-A1I','8-AFU','8-B00','8-C00','8-D00',
+'8-G00','8-I00','8-I6L','8-I9H','8-IZC','8-IZI','8-JAG','8-JBK','8-JBP','8-RJL',
+'8-VSS','8-VST','9-0','9-A00','9-C00','9-D00','9-E00','9-J0U','9-J4Q','9-J9E',
+'9-JZL','9-JZN','9-KDI','10-0','10-K2H','10-K2N','10-K2O','10-K8V','10-LAT',
+'10-LAU','11-0','11-A00','11-B00','11-B01','11-G00','11-K00','11-L00','11-L3P',
+'11-L4J','11-L5N','11-L5X','11-L6H','11-L6I','11-L6J','11-L6W','11-L8G','11-L8K',
+'11-L9T','11-M00','11-MAR','11-MAX','11-MDA','11-MDE','11-MEY','11-MGC','11-MGJ',
+'11-O00','12-0','12-E00','12-I00','12-K00','12-L00','12-M00','12-M7F','12-M7K',
+'12-NAW','12-NBB','12-NBD','12-NBG','12-NBV','12-NCA','12-NCD','12-NCE','12-NCG',
+'12-NCH','12-NCK','12-NCZ','12-NDE','12-NDF','12-NDY','12-NEF','12-NHK','12-O00',
+'12-Q00','12-R00','12-S00','12-T00','12-V00','12-Y00','13-0','13-AYH','13-J2I',
+'13-J2K','13-J2P','13-J2R','13-J2T','13-J2U','13-J2V','13-J2W','13-J2X','13-J2Y',
+'13-J2Z','13-J3A','13-J3B','13-J3C','13-J3D','13-J3E','13-J3F','13-J3G','13-J3L',
+'13-J4V','13-KDN','13-N9W','14-0','14-A00','14-P7R','14-PBE','14-PBJ','14-VUY',
+'15-0','15-B00','15-QCW','15-QDV','15-QEU','15-QEZ','16-0','16-B00','16-E00',
+'16-F00','16-G00','16-RHQ','16-RJE','16-RJJ','18-0','18-A00','18-E00','18-T0K',
+'18-T0O','18-T0Q','18-T0U','18-T4I','18-T4L','18-T4M','18-T4N','18-T4O','18-TOM',
+'18-TON','18-TQA','19-HC6','20-0','20-L00','20-V3A','20-VRW','21-0','21-W3N',
+'21-W3S','25-C00','27-0','27-T00','31-0','32-0','36-0','36-B00','36-C00','36-D00',
+'36-E00','36-F00','36-G00','36-H00','37-0','38-90A','38-90C','38-90E','38-90G',
+'38-90I','38-90K','38-90M','38-90O','38-90Q','38-90S','38-90U','38-90W','38-90X',
+'38-90Y','38-91A','38-91C','38-91E','38-91I','38-91K','38-91M','38-91Q','38-91S',
+'38-91U','38-91W','38-92M','38-9ZU','38-9ZW','38-9ZY','47-AYB','47-AYI','47-AYJ',
+'47-AYL','47-AYM','47-AYN','47-AYO','47-EZN','47-MDL','48-0','48-D00','48-E00',
+'48-F00','48-I00','48-J00','48-L3N','48-L6U','48-L8P','48-L9Y','48-MDB','48-MDC',
+'48-MHL','48-VZG','50-GYR','50-ZZZ','51-GYN','52-T9G','52-T9K','52-T9M','52-T9N',
+'53-TVV','53-UHI','53-UHN','53-UHS','53-UHX','53-UIC','53-UIH','53-UIM','53-UIR',
+'53-UIT','53-UIW','54-0','55-0'
+];
+
+const dependencias = [
+"ADMINISTRACIÓN DEL PATRIMONIO DE LA BENEFICENCIA PÚBLICA","ADMINISTRACIÓN DEL SISTEMA PORTUARIO LÁZARO CÁRDENAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL CABO SAN LUCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL COATZACOALCOS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL DOS BOCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ENSENADA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL GUAYMAS, S.A. DE C.V.",
+
+"ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MANZANILLO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MAZATLÁN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO CHIAPAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO VALLARTA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL SALINA CRUZ, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TAMPICO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TOPOLOBAMPO, S.A. DE C.V.",
+
+"ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TUXPAN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL VERACRUZ, S.A. DE C.V.","AEROPUERTO INTERNACIONAL DE LA CIUDAD DE MÉXICO, S.A. DE C.V.","AEROPUERTO INTERNACIONAL FELIPE ÁNGELES, S.A. DE C.V.","AEROPUERTOS Y SERVICIOS AUXILIARES","AGENCIA DE TRANSFORMACIÓN DIGITAL Y TELECOMUNICACIONES","AGENCIA ESPACIAL MEXICANA","AGENCIA FEDERAL DE AVIACIÓN CIVIL",
+
+"AGENCIA NACIONAL DE ADUANAS DE MÉXICO","AGENCIA NACIONAL DE SEGURIDAD INDUSTRIAL Y DE PROTECCIÓN AL MEDIO AMBIENTE DEL SECTOR HIDROCARBUROS","AGROASEMEX, S.A.","ARCHIVO GENERAL DE LA NACIÓN","AUTORIDAD EDUCATIVA FEDERAL EN LA CIUDAD DE MÉXICO","BANCO DEL BIENESTAR, S.N.C., I.B.D.","BANCO NACIONAL DE COMERCIO EXTERIOR, S.N.C.","BANCO NACIONAL DE OBRAS Y SERVICIOS PÚBLICOS, S.N.C.",
+
+"BANCO NACIONAL DEL EJÉRCITO, FUERZA AÉREA Y ARMADA, S.N.C.","CAMINOS Y PUENTES FEDERALES DE INGRESOS Y SERVICIOS CONEXOS","CASA DE MONEDA DE MÉXICO","CENTRO DE CAPACITACIÓN CINEMATOGRÁFICA, A.C.","CENTRO DE ENSEÑANZA TÉCNICA INDUSTRIAL","CENTRO DE INGENIERÍA Y DESARROLLO INDUSTRIAL","CENTRO DE INVESTIGACIÓN CIENTÍFICA DE YUCATÁN, A.C.","CENTRO DE INVESTIGACIÓN CIENTÍFICA Y DE EDUCACIÓN SUPERIOR DE ENSENADA, BAJA CALIFORNIA",
+
+"CENTRO DE INVESTIGACIÓN EN ALIMENTACIÓN Y DESARROLLO, A.C.","CENTRO DE INVESTIGACIÓN EN CIENCIAS DE INFORMACIÓN GEOESPACIAL, A.C.","CENTRO DE INVESTIGACIÓN EN MATEMÁTICAS, A.C.","CENTRO DE INVESTIGACIÓN EN MATERIALES AVANZADOS, S.C.","CENTRO DE INVESTIGACIÓN EN QUÍMICA APLICADA","CENTRO DE INVESTIGACIÓN Y ASISTENCIA EN TECNOLOGÍA Y DISEÑO DE JALISCO, A.C.","CENTRO DE INVESTIGACIÓN Y DE ESTUDIOS AVANZADOS DEL IPN","CENTRO DE INVESTIGACIÓN Y DESARROLLO TECNOLÓGICO EN ELECTROQUÍMICA, S.C.",
+
+"CENTRO DE INVESTIGACIÓN Y DOCENCIA ECONÓMICAS, A.C.","CENTRO DE INVESTIGACIONES BIOLÓGICAS DEL NOROESTE, S.C.","CENTRO DE INVESTIGACIONES EN ÓPTICA, A.C.","CENTRO DE INVESTIGACIONES Y ESTUDIOS SUPERIORES EN ANTROPOLOGÍA SOCIAL","CENTRO DE PRODUCCIÓN DE PROGRAMAS INFORMATIVOS Y ESPECIALES","CENTRO FEDERAL DE CONCILIACIÓN Y REGISTRO LABORAL","CENTRO NACIONAL DE CONTROL DE ENERGÍA","CENTRO NACIONAL DE CONTROL DEL GAS NATURAL",
+
+"CENTRO NACIONAL DE EQUIDAD DE GÉNERO Y SALUD REPRODUCTIVA","CENTRO NACIONAL DE EXCELENCIA TECNOLÓGICA EN SALUD","CENTRO NACIONAL DE LA TRANSFUSIÓN SANGUÍNEA","CENTRO NACIONAL DE METROLOGÍA","CENTRO NACIONAL DE PREVENCIÓN DE DESASTRES","CENTRO NACIONAL DE PROGRAMAS PREVENTIVOS Y CONTROL DE ENFERMEDADES","CENTRO NACIONAL DE TRASPLANTES","CENTRO NACIONAL PARA LA PREVENCIÓN Y CONTROL DEL VIH/SIDA",
+
+"CENTRO NACIONAL PARA LA SALUD DE LA INFANCIA Y LA ADOLESCENCIA","CENTROS DE INTEGRACIÓN JUVENIL, A.C.","CIATEC, A.C.","CIATEQ, A.C.","COLEGIO DE BACHILLERES","COLEGIO DE POSTGRADUADOS","COLEGIO NACIONAL DE EDUCACIÓN PROFESIONAL TÉCNICA","COLEGIO SUPERIOR AGROPECUARIO DEL ESTADO DE GUERRERO",
+
+"COMISIÓN DE APELACIÓN Y ARBITRAJE DEL DEPORTE","COMISIÓN DE OPERACIÓN Y FOMENTO DE ACTIVIDADES ACADÉMICAS DEL IPN","COMISIÓN EJECUTIVA DE ATENCIÓN A VÍCTIMAS","COMISIÓN FEDERAL PARA LA PROTECCIÓN CONTRA RIESGOS SANITARIOS","COMISIÓN NACIONAL BANCARIA Y DE VALORES","COMISIÓN NACIONAL DE ACUACULTURA Y PESCA","COMISIÓN NACIONAL DE ARBITRAJE MÉDICO","COMISIÓN NACIONAL DE ÁREAS NATURALES PROTEGIDAS",
+
+"COMISIÓN NACIONAL DE BIOÉTICA","COMISIÓN NACIONAL DE BÚSQUEDA DE PERSONAS","COMISIÓN NACIONAL DE CULTURA FÍSICA Y DEPORTE","COMISIÓN NACIONAL DE HIDROCARBUROS","COMISIÓN NACIONAL DE LAS ZONAS ÁRIDAS","COMISIÓN NACIONAL DE LIBROS DE TEXTO GRATUITOS","COMISIÓN NACIONAL DE LOS SALARIOS MÍNIMOS","COMISIÓN NACIONAL DE MEJORA REGULATORIA",
+
+"COMISIÓN NACIONAL DE SALUD MENTAL Y ADICCIONES","COMISIÓN NACIONAL DE SEGURIDAD NUCLEAR Y SALVAGUARDIAS","COMISIÓN NACIONAL DE SEGUROS Y FIANZAS","COMISIÓN NACIONAL DE VIVIENDA","COMISIÓN NACIONAL DEL AGUA","COMISIÓN NACIONAL DEL SISTEMA DE AHORRO PARA EL RETIRO","COMISIÓN NACIONAL FORESTAL","COMISIÓN NACIONAL PARA EL USO EFICIENTE DE LA ENERGÍA",
+
+"COMISIÓN NACIONAL PARA LA MEJORA CONTINUA DE LA EDUCACIÓN","COMISIÓN NACIONAL PARA LA PROTECCIÓN Y DEFENSA DE LOS USUARIOS DE SERVICIOS FINANCIEROS","COMISIÓN REGULADORA DE ENERGÍA","COMITÉ NACIONAL PARA EL DESARROLLO SUSTENTABLE DE LA CAÑA DE AZÚCAR","COMPAÑÍA MEXICANA DE EXPLORACIONES, S.A. DE C.V.","COMPAÑÍA OPERADORA DEL CENTRO CULTURAL Y TURÍSTICO DE TIJUANA, S.A. DE C.V.","CONSEJERÍA JURÍDICA DEL EJECUTIVO FEDERAL","CONSEJO NACIONAL DE EVALUACIÓN DE LA POLÍTICA DE DESARROLLO SOCIAL",
+
+"CONSEJO NACIONAL DE FOMENTO EDUCATIVO","CONSEJO NACIONAL DE HUMANIDADES, CIENCIAS Y TECNOLOGÍAS","CONSEJO NACIONAL PARA EL DESARROLLO Y LA INCLUSIÓN DE LAS PERSONAS CON DISCAPACIDAD","CONSEJO NACIONAL PARA PREVENIR LA DISCRIMINACIÓN","CONSOLIDADO","COORDINACIÓN GENERAL DE LA COMISIÓN MEXICANA DE AYUDA A REFUGIADOS","COORDINACIÓN NACIONAL ANTISECUESTRO Y DELITOS DE ALTO IMPACTO","COORDINACIÓN NACIONAL DE BECAS PARA EL BIENESTAR BENITO JUÁREZ",
+
+"COORDINACIÓN PARA LA ATENCIÓN INTEGRAL DE LA MIGRACIÓN EN LA FRONTERA SUR","CORREDOR INTEROCEÁNICO DEL ISTMO DE TEHUANTEPEC","EDUCAL, S.A. DE C.V.","EL COLEGIO DE LA FRONTERA NORTE, A.C.","EL COLEGIO DE LA FRONTERA SUR","EL COLEGIO DE MÉXICO, A.C.","EL COLEGIO DE MICHOACÁN, A.C.","EL COLEGIO DE SAN LUIS, A.C.",
+
+"ESTUDIOS CHURUBUSCO AZTECA, S.A.","EXPORTADORA DE SAL, S.A. DE C.V.","FERROCARRIL DEL ISTMO DE TEHUANTEPEC, S.A. DE C.V.","FIDEICOMISO DE FOMENTO MINERO","FIDEICOMISO DE LOS SISTEMAS NORMALIZADO DE COMPETENCIA LABORAL Y DE CERTIFICACIÓN","FIDEICOMISO DE RIESGO COMPARTIDO","FIDEICOMISO FONDO NACIONAL DE FOMENTO EJIDAL","FIDEICOMISO PARA LA CINETECA NACIONAL",
+
+"FIDEICOMISO UNIVERSIDAD MARÍTIMA Y PORTUARIA DE MÉXICO","FINANCIERA PARA EL BIENESTAR","FONATUR INFRAESTRUCTURA, S.A. DE C.V.","FONDO DE CAPITALIZACIÓN E INVERSIÓN DEL SECTOR RURAL","FONDO DE CULTURA ECONÓMICA","FONDO DE GARANTÍA Y FOMENTO PARA LA AGRICULTURA, GANADERÍA Y AVICULTURA","FONDO DE LA VIVIENDA DEL ISSSTE","FONDO NACIONAL DE FOMENTO AL TURISMO",
+
+"FONDO NACIONAL PARA EL FOMENTO DE LAS ARTESANÍAS","GUARDIA NACIONAL","HOSPITAL GENERAL DR. MANUEL GEA GONZÁLEZ","HOSPITAL GENERAL DE MÉXICO DR. EDUARDO LICEAGA","HOSPITAL INFANTIL DE MÉXICO FEDERICO GÓMEZ","HOSPITAL JUÁREZ DE MÉXICO","IMPRESORA Y ENCUADERNADORA PROGRESO, S.A. DE C.V.","INFOTEC CENTRO DE INVESTIGACIÓN E INNOVACIÓN EN TIC",
+
+"INNOVABIENESTAR DE MÉXICO, S.A.P.I. DE C.V.","INSTITUTO DE ADMINISTRACIÓN Y AVALÚOS DE BIENES NACIONALES","INSTITUTO DE ECOLOGÍA, A.C.","INSTITUTO DE INVESTIGACIONES DR. JOSÉ MARÍA LUIS MORA","INSTITUTO DE SEGURIDAD SOCIAL PARA LAS FUERZAS ARMADAS MEXICANAS","INSTITUTO DE SEGURIDAD Y SERVICIOS SOCIALES DE LOS TRABAJADORES DEL ESTADO","INSTITUTO DEL FONDO NACIONAL PARA EL CONSUMO DE LOS TRABAJADORES","INSTITUTO MEXICANO DE CINEMATOGRAFÍA",
+
+"INSTITUTO MEXICANO DE INVESTIGACIÓN EN PESCA Y ACUACULTURA SUSTENTABLES","INSTITUTO MEXICANO DE LA PROPIEDAD INDUSTRIAL","INSTITUTO MEXICANO DE LA RADIO","INSTITUTO MEXICANO DE TECNOLOGÍA DEL AGUA","INSTITUTO MEXICANO DEL PETRÓLEO","INSTITUTO MEXICANO DEL SEGURO SOCIAL","INSTITUTO MEXICANO DEL TRANSPORTE","INSTITUTO NACIONAL DE ANTROPOLOGÍA E HISTORIA",
+
+"INSTITUTO NACIONAL DE ASTROFÍSICA, ÓPTICA Y ELECTRÓNICA","INSTITUTO NACIONAL DE BELLAS ARTES Y LITERATURA","INSTITUTO NACIONAL DE CANCEROLOGÍA","INSTITUTO NACIONAL DE CARDIOLOGÍA IGNACIO CHÁVEZ","INSTITUTO NACIONAL DE CIENCIAS MÉDICAS Y NUTRICIÓN SALVADOR ZUBIRÁN","INSTITUTO NACIONAL DE ECOLOGÍA Y CAMBIO CLIMÁTICO","INSTITUTO NACIONAL DE ELECTRICIDAD Y ENERGÍAS LIMPIAS","INSTITUTO NACIONAL DE ENFERMEDADES RESPIRATORIAS ISMAEL COSÍO VILLEGAS",
+
+"INSTITUTO NACIONAL DE GERIATRÍA","INSTITUTO NACIONAL DE INVESTIGACIONES FORESTALES, AGRÍCOLAS Y PECUARIAS","INSTITUTO NACIONAL DE INVESTIGACIONES NUCLEARES","INSTITUTO NACIONAL DE LA ECONOMÍA SOCIAL","INSTITUTO NACIONAL DE LA INFRAESTRUCTURA FÍSICA EDUCATIVA","INSTITUTO NACIONAL DE LAS MUJERES","INSTITUTO NACIONAL DE LAS PERSONAS ADULTAS MAYORES","INSTITUTO NACIONAL DE LENGUAS INDÍGENAS",
+
+"INSTITUTO NACIONAL DE LOS PUEBLOS INDÍGENAS","INSTITUTO NACIONAL DE MEDICINA GENÓMICA","INSTITUTO NACIONAL DE MIGRACIÓN","INSTITUTO NACIONAL DE NEUROLOGÍA Y NEUROCIRUGÍA MANUEL VELASCO SUÁREZ","INSTITUTO NACIONAL DE PEDIATRÍA","INSTITUTO NACIONAL DE PERINATOLOGÍA ISIDRO ESPINOSA DE LOS REYES","INSTITUTO NACIONAL DE PSIQUIATRÍA RAMÓN DE LA FUENTE MUÑIZ","INSTITUTO NACIONAL DE REHABILITACIÓN LUIS GUILLERMO IBARRA IBARRA",
+
+"INSTITUTO NACIONAL DE SALUD PÚBLICA","INSTITUTO NACIONAL DEL SUELO SUSTENTABLE","INSTITUTO NACIONAL PARA EL DESARROLLO DE CAPACIDADES DEL SECTOR RURAL, A.C.","INSTITUTO NACIONAL PARA EL FEDERALISMO Y EL DESARROLLO MUNICIPAL","INSTITUTO NACIONAL PARA LA EDUCACIÓN DE LOS ADULTOS","INSTITUTO PARA DEVOLVER AL PUEBLO LO ROBADO","INSTITUTO PARA LA PROTECCIÓN AL AHORRO BANCARIO","INSTITUTO POLITÉCNICO NACIONAL",
+
+"INSTITUTO POTOSINO DE INVESTIGACIÓN CIENTÍFICA Y TECNOLÓGICA, A.C.","LABORATORIOS DE BIOLÓGICOS Y REACTIVOS DE MÉXICO, S.A. DE C.V.","LITIO PARA MÉXICO","LOTERÍA NACIONAL","NACIONAL FINANCIERA, S.N.C.","OFICINA DE LA PRESIDENCIA DE LA REPÚBLICA","ORGANISMO COORDINADOR DE UNIVERSIDADES PARA EL BIENESTAR BENITO JUÁREZ","ORGANISMO PROMOTOR DE INVERSIONES EN TELECOMUNICACIONES",
+
+"PATRONATO DE OBRAS E INSTALACIONES DEL IPN","PEMEX CORPORATIVO","PREVENCIÓN Y REINSERCIÓN SOCIAL","PROCURADURÍA AGRARIA","PROCURADURÍA DE LA DEFENSA DEL CONTRIBUYENTE","PROCURADURÍA FEDERAL DE LA DEFENSA DEL TRABAJO","PROCURADURÍA FEDERAL DE PROTECCIÓN AL AMBIENTE","PROCURADURÍA FEDERAL DEL CONSUMIDOR",
+
+"PRODUCTORA NACIONAL DE BIOLÓGICOS VETERINARIOS","RADIO EDUCACIÓN","REGISTRO AGRARIO NACIONAL","SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO","SECRETARÍA DE AGRICULTURA Y DESARROLLO RURAL","SECRETARÍA DE BIENESTAR","SECRETARÍA DE CULTURA","SECRETARÍA DE DESARROLLO AGRARIO, TERRITORIAL Y URBANO",
+
+"SECRETARÍA DE ECONOMÍA","SECRETARÍA DE EDUCACIÓN PÚBLICA","SECRETARÍA DE ENERGÍA","SECRETARÍA DE GOBERNACIÓN","SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO","SECRETARÍA DE INFRAESTRUCTURA, COMUNICACIONES Y TRANSPORTES","SECRETARÍA DE LA DEFENSA NACIONAL","SECRETARÍA DE MEDIO AMBIENTE Y RECURSOS NATURALES",
+
+"SECRETARÍA DE RELACIONES EXTERIORES","SECRETARÍA DE SALUD","SECRETARÍA DE SEGURIDAD Y PROTECCIÓN CIUDADANA","SECRETARÍA DE TURISMO","SECRETARÍA DEL TRABAJO Y PREVISIÓN SOCIAL","SECRETARÍA EJECUTIVA DEL SISTEMA NACIONAL ANTICORRUPCIÓN","SECRETARÍA GENERAL DEL CONSEJO NACIONAL DE POBLACIÓN","SECRETARIADO EJECUTIVO DEL SISTEMA NACIONAL DE SEGURIDAD PÚBLICA",
+
+"SEGURIDAD ALIMENTARIA MEXICANA","SERVICIO DE ADMINISTRACIÓN TRIBUTARIA","SERVICIO DE INFORMACIÓN AGROALIMENTARIA Y PESQUERA","SERVICIO DE PROTECCIÓN FEDERAL","SERVICIO GEOLÓGICO MEXICANO","SERVICIO NACIONAL DE INSPECCIÓN Y CERTIFICACIÓN DE SEMILLAS","SERVICIO NACIONAL DE SANIDAD, INOCUIDAD Y CALIDAD AGROALIMENTARIA","SERVICIO POSTAL MEXICANO",
+
+"SERVICIOS A LA NAVEGACIÓN EN EL ESPACIO AÉREO MEXICANO","SERVICIOS DE SALUD DEL IMSS-BIENESTAR","SISTEMA NACIONAL PARA EL DESARROLLO INTEGRAL DE LA FAMILIA","SISTEMA PÚBLICO DE RADIODIFUSIÓN DEL ESTADO MEXICANO","SOCIEDAD HIPOTECARIA FEDERAL, S.N.C.","TALLERES GRÁFICOS DE MÉXICO","TECNOLÓGICO NACIONAL DE MÉXICO","TELEVISIÓN METROPOLITANA, S.A. DE C.V.",
+
+"TREN MAYA, S.A. DE C.V.","TRIBUNAL FEDERAL DE CONCILIACIÓN Y ARBITRAJE","TRIBUNAL FEDERAL DE JUSTICIA FISCAL Y ADMINISTRATIVA","TRIBUNAL SUPERIOR AGRARIO","TURÍSTICA INTEGRAL ISLAS MARÍAS, S.A. DE C.V.","UNIDAD DEL SISTEMA PARA LA CARRERA DE LAS MAESTRAS Y LOS MAESTROS","UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO","UNIVERSIDAD AUTÓNOMA CHAPINGO",
+
+"UNIVERSIDAD PEDAGÓGICA NACIONAL","XE-IPN CANAL 11"
+
+];
+
+function initAutocomplete() {
+    const ramoInput = document.getElementById('ramoUrInput');
+    const ramoSuggestions = document.getElementById('ramoUrSuggestions');
+    const depInput = document.getElementById('dependenciaInput');
+    const depSuggestions = document.getElementById('dependenciaSuggestions');
+
+    if (ramoInput && ramoSuggestions) {
+        setupAutocomplete(ramoInput, ramoSuggestions, ramosUR);
+    }
+
+    if (depInput && depSuggestions) {
+        setupAutocomplete(depInput, depSuggestions, dependencias);
+    }
+}
+
+function setupAutocomplete(input, suggestionsContainer, dataList) {
+    let currentFocus = -1;
+
+    input.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        currentFocus = -1;
+        suggestionsContainer.innerHTML = '';
+
+        if (!value) {
+            suggestionsContainer.classList.remove('show');
+            return;
+        }
+
+        const filtered = dataList.filter(item => 
+            item.toLowerCase().includes(value)
+        );
+
+        if (filtered.length === 0) {
+            suggestionsContainer.innerHTML = '<div class="no-suggestions">No se encontraron coincidencias</div>';
+            suggestionsContainer.classList.add('show');
+            return;
+        }
+
+        filtered.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            
+            const pos = item.toLowerCase().indexOf(value);
+            const beforeMatch = item.substring(0, pos);
+            const matchText = item.substring(pos, pos + value.length);
+            const afterMatch = item.substring(pos + value.length);
+            
+            div.innerHTML = beforeMatch + '<span class="suggestion-highlight">' + matchText + '</span>' + afterMatch;
+            
+            div.addEventListener('click', function() {
+                input.value = item;
+                suggestionsContainer.classList.remove('show');
+            });
+            
+            suggestionsContainer.appendChild(div);
+        });
+
+        suggestionsContainer.classList.add('show');
+    });
+
+    input.addEventListener('keydown', function(e) {
+        const items = suggestionsContainer.querySelectorAll('.suggestion-item');
+        if (!items.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentFocus++;
+            if (currentFocus >= items.length) currentFocus = 0;
+            addActive(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentFocus--;
+            if (currentFocus < 0) currentFocus = items.length - 1;
+            addActive(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentFocus > -1 && items[currentFocus]) {
+                items[currentFocus].click();
+            }
+        } else if (e.key === 'Escape') {
+            suggestionsContainer.classList.remove('show');
+        }
+    });
+
+    function addActive(items) {
+        items.forEach(item => item.classList.remove('active'));
+        if (currentFocus >= 0 && currentFocus < items.length) {
+            items[currentFocus].classList.add('active');
+            items[currentFocus].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target !== input && e.target !== suggestionsContainer) {
+            suggestionsContainer.classList.remove('show');
+        }
+    });
+}
+
+window.addEventListener('load', initAutocomplete);
+        console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
+    </script>
+</body>
+</html>
