@@ -3743,17 +3743,6 @@ async function guardarTodo(data) {
     console.error("Error fetch:", error);
   }
 }
-/* ===============================
-   🔴 PRUEBA AUTOMÁTICA AL CARGAR
-   =============================== */
-document.addEventListener("DOMContentLoaded", () => {
-  guardarTodo({
-    prueba: true,
-    mensaje: "Primer test desde SABG",
-    momento: new Date().toISOString(),
-    pagina: window.location.href,
-    navegador: navigator.userAgent
-  });
 });
 </script>
 </body>
