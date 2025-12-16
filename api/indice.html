@@ -3725,7 +3725,7 @@ const API_SABG = "/api/registro";
    =============================== */
 async function guardarTodo(data) {
   try {
-    const res = await fetch("/api/registro", {
+    const res = await fetch(API_SABG, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
@@ -3743,9 +3743,6 @@ async function guardarTodo(data) {
     console.error("Error fetch:", error);
   }
 }
-});
 </script>
-</body>
-</html>
 </body>
 </html>
