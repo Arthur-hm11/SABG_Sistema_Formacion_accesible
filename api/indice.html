@@ -3725,24 +3725,24 @@ const API_SABG = "/api/registro";
    =============================== */
 async function guardarTodo(data) {
   try {
-    const res = await fetch(API_SABG, {
+    const res = await fetch("/api/registro", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
 
-    const result = await res.json();
-
-    if (!result.ok) {
-      console.error("Error al guardar en BD:", result);
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Respuesta backend:", text);
     } else {
-      console.log("Registro guardado en Postgres:", data);
+      const json = await res.json();
+      console.log("Guardado OK:", json);
     }
+
   } catch (error) {
-    console.error("Error de conexión:", error);
+    console.error("Error fetch:", error);
   }
 }
-
 /* ===============================
    🔴 PRUEBA AUTOMÁTICA AL CARGAR
    =============================== */
