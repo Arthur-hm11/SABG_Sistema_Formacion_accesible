@@ -6,27 +6,38 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
-  }
-
   try {
-    const data = req.body;
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Método no permitido" });
+    }
+
+    // 🔴 FORZAMOS PARSEO DEL BODY
+    let body = req.body;
+
+    if (!body || typeof body !== "object") {
+      return res.status(400).json({
+        error: "Body inválido",
+        recibido: body
+      });
+    }
 
     await pool.query(
-      "INSERT INTO registros_formacion (datos) VALUES ($1)",
-      [data]
+      `INSERT INTO registros_formacion (datos)
+       VALUES ($1)`,
+      [body]
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: true,
       mensaje: "Registro guardado correctamente"
     });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
+    console.error("ERROR BACKEND:", error);
+    return res.status(500).json({
       ok: false,
-      error: "Error al guardar"
+      error: error.message
     });
   }
 }
+
