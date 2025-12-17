@@ -1593,6 +1593,13 @@
                 <button type="button" class="login-btn" onclick="loginUsuario()">
                       <span>🚀 INICIAR SESIÓN</span>
                 </button>
+                <button 
+                      type="button" 
+                      class="register-btn"
+                      onclick="mostrarRegistro()"
+                    >
+                  📝 Registrarse
+                </button>
             </form>
         </div>
     </div>
@@ -3749,28 +3756,23 @@ async function guardarTodo(data) {
 /* ===============================
    LOGIN REAL (NUEVO)
    =============================== */
+<script>
 async function loginUsuario() {
-  const usuario = document.querySelector("#usuario").value;
-  const password = document.querySelector("#password").value;
-
   try {
-    const res = await fetch(API_LOGIN, {
+    const usuario = document.querySelector("#username").value;
+    const password = document.querySelector("#password").value;
+
+    const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        usuario,
-        institucion,
-        password
-      })
+      body: JSON.stringify({ usuario, password })
     });
 
     const result = await res.json();
 
-    // Guardamos intento de login (éxito o error)
     guardarTodo({
       tipo: "login",
       usuario,
-      institucion,
       exito: result.ok,
       mensaje: result.message,
       momento: new Date().toISOString()
@@ -3778,14 +3780,61 @@ async function loginUsuario() {
 
     if (result.ok) {
       alert("Login correcto");
+      window.location.href = "/"; // dashboard
     } else {
       alert("Error de login");
     }
-
   } catch (error) {
     console.error("Error login:", error);
   }
 }
+
+function mostrarRegistro() {
+  document.getElementById("registroModal").classList.remove("hidden");
+}
+
+function cerrarRegistro() {
+  document.getElementById("registroModal").classList.add("hidden");
+}
+
+async function registrarUsuario() {
+  const usuario = document.getElementById("reg_usuario").value;
+  const institucion = document.getElementById("reg_institucion").value;
+  const password = document.getElementById("reg_password").value;
+
+  if (!usuario || !institucion || !password) {
+    alert("Completa todos los campos");
+    return;
+  }
+
+  const res = await fetch("/api/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuario, institucion, password })
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    alert("Usuario registrado correctamente");
+    cerrarRegistro();
+  } else {
+    alert(data.error || "Error al registrar");
+  }
+}
 </script>
+<!-- MODAL REGISTRO USUARIO -->
+<div id="registroModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Registro de Usuario</h3>
+
+    <input id="reg_usuario" placeholder="Usuario" />
+    <input id="reg_institucion" placeholder="Institución" />
+    <input id="reg_password" type="password" placeholder="Contraseña" />
+
+    <button onclick="registrarUsuario()">Registrar</button>
+    <button onclick="cerrarRegistro()">Cancelar</button>
+  </div>
+</div>ya quedo seguims
 </body>
 </html>
