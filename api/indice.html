@@ -1565,12 +1565,13 @@
                     <label for="username">USUARIO / INSTITUCIÓN</label>
                     <div class="input-wrapper">
                         <input 
-                            type="text" 
-                            id="username" 
-                            class="login-input" 
-                            placeholder="Ingrese su usuario"
-                            required
-                        >
+                            <input 
+                              type="text" 
+                              id="usuario" 
+                              class="login-input" 
+                              placeholder="Ingrese su usuario"
+                              required
+                            >
                         <span class="input-icon">👤</span>
                     </div>
                 </div>
@@ -3750,7 +3751,6 @@ async function guardarTodo(data) {
    =============================== */
 async function loginUsuario() {
   const usuario = document.querySelector("#usuario").value;
-  const institucion = document.querySelector("#institucion").value;
   const password = document.querySelector("#password").value;
 
   try {
