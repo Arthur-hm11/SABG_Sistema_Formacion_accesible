@@ -1,27 +1,39 @@
-import { Pool } from "pg";
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+import bcrypt from "bcryptjs";
+import { pool } from "./_db.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  try {
-    const { usuario, institucion, exito, navegador } = req.body;
+  const { usuario, password } = req.body;
 
-    await pool.query(
-      `INSERT INTO login_logs (usuario, institucion, exito, navegador)
-       VALUES ($1, $2, $3, $4)`,
-      [usuario, institucion, exito, navegador]
+  try {
+    const result = await pool.query(
+      `SELECT * FROM usuarios WHERE usuario = $1`,
+      [usuario]
     );
 
-    return res.status(200).json({ ok: true });
+    if (result.rowCount === 0) {
+      return res.json({ ok: false, message: "Usuario no encontrado" });
+    }
+
+    const user = result.rows[0];
+    const valido = await bcrypt.compare(password, user.password_hash);
+
+    if (!valido) {
+      return res.json({ ok: false, message: "Contraseña incorrecta" });
+    }
+
+    res.json({
+      ok: true,
+      message: "Login exitoso",
+      usuario: user.usuario,
+      institucion: user.institucion
+    });
+
   } catch (error) {
-    console.error("Error login:", error);
-    return res.status(500).json({ ok: false, error: error.message });
+    console.error(error);
+    res.status(500).json({ error: "Error de login" });
   }
 }
