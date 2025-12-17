@@ -3716,16 +3716,17 @@ window.addEventListener('load', initAutocomplete);
     </script>
    <script>
 /* ===============================
-   ENDPOINT DE VERCEL (POSTGRES)
+   ENDPOINTS
    =============================== */
-const API_SABG = "/api/registro";
+const API_REGISTRO = "/api/registro";
+const API_LOGIN = "/api/login";
 
 /* ===============================
-   FUNCIÓN PARA GUARDAR TODO
+   GUARDAR TODO (YA EXISTE)
    =============================== */
 async function guardarTodo(data) {
   try {
-    const res = await fetch(API_SABG, {
+    const res = await fetch(API_REGISTRO, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
@@ -3741,6 +3742,48 @@ async function guardarTodo(data) {
 
   } catch (error) {
     console.error("Error fetch:", error);
+  }
+}
+
+/* ===============================
+   LOGIN REAL (NUEVO)
+   =============================== */
+async function loginUsuario() {
+  const usuario = document.querySelector("#usuario").value;
+  const institucion = document.querySelector("#institucion").value;
+  const password = document.querySelector("#password").value;
+
+  try {
+    const res = await fetch(API_LOGIN, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        usuario,
+        institucion,
+        password
+      })
+    });
+
+    const result = await res.json();
+
+    // Guardamos intento de login (éxito o error)
+    guardarTodo({
+      tipo: "login",
+      usuario,
+      institucion,
+      exito: result.ok,
+      mensaje: result.message,
+      momento: new Date().toISOString()
+    });
+
+    if (result.ok) {
+      alert("Login correcto");
+    } else {
+      alert("Error de login");
+    }
+
+  } catch (error) {
+    console.error("Error login:", error);
   }
 }
 </script>
