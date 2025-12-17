@@ -1,5 +1,10 @@
 import bcrypt from "bcryptjs";
-import { pool } from "./_db.js";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -21,15 +26,26 @@ export default async function handler(req, res) {
     const user = result.rows[0];
     const valido = await bcrypt.compare(password, user.password_hash);
 
+    await pool.query(
+      `INSERT INTO login_logs (usuario, institucion, exito, navegador)
+       VALUES ($1,$2,$3,$4)`,
+      [
+        usuario,
+        user.institucion,
+        valido,
+        req.headers["user-agent"]
+      ]
+    );
+
     if (!valido) {
       return res.json({ ok: false, message: "Contraseña incorrecta" });
     }
 
     res.json({
       ok: true,
-      message: "Login exitoso",
       usuario: user.usuario,
-      institucion: user.institucion
+      institucion: user.institucion,
+      rol: user.rol
     });
 
   } catch (error) {
