@@ -3780,24 +3780,23 @@ const API_LOGIN = "/api/login";
    =============================== */
 async function guardarTodo(data) {
   try {
-    const res = await fetch("/api/logs", {   // 🔧 ENDPOINT CORRECTO
+    const res = await fetch("/api/logs", {   // ⬅️ OJO: NO /api/registro
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
 
-    const result = await res.json();
-
-    if (!result.ok) {
-      console.error("Error al guardar en BD:", result);
-    } else {
-      console.log("Registro guardado en Postgres");
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Error al guardar LOG:", text);
+      return;
     }
 
+    const json = await res.json();
+    console.log("Log guardado OK:", json);
+
   } catch (error) {
-    console.error("Error de conexión:", error);
+    console.error("Error de conexión LOG:", error);
   }
 }
 
