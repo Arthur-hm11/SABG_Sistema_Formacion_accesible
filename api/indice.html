@@ -3808,7 +3808,7 @@ async function loginUsuario() {
 
     const result = await res.json();
 
-    // Guardar intento de login
+    // Guardar intento
     guardarTodo({
       tipo: "login",
       usuario,
@@ -3818,10 +3818,13 @@ async function loginUsuario() {
     });
 
     if (result.ok) {
-      alert("Login correcto");
+      // 👉 GUARDAR TOKEN
+      localStorage.setItem("SABG_TOKEN", result.token);
+      localStorage.setItem("SABG_USUARIO", usuario);
+
       window.location.href = "/"; // dashboard
     } else {
-      alert("Error de login");
+      alert(result.message || "Error de login");
     }
 
   } catch (error) {
