@@ -4,13 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Promoción de la Formación Académica - SABG</title>
+
+    <!-- 🔐 PROTECCIÓN JWT -->
+    <script>
+      const token = localStorage.getItem("SABG_TOKEN");
+
+      if (!token) {
+        alert("Sesión expirada o no iniciada");
+        window.location.href = "/"; // login
+      }
+    </script>
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         :root {
             --guinda: #6B2C40;
             --vino: #8B3A52;
