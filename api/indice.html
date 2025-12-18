@@ -3859,8 +3859,13 @@ async function registrarUsuario() {
       body: JSON.stringify({ usuario, institucion, password })
     });
 
-    const data = await res.json();
-
+        let data;
+    try {
+      data = await res.json();
+    } catch {
+      alert("Error del servidor");
+      return;
+    }
     if (res.ok) {
       alert("Usuario registrado correctamente");
       cerrarRegistro();
