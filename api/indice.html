@@ -3897,10 +3897,11 @@ window.addEventListener('load', initAutocomplete);
 <script>
 <script>
 /* ===============================
-   ENDPOINTS
+   ENDPOINTS (SEPARADOS Y CORRECTOS)
    =============================== */
 const API_REGISTRO_USUARIO = "/api/registro";
 const API_LOGIN = "/api/login";
+const API_LOGS = "/api/logs"; // SOLO PARA AUDITORÍA / LOGS
 
 /* ===============================
    CONTROL MODAL REGISTRO
@@ -3920,7 +3921,7 @@ function cerrarRegistro() {
 }
 
 /* ===============================
-   REGISTRO DE USUARIO (FIX REAL)
+   REGISTRO DE USUARIO (FIX DEFINITIVO)
    =============================== */
 async function registrarUsuario() {
   console.log("🚀 ========== INICIO REGISTRO ==========");
@@ -3963,7 +3964,7 @@ async function registrarUsuario() {
     console.log("📥 Respuesta backend:", result);
 
     if (!response.ok) {
-      alert("❌ " + (result.error || "Error al registrar"));
+      alert("❌ " + (result.error || "Error al registrar usuario"));
       return;
     }
 
@@ -4016,8 +4017,32 @@ async function loginUsuario() {
     }
 
   } catch (error) {
-    console.error("Error login:", error);
+    console.error("❌ Error login:", error);
     alert("❌ Error de conexión");
+  }
+}
+
+/* ===============================
+   LOGS / AUDITORÍA (SEPARADO)
+   =============================== */
+async function guardarTodo(data) {
+  try {
+    const res = await fetch(API_LOGS, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("❌ Error al guardar log:", result);
+    } else {
+      console.log("✅ Log guardado:", result);
+    }
+
+  } catch (error) {
+    console.error("❌ Error conexión logs:", error);
   }
 }
 </script>
