@@ -2973,41 +2973,46 @@
             Para soporte técnico: correo[arroba]institucional[punto]gob[punto]mx
         </p>
     </footer>
-<!-- MODAL REGISTRO USUARIO -->
+<!-- ⬇️ MODAL REGISTRO USUARIO ⬇️ -->
 <div id="registroModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>📝 Registro de Usuario</h3>
-    
-    <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
-      <input
-        id="reg_usuario"
-        type="text"
-        placeholder="Usuario"
-        autocomplete="username"
-        required
-      />
-
-      <input
-        id="reg_institucion"
-        type="text"
-        placeholder="Institución"
-        required
-      />
-
-      <input
-        id="reg_password"
-        type="password"
-        placeholder="Contraseña"
-        autocomplete="new-password"
-        required
-      />
-
-      <div class="modal-actions">
-        <button type="submit">Registrar</button>
-        <button type="button" onclick="cerrarRegistro()">Cancelar</button>
-      </div>
-    </form>
-  </div>
+    <div class="modal-content">
+        <h3>📝 Registro de Usuario</h3>
+        
+        <form id="formRegistro">
+            <input
+                id="reg_usuario"
+                name="usuario"
+                type="text"
+                placeholder="Usuario (mínimo 3 caracteres)"
+                autocomplete="username"
+                required
+                minlength="3"
+            />
+            
+            <input
+                id="reg_institucion"
+                name="institucion"
+                type="text"
+                placeholder="Institución"
+                required
+            />
+            
+            <input
+                id="reg_password"
+                name="password"
+                type="password"
+                placeholder="Contraseña (mínimo 6 caracteres)"
+                autocomplete="new-password"
+                required
+                minlength="6"
+            />
+            
+            <div class="modal-actions">
+                <button type="button" onclick="registrarUsuario()">Registrar</button>
+                <button type="button" onclick="cerrarRegistro()">Cancelar</button>
+            </div>
+        </form>
+    </div>
 </div>
     <script>
         // Sistema de roles y dependencias
@@ -3889,6 +3894,7 @@ window.addEventListener('load', initAutocomplete);
         console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
     </script>
    <script>
+<script>
 /* ===============================
    ENDPOINTS
    =============================== */
@@ -3899,11 +3905,14 @@ const API_LOGIN = "/api/login";
    CONTROL MODAL REGISTRO
    =============================== */
 function mostrarRegistro() {
+  console.log('📝 Abriendo modal de registro');
   document.getElementById("registroModal").classList.remove("hidden");
 }
 
 function cerrarRegistro() {
+  console.log('❌ Cerrando modal de registro');
   document.getElementById("registroModal").classList.add("hidden");
+  
   // Limpiar campos
   document.getElementById("reg_usuario").value = "";
   document.getElementById("reg_institucion").value = "";
@@ -3911,95 +3920,128 @@ function cerrarRegistro() {
 }
 
 /* ===============================
-   REGISTRO DE USUARIO - CORREGIDO
+   REGISTRO DE USUARIO
    =============================== */
 async function registrarUsuario() {
-  console.log('🚀 Iniciando registro...');
+  console.log('🚀 ========== INICIO REGISTRO ==========');
   
-  // Obtener valores de los inputs
-  const usuario = document.getElementById("reg_usuario").value.trim();
-  const institucion = document.getElementById("reg_institucion").value.trim();
-  const password = document.getElementById("reg_password").value.trim();
+  // Obtener elementos del DOM
+  const inputUsuario = document.getElementById("reg_usuario");
+  const inputInstitucion = document.getElementById("reg_institucion");
+  const inputPassword = document.getElementById("reg_password");
 
-  // LOG: Verificar qué se capturó
-  console.log('📋 Datos capturados del formulario:', {
-    usuario: usuario || '❌ VACÍO',
-    institucion: institucion || '❌ VACÍO',
-    password: password ? '✅ Presente (' + password.length + ' caracteres)' : '❌ VACÍO'
+  // Verificar que los elementos existen
+  if (!inputUsuario || !inputInstitucion || !inputPassword) {
+    console.error('❌ ERROR: No se encontraron los inputs del formulario');
+    alert("❌ Error: Formulario no encontrado. Recarga la página.");
+    return;
+  }
+
+  // Obtener valores
+  const usuario = inputUsuario.value.trim();
+  const institucion = inputInstitucion.value.trim();
+  const password = inputPassword.value.trim();
+
+  // LOG: Valores capturados
+  console.log('📋 Valores capturados:', {
+    usuario: usuario || '⚠️ VACÍO',
+    institucion: institucion || '⚠️ VACÍO',
+    password: password ? `✅ ${password.length} caracteres` : '⚠️ VACÍO'
   });
 
-  // Validación en frontend
+  // Validación frontend
   if (!usuario || !institucion || !password) {
-    const camposFaltantes = [];
-    if (!usuario) camposFaltantes.push('Usuario');
-    if (!institucion) camposFaltantes.push('Institución');
-    if (!password) camposFaltantes.push('Contraseña');
-    
-    alert("❌ Por favor completa todos los campos:\n\n" + camposFaltantes.join('\n'));
+    console.error('❌ Validación fallida: campos vacíos');
+    alert("❌ Por favor completa todos los campos");
     return;
   }
 
   if (usuario.length < 3) {
+    console.error('❌ Usuario muy corto');
     alert("❌ El usuario debe tener al menos 3 caracteres");
     return;
   }
 
   if (password.length < 6) {
+    console.error('❌ Contraseña muy corta');
     alert("❌ La contraseña debe tener al menos 6 caracteres");
     return;
   }
 
-  // Preparar datos para enviar
+  // Preparar datos
   const datos = {
     usuario: usuario,
     institucion: institucion,
     password: password
   };
 
-  console.log('📤 Datos a enviar al backend:', datos);
+  console.log('📤 Datos a enviar:', datos);
+  console.log('🌐 Endpoint:', API_REGISTRO);
 
   try {
-    console.log('🌐 Enviando POST a /api/registro...');
+    console.log('⏳ Enviando petición POST...');
     
-    const res = await fetch(API_REGISTRO, {
+    const response = await fetch(API_REGISTRO, {
       method: "POST",
       headers: { 
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
       },
       body: JSON.stringify(datos)
     });
 
-    console.log('📨 Respuesta HTTP recibida. Status:', res.status);
+    console.log('📨 Respuesta recibida:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
 
+    // Intentar parsear respuesta
     let data;
-    const contentType = res.headers.get("content-type");
-    
-    if (contentType && contentType.includes("application/json")) {
-      data = await res.json();
-      console.log('📦 Datos JSON parseados:', data);
-    } else {
-      const text = await res.text();
-      console.error('⚠️ Respuesta no es JSON:', text);
-      alert("❌ Error del servidor: respuesta no válida");
+    try {
+      const text = await response.text();
+      console.log('📄 Respuesta texto:', text);
+      
+      if (text) {
+        data = JSON.parse(text);
+        console.log('📦 Respuesta JSON:', data);
+      } else {
+        console.error('❌ Respuesta vacía del servidor');
+        alert("❌ Error: El servidor no respondió correctamente");
+        return;
+      }
+    } catch (parseError) {
+      console.error('❌ Error al parsear JSON:', parseError);
+      alert("❌ Error: Respuesta inválida del servidor");
       return;
     }
 
-    if (res.ok && data.ok) {
-      console.log('✅ REGISTRO EXITOSO');
-      alert("✅ Usuario registrado correctamente\n\n" + 
-            "Usuario: " + usuario + "\n" +
-            "Institución: " + institucion + "\n\n" +
-            "Ya puedes iniciar sesión con tus credenciales");
+    // Manejar respuesta
+    if (response.ok && data.ok) {
+      console.log('✅ ========== REGISTRO EXITOSO ==========');
+      console.log('Usuario registrado:', data.usuario);
+      
+      alert(
+        "✅ ¡Registro exitoso!\n\n" +
+        "Usuario: " + usuario + "\n" +
+        "Institución: " + institucion + "\n\n" +
+        "Ya puedes iniciar sesión con tus credenciales"
+      );
+      
       cerrarRegistro();
     } else {
       console.error('❌ Error en registro:', data);
-      alert("❌ Error al registrar:\n\n" + (data.error || "Error desconocido"));
+      alert("❌ " + (data.error || "Error desconocido al registrar"));
     }
 
   } catch (error) {
-    console.error("💥 Error de conexión:", error);
-    alert("❌ Error de conexión al servidor\n\nDetalles: " + error.message);
+    console.error('💥 ========== ERROR DE CONEXIÓN ==========');
+    console.error('Error:', error);
+    console.error('Stack:', error.stack);
+    alert("❌ Error de conexión:\n\n" + error.message);
   }
+  
+  console.log('🏁 ========== FIN REGISTRO ==========');
 }
 
 /* ===============================
@@ -4027,7 +4069,6 @@ async function loginUsuario() {
       localStorage.setItem("SABG_TOKEN", result.token);
       localStorage.setItem("SABG_USUARIO", usuario);
       
-      // Mostrar loading
       document.getElementById("loadingOverlay").classList.add("active");
       
       setTimeout(() => {
