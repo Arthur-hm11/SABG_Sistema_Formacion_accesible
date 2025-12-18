@@ -7,32 +7,51 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
+  // 🔒 Solo POST
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
+    return res.status(405).json({
+      ok: false,
+      error: "Método no permitido"
+    });
   }
 
-  const { usuario, institucion, password } = req.body;
+  // 🔎 Extraer datos
+  const { usuario, institucion, password } = req.body || {};
 
-  if (!usuario || !institucion || !password) {
-    return res.status(400).json({ error: "Datos incompletos" });
+  // 🧹 Normalizar
+  const usuarioLimpio = usuario?.trim();
+  const institucionLimpia = institucion?.trim();
+
+  // 🚨 Validación estricta
+  if (!usuarioLimpio || !institucionLimpia || !password) {
+    return res.status(400).json({
+      ok: false,
+      error: "Datos incompletos"
+    });
   }
 
   try {
+    // 🔐 Hash de contraseña
     const hash = await bcrypt.hash(password, 10);
 
+    // 📥 Insertar usuario
     await pool.query(
-      `INSERT INTO usuarios (usuario, institucion, password_hash)
-       VALUES ($1, $2, $3)`,
-      [usuario, institucion, hash]
+      `
+      INSERT INTO usuarios (usuario, institucion, password_hash)
+      VALUES ($1, $2, $3)
+      `,
+      [usuarioLimpio, institucionLimpia, hash]
     );
 
+    // ✅ Respuesta OK
     return res.status(201).json({
       ok: true,
       message: "Usuario registrado correctamente"
     });
 
   } catch (error) {
-    // 🔐 Usuario duplicado
+
+    // 🚫 Usuario duplicado
     if (error.code === "23505") {
       return res.status(409).json({
         ok: false,
@@ -40,7 +59,8 @@ export default async function handler(req, res) {
       });
     }
 
-    console.error("ERROR REGISTER:", error);
+    // ❌ Error real
+    console.error("ERROR /api/registro:", error);
 
     return res.status(500).json({
       ok: false,
