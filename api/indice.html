@@ -2488,341 +2488,307 @@
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
     <script>
-        // ========================================
-        // SISTEMA DE ROLES Y VARIABLES GLOBALES
-        // ========================================
-        let userRole = 'enlace';
-        let edicionBloqueada = true;
-        let userDependencia = null;
-        let userName = '';
+        <script>
+    // ========================================
+    // SISTEMA DE ROLES Y VARIABLES GLOBALES
+    // ========================================
+    let userRole = 'enlace';
+    let edicionBloqueada = true;
+    let userDependencia = null;
+    let userName = '';
 
-        // Base de datos de usuarios (en producción esto vendría de un backend)
-        const usuarios = {
-            // Super Admin
-            'ADMIN': { 
-                password: 'admin2024', 
-                role: 'superadmin',
-                dependencia: null,
-                nombre: 'Administrador'
-            },
-            // Dependencias
-            'SABG': { 
-                password: 'sabg2024', 
-                role: 'enlace',
-                dependencia: 'SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO',
-                nombre: 'Enlace SABG'
-            },
-            'SCT': { 
-                password: 'sct2024', 
-                role: 'enlace',
-                dependencia: 'SECRETARÍA DE COMUNICACIONES Y TRANSPORTES',
-                nombre: 'Enlace SCT'
-            },
-            'SHCP': { 
-                password: 'shcp2024', 
-                role: 'enlace',
-                dependencia: 'SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO',
-                nombre: 'Enlace SHCP'
-            },
-            'SEP': { 
-                password: 'sep2024', 
-                role: 'enlace',
-                dependencia: 'SECRETARÍA DE EDUCACIÓN PÚBLICA',
-                nombre: 'Enlace SEP'
-            },
-            'ALTAMIRA': { 
-                password: 'altamira2024', 
-                role: 'enlace',
-                dependencia: 'ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA',
-                nombre: 'Enlace Altamira'
-            },
-            'PROGRESO': { 
-                password: 'progreso2024', 
-                role: 'enlace',
-                dependencia: 'ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO',
-                nombre: 'Enlace Progreso'
-            }
-        };
-
-        // ========================================
-        // FUNCIONES DE AUTENTICACIÓN
-        // ========================================
-
-        // Control Modal Registro
-        function mostrarRegistro() {
-            console.log("📝 Abriendo modal de registro");
-            document.getElementById("registroModal").classList.remove("hidden");
+    // Base de datos de usuarios (en producción esto vendría de un backend)
+    const usuarios = {
+        // Super Admin
+        'ADMIN': { 
+            password: 'admin2024', 
+            role: 'superadmin',
+            dependencia: null,
+            nombre: 'Administrador'
+        },
+        // Dependencias
+        'SABG': { 
+            password: 'sabg2024', 
+            role: 'enlace',
+            dependencia: 'SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO',
+            nombre: 'Enlace SABG'
+        },
+        'SCT': { 
+            password: 'sct2024', 
+            role: 'enlace',
+            dependencia: 'SECRETARÍA DE COMUNICACIONES Y TRANSPORTES',
+            nombre: 'Enlace SCT'
+        },
+        'SHCP': { 
+            password: 'shcp2024', 
+            role: 'enlace',
+            dependencia: 'SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO',
+            nombre: 'Enlace SHCP'
+        },
+        'SEP': { 
+            password: 'sep2024', 
+            role: 'enlace',
+            dependencia: 'SECRETARÍA DE EDUCACIÓN PÚBLICA',
+            nombre: 'Enlace SEP'
+        },
+        'ALTAMIRA': { 
+            password: 'altamira2024', 
+            role: 'enlace',
+            dependencia: 'ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA',
+            nombre: 'Enlace Altamira'
+        },
+        'PROGRESO': { 
+            password: 'progreso2024', 
+            role: 'enlace',
+            dependencia: 'ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO',
+            nombre: 'Enlace Progreso'
         }
+    };
 
-        function cerrarRegistro() {
-            console.log("❌ Cerrando modal de registro");
-            document.getElementById("registroModal").classList.add("hidden");
-            document.getElementById("reg_usuario").value = "";
-            document.getElementById("reg_institucion").value = "";
-            document.getElementById("reg_password").value = "";
-        }
+    // ========================================
+    // FUNCIONES DE AUTENTICACIÓN
+    // ========================================
 
-        // Registro de Usuario (SIN BACKEND - usando localStorage)
-       function registrarUsuario() {
-    console.log("🚀 Iniciando registro de usuario");
-    
-    const usuarioInput = document.getElementById("reg_usuario");
-    const institucionInput = document.getElementById("reg_institucion");
-    const passwordInput = document.getElementById("reg_password");
-
-    // Verificar que los elementos existan
-    if (!usuarioInput || !institucionInput || !passwordInput) {
-        console.error("❌ No se encontraron los campos del formulario");
-        alert("❌ Error: Campos del formulario no encontrados");
-        return;
+    // Control Modal Registro
+    function mostrarRegistro() {
+        console.log("📝 Abriendo modal de registro");
+        document.getElementById("registroModal").classList.remove("hidden");
     }
 
-    const usuario = usuarioInput.value.trim();
-    const institucion = institucionInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    console.log("📝 Valores capturados:", { usuario, institucion, password: "***" });
-
-    if (!usuario || !institucion || !password) {
-        alert("❌ Completa todos los campos");
-        return;
+    function cerrarRegistro() {
+        console.log("❌ Cerrando modal de registro");
+        document.getElementById("registroModal").classList.add("hidden");
+        document.getElementById("reg_usuario").value = "";
+        document.getElementById("reg_institucion").value = "";
+        document.getElementById("reg_password").value = "";
     }
 
-    if (usuario.length < 3) {
-        alert("❌ El usuario debe tener al menos 3 caracteres");
-        return;
-    }
-
-    if (password.length < 6) {
-        alert("❌ La contraseña debe tener al menos 6 caracteres");
-        return;
-    }
-
-    try {
-        // Guardar en localStorage (temporal, sin backend)
-        const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
+    // Registro de Usuario (SIN BACKEND - usando localStorage)
+    function registrarUsuario() {
+        console.log("🚀 Iniciando registro de usuario");
         
-        if (usuariosGuardados[usuario.toUpperCase()]) {
-            alert("❌ El usuario ya existe");
+        const usuarioInput = document.getElementById("reg_usuario");
+        const institucionInput = document.getElementById("reg_institucion");
+        const passwordInput = document.getElementById("reg_password");
+
+        // Verificar que los elementos existan
+        if (!usuarioInput || !institucionInput || !passwordInput) {
+            console.error("❌ No se encontraron los campos del formulario");
+            alert("❌ Error: Campos del formulario no encontrados");
             return;
         }
 
-        usuariosGuardados[usuario.toUpperCase()] = {
-            password: password,
-            role: 'enlace',
-            dependencia: institucion,
-            nombre: usuario
-        };
+        const usuario = usuarioInput.value.trim();
+        const institucion = institucionInput.value.trim();
+        const password = passwordInput.value.trim();
 
-        localStorage.setItem("usuarios", JSON.stringify(usuariosGuardados));
-        
-        console.log("✅ Usuario registrado exitosamente:", usuario);
-        alert("✅ Usuario registrado correctamente\n\nUsuario: " + usuario + "\nInstitución: " + institucion);
-        
-        cerrarRegistro();
-        
-    } catch (error) {
-        console.error("❌ Error al registrar:", error);
-        alert("❌ Error al registrar el usuario");
-    }
-}
-                        // Configurar interfaz según rol
-                        if (userRole === 'superadmin') {
-                            document.getElementById('userName').textContent = '👤 ' + user.nombre;
-                            document.getElementById('userRole').textContent = 'Super Admin';
-                            document.getElementById('userRole').style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
-                            document.getElementById('adminPanelTrimestral').classList.remove('hidden');
-                            document.getElementById('adminPanelEvidencias').classList.remove('hidden');
-                            document.getElementById('tabVerTabla').classList.remove('hidden');
-                        } else {
-                            document.getElementById('userName').textContent = '👤 ' + user.nombre;
-                            document.getElementById('userRole').textContent = 'Enlace - ' + usuario.toUpperCase();
-                            document.getElementById('dropdownItemTabla').style.display = 'none';
-                            document.getElementById('dropdownItemRevision').style.display = 'none';
-                        }
-                        
-                        // Inicializar estado de celdas editables
-                        if (userRole !== 'superadmin' || edicionBloqueada) {
-                            document.querySelectorAll('.editable-cell').forEach(cell => {
-                                cell.classList.add('editable-disabled');
-                            });
-                        }
-                        
-                        // Filtrar tabla por dependencia si es enlace
-                        if (userRole === 'enlace') {
-                            filtrarTablaPorDependencia();
-                        }
-                        
-                        document.getElementById("loadingOverlay").classList.remove("active");
-                        document.getElementById("loginScreen").classList.add("hidden");
-                        
-                        const mensaje = userRole === 'superadmin' 
-                            ? `✅ ¡Bienvenido ${user.nombre}!\n\nRol: Super Administrador\nAcceso completo al sistema.`
-                            : `✅ ¡Bienvenido ${user.nombre}!\n\nRol: Enlace\nDependencia: ${userDependencia}\n\nSolo podrá visualizar información de su dependencia.`;
-                        alert(mensaje);
-                    }, 1200);
-                } else {
-                    alert("❌ Credenciales incorrectas");
-                }
+        console.log("📝 Valores capturados:", { usuario, institucion, password: "***" });
 
-            } catch (error) {
-                console.error("❌ Error login:", error);
-                alert("❌ Error de conexión");
-            }
+        if (!usuario || !institucion || !password) {
+            alert("❌ Completa todos los campos");
+            return;
         }
 
-        // Logout
-        function logout() {
-            if (confirm('¿Está seguro que desea cerrar sesión?')) {
-                document.getElementById('usuario').value = '';
-                document.getElementById('password').value = '';
+        if (usuario.length < 3) {
+            alert("❌ El usuario debe tener al menos 3 caracteres");
+            return;
+        }
+
+        if (password.length < 6) {
+            alert("❌ La contraseña debe tener al menos 6 caracteres");
+            return;
+        }
+
+        try {
+            // Guardar en localStorage (temporal, sin backend)
+            const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
+            
+            if (usuariosGuardados[usuario.toUpperCase()]) {
+                alert("❌ El usuario ya existe");
+                return;
+            }
+
+            usuariosGuardados[usuario.toUpperCase()] = {
+                password: password,
+                role: 'enlace',
+                dependencia: institucion,
+                nombre: usuario
+            };
+
+            localStorage.setItem("usuarios", JSON.stringify(usuariosGuardados));
+            
+            console.log("✅ Usuario registrado exitosamente:", usuario);
+            alert("✅ Usuario registrado correctamente\n\nUsuario: " + usuario + "\nInstitución: " + institucion);
+            
+            cerrarRegistro();
+            
+        } catch (error) {
+            console.error("❌ Error al registrar:", error);
+            alert("❌ Error al registrar el usuario");
+        }
+    }
+
+    // Login de Usuario (FUNCIÓN COMPLETA)
+    function loginUsuario() {
+        try {
+            const usuario = document.getElementById("usuario").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            if (!usuario || !password) {
+                alert("❌ Completa todos los campos");
+                return;
+            }
+
+            // Cargar usuarios guardados de localStorage
+            const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
+            const todosLosUsuarios = { ...usuarios, ...usuariosGuardados };
+            
+            const user = todosLosUsuarios[usuario.toUpperCase()];
+            
+            if (user && user.password === password) {
+                localStorage.setItem("SABG_TOKEN", "token_" + Date.now());
+                localStorage.setItem("SABG_USUARIO", usuario);
                 
-                userRole = 'enlace';
-                userDependencia = null;
-                userName = '';
-                
-                localStorage.removeItem('SABG_TOKEN');
-                localStorage.removeItem('SABG_USUARIO');
-                
-                document.getElementById('loginScreen').classList.remove('hidden');
-                
-                document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
-                    row.style.display = '';
-                });
+                document.getElementById("loadingOverlay").classList.add("active");
                 
                 setTimeout(() => {
-                    alert('👋 Sesión cerrada exitosamente\n\n¡Hasta pronto!');
-                }, 300);
+                    userRole = user.role;
+                    userDependencia = user.dependencia;
+                    userName = user.nombre;
+                    
+                    // Configurar interfaz según rol
+                    if (userRole === 'superadmin') {
+                        document.getElementById('userName').textContent = '👤 ' + user.nombre;
+                        document.getElementById('userRole').textContent = 'Super Admin';
+                        document.getElementById('userRole').style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
+                        document.getElementById('adminPanelTrimestral').classList.remove('hidden');
+                        document.getElementById('adminPanelEvidencias').classList.remove('hidden');
+                        document.getElementById('tabVerTabla').classList.remove('hidden');
+                    } else {
+                        document.getElementById('userName').textContent = '👤 ' + user.nombre;
+                        document.getElementById('userRole').textContent = 'Enlace - ' + usuario.toUpperCase();
+                        document.getElementById('dropdownItemTabla').style.display = 'none';
+                        document.getElementById('dropdownItemRevision').style.display = 'none';
+                    }
+                    
+                    // Inicializar estado de celdas editables
+                    if (userRole !== 'superadmin' || edicionBloqueada) {
+                        document.querySelectorAll('.editable-cell').forEach(cell => {
+                            cell.classList.add('editable-disabled');
+                        });
+                    }
+                    
+                    // Filtrar tabla por dependencia si es enlace
+                    if (userRole === 'enlace') {
+                        filtrarTablaPorDependencia();
+                    }
+                    
+                    document.getElementById("loadingOverlay").classList.remove("active");
+                    document.getElementById("loginScreen").classList.add("hidden");
+                    
+                    const mensaje = userRole === 'superadmin' 
+                        ? `✅ ¡Bienvenido ${user.nombre}!\n\nRol: Super Administrador\nAcceso completo al sistema.`
+                        : `✅ ¡Bienvenido ${user.nombre}!\n\nRol: Enlace\nDependencia: ${userDependencia}\n\nSolo podrá visualizar información de su dependencia.`;
+                    alert(mensaje);
+                }, 1200);
+            } else {
+                alert("❌ Credenciales incorrectas");
             }
+
+        } catch (error) {
+            console.error("❌ Error login:", error);
+            alert("❌ Error de conexión");
         }
+    }
 
-        // ========================================
-        // FUNCIONES DE NAVEGACIÓN
-        // ========================================
-
-        function toggleDropdown(dropdownId, btn) {
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                if (menu.id !== dropdownId) {
-                    menu.classList.remove('show');
-                }
+    // Logout
+    function logout() {
+        if (confirm('¿Está seguro que desea cerrar sesión?')) {
+            document.getElementById('usuario').value = '';
+            document.getElementById('password').value = '';
+            
+            userRole = 'enlace';
+            userDependencia = null;
+            userName = '';
+            
+            localStorage.removeItem('SABG_TOKEN');
+            localStorage.removeItem('SABG_USUARIO');
+            
+            document.getElementById('loginScreen').classList.remove('hidden');
+            
+            document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
+                row.style.display = '';
             });
             
-            document.querySelectorAll('.main-nav-btn').forEach(button => {
-                if (button !== btn) {
-                    button.classList.remove('expanded');
-                }
-            });
-            
-            const dropdown = document.getElementById(dropdownId);
-            dropdown.classList.toggle('show');
-            btn.classList.toggle('expanded');
+            setTimeout(() => {
+                alert('👋 Sesión cerrada exitosamente\n\n¡Hasta pronto!');
+            }, 300);
         }
+    }
 
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('.nav-item')) {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-                document.querySelectorAll('.main-nav-btn').forEach(btn => {
-                    btn.classList.remove('expanded');
-                });
+    // ========================================
+    // FUNCIONES DE NAVEGACIÓN
+    // ========================================
+
+    function toggleDropdown(dropdownId, btn) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            if (menu.id !== dropdownId) {
+                menu.classList.remove('show');
             }
         });
+        
+        document.querySelectorAll('.main-nav-btn').forEach(button => {
+            if (button !== btn) {
+                button.classList.remove('expanded');
+            }
+        });
+        
+        const dropdown = document.getElementById(dropdownId);
+        dropdown.classList.toggle('show');
+        btn.classList.toggle('expanded');
+    }
 
-        function showSectionAndTab(sectionId, tabId) {
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.nav-item')) {
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 menu.classList.remove('show');
             });
             document.querySelectorAll('.main-nav-btn').forEach(btn => {
                 btn.classList.remove('expanded');
             });
-            
-            document.querySelectorAll('.main-nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.main-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            document.getElementById(sectionId).classList.add('active');
-            
-            if (sectionId === 'trimestral') {
-                document.querySelectorAll('#trimestral .tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                
-                document.querySelectorAll('#trimestral .tab').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-                
-                document.getElementById(tabId).classList.add('active');
-                
-                const tabs = document.querySelectorAll('#trimestral .tab');
-                tabs.forEach(tab => {
-                    if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
-                        (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
-                        (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
-                        tab.classList.add('active');
-                    }
-                });
-                
-                if (tabId === 'tabla') {
-                    setTimeout(() => {
-                        filtrarTablaPorDependencia();
-                    }, 100);
-                }
-            }
-            
-            if (sectionId === 'evidencias') {
-                document.querySelectorAll('#evidencias .subsection').forEach(subsection => {
-                    subsection.classList.remove('active');
-                });
-                
-                document.getElementById(tabId).classList.add('active');
-            }
         }
+    });
 
-        function showMainSection(sectionId) {
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                menu.classList.remove('show');
-            });
-            document.querySelectorAll('.main-nav-btn').forEach(btn => {
-                btn.classList.remove('expanded');
-            });
-            
-            const sections = document.querySelectorAll('.main-section');
-            const navButtons = document.querySelectorAll('.main-nav-btn');
-
-            sections.forEach(section => {
-                section.classList.remove('active');
-            });
-
-            navButtons.forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            document.getElementById(sectionId).classList.add('active');
-            
-            navButtons.forEach(btn => {
-                if (btn.textContent.includes('Inicio') && sectionId === 'inicio') {
-                    btn.classList.add('active');
-                }
-            });
-        }
-
-        function showTrimestralTab(tabId) {
-            const tabs = document.querySelectorAll('#trimestral .tab');
-            const tabContents = document.querySelectorAll('#trimestral .tab-content');
-
-            tabs.forEach(tab => {
-                tab.classList.remove('active');
-            });
-
-            tabContents.forEach(content => {
+    function showSectionAndTab(sectionId, tabId) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('expanded');
+        });
+        
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        document.querySelectorAll('.main-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        document.getElementById(sectionId).classList.add('active');
+        
+        if (sectionId === 'trimestral') {
+            document.querySelectorAll('#trimestral .tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-
+            
+            document.querySelectorAll('#trimestral .tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            
+            const tabs = document.querySelectorAll('#trimestral .tab');
             tabs.forEach(tab => {
                 if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
                     (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
@@ -2830,453 +2796,421 @@
                     tab.classList.add('active');
                 }
             });
-
+            
+            if (tabId === 'tabla') {
+                setTimeout(() => {
+                    filtrarTablaPorDependencia();
+                }, 100);
+            }
+        }
+        
+        if (sectionId === 'evidencias') {
+            document.querySelectorAll('#evidencias .subsection').forEach(subsection => {
+                subsection.classList.remove('active');
+            });
+            
             document.getElementById(tabId).classList.add('active');
         }
+    }
 
-        // ========================================
-        // FUNCIONES DE ADMINISTRACIÓN
-        // ========================================
+    function showMainSection(sectionId) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('expanded');
+        });
+        
+        const sections = document.querySelectorAll('.main-section');
+        const navButtons = document.querySelectorAll('.main-nav-btn');
 
-        function toggleTablaRegistros() {
-            const tab = document.getElementById('tabVerTabla');
-            const content = document.getElementById('tabla');
-            
-            if (tab.classList.contains('hidden')) {
-                tab.classList.remove('hidden');
-                alert('✅ Pestaña "Ver Tabla de Registros" ahora visible');
-            } else {
-                tab.classList.add('hidden');
-                content.classList.remove('active');
-                alert('🔒 Pestaña "Ver Tabla de Registros" ahora oculta');
+        sections.forEach(section => {
+            section.classList.remove('active');
+        });
+
+        navButtons.forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        document.getElementById(sectionId).classList.add('active');
+        
+        navButtons.forEach(btn => {
+            if (btn.textContent.includes('Inicio') && sectionId === 'inicio') {
+                btn.classList.add('active');
             }
-        }
+        });
+    }
 
-        function togglePanelRevision() {
-            const panel = document.getElementById('revision');
-            
-            if (panel.classList.contains('active')) {
-                panel.classList.remove('active');
-                document.getElementById('registro').classList.add('active');
-                alert('🔒 Panel de Revisión DCEVE ahora oculto');
-            } else {
-                panel.classList.add('active');
-                document.getElementById('registro').classList.remove('active');
-                alert('✅ Panel de Revisión DCEVE ahora visible');
+    function showTrimestralTab(tabId) {
+        const tabs = document.querySelectorAll('#trimestral .tab');
+        const tabContents = document.querySelectorAll('#trimestral .tab-content');
+
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+        });
+
+        tabs.forEach(tab => {
+            if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
+                (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
+                (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
+                tab.classList.add('active');
             }
-        }
+        });
 
-        function desbloquearEdicion() {
-            edicionBloqueada = false;
-            const estado = document.getElementById('estadoEdicion');
-            estado.innerHTML = '🔓 Edición DESBLOQUEADA';
-            estado.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            
-            document.querySelectorAll('.editable-cell').forEach(cell => {
-                cell.classList.remove('editable-disabled');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    // ========================================
+    // FUNCIONES DE ADMINISTRACIÓN
+    // ========================================
+
+    function toggleTablaRegistros() {
+        const tab = document.getElementById('tabVerTabla');
+        const content = document.getElementById('tabla');
+        
+        if (tab.classList.contains('hidden')) {
+            tab.classList.remove('hidden');
+            alert('✅ Pestaña "Ver Tabla de Registros" ahora visible');
+        } else {
+            tab.classList.add('hidden');
+            content.classList.remove('active');
+            alert('🔒 Pestaña "Ver Tabla de Registros" ahora oculta');
+        }
+    }
+
+    function togglePanelRevision() {
+        const panel = document.getElementById('revision');
+        
+        if (panel.classList.contains('active')) {
+            panel.classList.remove('active');
+            document.getElementById('registro').classList.add('active');
+            alert('🔒 Panel de Revisión DCEVE ahora oculto');
+        } else {
+            panel.classList.add('active');
+            document.getElementById('registro').classList.remove('active');
+            alert('✅ Panel de Revisión DCEVE ahora visible');
+        }
+    }
+
+    function desbloquearEdicion() {
+        edicionBloqueada = false;
+        const estado = document.getElementById('estadoEdicion');
+        estado.innerHTML = '🔓 Edición DESBLOQUEADA';
+        estado.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        
+        document.querySelectorAll('.editable-cell').forEach(cell => {
+            cell.classList.remove('editable-disabled');
+        });
+        
+        alert('✅ Edición desbloqueada. Los Super Administradores pueden ahora modificar los campos editables.');
+    }
+
+    function bloquearEdicion() {
+        edicionBloqueada = true;
+        const estado = document.getElementById('estadoEdicion');
+        estado.innerHTML = '🔒 Edición BLOQUEADA';
+        estado.style.background = 'var(--gradient1)';
+        
+        document.querySelectorAll('.editable-cell').forEach(cell => {
+            cell.classList.add('editable-disabled');
+        });
+        
+        alert('🔒 Edición bloqueada. Los usuarios no pueden modificar los registros.');
+    }
+
+    function filtrarTablaPorDependencia() {
+        if (userRole === 'superadmin') {
+            document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
+                row.style.display = '';
             });
-            
-            alert('✅ Edición desbloqueada. Los Super Administradores pueden ahora modificar los campos editables.');
+            return;
         }
-
-        function bloquearEdicion() {
-            edicionBloqueada = true;
-            const estado = document.getElementById('estadoEdicion');
-            estado.innerHTML = '🔒 Edición BLOQUEADA';
-            estado.style.background = 'var(--gradient1)';
-            
-            document.querySelectorAll('.editable-cell').forEach(cell => {
-                cell.classList.add('editable-disabled');
-            });
-            
-            alert('🔒 Edición bloqueada. Los usuarios no pueden modificar los registros.');
-        }
-
-        function filtrarTablaPorDependencia() {
-            if (userRole === 'superadmin') {
-                document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
+        
+        const rows = document.querySelectorAll('#registrosTable tbody tr');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const cells = row.cells;
+            if (cells && cells.length > 10) {
+                const dependenciaCell = cells[10].textContent.trim();
+                
+                if (dependenciaCell.toUpperCase().includes(userDependencia.toUpperCase()) ||
+                    userDependencia.toUpperCase().includes(dependenciaCell.toUpperCase())) {
                     row.style.display = '';
-                });
-                return;
-            }
-            
-            const rows = document.querySelectorAll('#registrosTable tbody tr');
-            let visibleCount = 0;
-            
-            rows.forEach(row => {
-                const cells = row.cells;
-                if (cells && cells.length > 10) {
-                    const dependenciaCell = cells[10].textContent.trim();
-                    
-                    if (dependenciaCell.toUpperCase().includes(userDependencia.toUpperCase()) ||
-                        userDependencia.toUpperCase().includes(dependenciaCell.toUpperCase())) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                }
-            });
-            
-            if (visibleCount === 0) {
-                console.log('No hay registros para la dependencia:', userDependencia);
-            }
-        }
-
-        function makeEditable(cell) {
-            if (userRole !== 'superadmin') {
-                alert('⚠️ Solo los Super Administradores pueden editar estos campos.');
-                return;
-            }
-            
-            if (edicionBloqueada) {
-                alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
-                return;
-            }
-            
-            if (cell.classList.contains('editing')) {
-                return;
-            }
-            
-            const field = cell.dataset.field;
-            const currentValue = cell.textContent.trim().replace('✏️', '').trim();
-            
-            cell.classList.add('editing');
-            
-            let editControl;
-            
-            if (field === 'nivel_educativo') {
-                editControl = document.createElement('select');
-                editControl.innerHTML = `
-                    <option value="PRIMARIA">PRIMARIA</option>
-                    <option value="SECUNDARIA">SECUNDARIA</option>
-                    <option value="BACHILLERATO">BACHILLERATO</option>
-                    <option value="LICENCIATURA">LICENCIATURA</option>
-                    <option value="ESPECIALIDAD">ESPECIALIDAD</option>
-                    <option value="MAESTRÍA">MAESTRÍA</option>
-                    <option value="DOCTORADO">DOCTORADO</option>
-                `;
-                editControl.value = currentValue;
-            } else if (field === 'institucion_educativa') {
-                editControl = document.createElement('select');
-                editControl.innerHTML = `
-                    <option value="INEA">INEA</option>
-                    <option value="COLBACH">COLBACH</option>
-                    <option value="UNADM">UNADM</option>
-                    <option value="UNRC">UNRC</option>
-                    <option value="TECNM">TECNM</option>
-                    <option value="UNIR">UNIR</option>
-                    <option value="SEP">SEP</option>
-                `;
-                editControl.value = currentValue;
-            } else if (field === 'modalidad') {
-                editControl = document.createElement('select');
-                editControl.innerHTML = `
-                    <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
-                    <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
-                    <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
-                    <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
-                    <option value="A DISTANCIA">A DISTANCIA</option>
-                    <option value="PRESENCIAL">PRESENCIAL</option>
-                    <option value="ESCOLARIZADA">ESCOLARIZADA</option>
-                    <option value="MIXTO">MIXTO</option>
-                `;
-                editControl.value = currentValue;
-            } else if (field === 'estado_avance') {
-                editControl = document.createElement('select');
-                editControl.innerHTML = `
-                    <option value="CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</option>
-                    <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
-                    <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
-                    <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
-                    <option value="PERSONA QUE CONCLUYÓ SUS ESTUDIOS">PERSONA QUE CONCLUYÓ SUS ESTUDIOS</option>
-                    <option value="PERSONA EN PROCESO DE TITULACIÓN">PERSONA EN PROCESO DE TITULACIÓN</option>
-                    <option value="PERSONA QUE DESERTÓ">PERSONA QUE DESERTÓ</option>
-                    <option value="PERSONA SUSPENDIDA">PERSONA SUSPENDIDA</option>
-                    <option value="OTRA">OTRA</option>
-                `;
-                editControl.value = currentValue;
-            } else if (field === 'observaciones') {
-                editControl = document.createElement('textarea');
-                editControl.value = currentValue;
-                editControl.rows = 3;
-            }
-            
-            cell.innerHTML = '';
-            cell.appendChild(editControl);
-            editControl.focus();
-            
-            const saveEdit = () => {
-                const newValue = editControl.value;
-                cell.classList.remove('editing');
-                
-                if (field === 'institucion_educativa') {
-                    cell.innerHTML = `${newValue}<span class="edit-icon">✏️</span>`;
+                    visibleCount++;
                 } else {
-                    cell.innerHTML = `${newValue}<span class="edit-icon">✏️</span>`;
+                    row.style.display = 'none';
                 }
-                
-                if (field === 'estado_avance') {
-                    const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
-                    if (estadosRojos.includes(newValue)) {
-                        cell.classList.add('estado-rojo');
-                    } else {
-                        cell.classList.remove('estado-rojo');
-                    }
-                }
-                
-                alert(`✅ Campo actualizado correctamente!\n\nNuevo valor: ${newValue}`);
-            };
+            }
+        });
+        
+        if (visibleCount === 0) {
+            console.log('No hay registros para la dependencia:', userDependencia);
+        }
+    }
+
+    function makeEditable(cell) {
+        if (userRole !== 'superadmin') {
+            alert('⚠️ Solo los Super Administradores pueden editar estos campos.');
+            return;
+        }
+        
+        if (edicionBloqueada) {
+            alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
+            return;
+        }
+        
+        if (cell.classList.contains('editing')) {
+            return;
+        }
+        
+        const field = cell.dataset.field;
+        const currentValue = cell.textContent.trim().replace('✏️', '').trim();
+        
+        cell.classList.add('editing');
+        
+        let editControl;
+        
+        if (field === 'nivel_educativo') {
+            editControl = document.createElement('select');
+            editControl.innerHTML = `
+                <option value="PRIMARIA">PRIMARIA</option>
+                <option value="SECUNDARIA">SECUNDARIA</option>
+                <option value="BACHILLERATO">BACHILLERATO</option>
+                <option value="LICENCIATURA">LICENCIATURA</option>
+                <option value="ESPECIALIDAD">ESPECIALIDAD</option>
+                <option value="MAESTRÍA">MAESTRÍA</option>
+                <option value="DOCTORADO">DOCTORADO</option>
+            `;
+            editControl.value = currentValue;
+        } else if (field === 'institucion_educativa') {
+            editControl = document.createElement('select');
+            editControl.innerHTML = `
+                <option value="INEA">INEA</option>
+                <option value="COLBACH">COLBACH</option>
+                <option value="UNADM">UNADM</option>
+                <option value="UNRC">UNRC</option>
+                <option value="TECNM">TECNM</option>
+                <option value="UNIR">UNIR</option>
+                <option value="SEP">SEP</option>
+            `;
+            editControl.value = currentValue;
+        } else if (field === 'modalidad') {
+            editControl = document.createElement('select');
+            editControl.innerHTML = `
+                <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
+                <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
+                <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
+                <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
+                <option value="A DISTANCIA">A DISTANCIA</option>
+                <option value="PRESENCIAL">PRESENCIAL</option>
+                <option value="ESCOLARIZADA">ESCOLARIZADA</option>
+                <option value="MIXTO">MIXTO</option>
+            `;
+            editControl.value = currentValue;
+        } else if (field === 'estado_avance') {
+            editControl = document.createElement('select');
+            editControl.innerHTML = `
+                <option value="CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</option>
+                <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
+                <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
+                <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
+                <option value="PERSONA QUE CONCLUYÓ SUS ESTUDIOS">PERSONA QUE CONCLUYÓ SUS ESTUDIOS</option>
+                <option value="PERSONA EN PROCESO DE TITULACIÓN">PERSONA EN PROCESO DE TITULACIÓN</option>
+                <option value="PERSONA QUE DESERTÓ">PERSONA QUE DESERTÓ</option>
+                <option value="PERSONA SUSPENDIDA">PERSONA SUSPENDIDA</option>
+                <option value="OTRA">OTRA</option>
+            `;
+            editControl.value = currentValue;
+        } else if (field === 'observaciones') {
+            editControl = document.createElement('textarea');
+            editControl.value = currentValue;
+            editControl.rows = 3;
+        }
+        
+        cell.innerHTML = '';
+        cell.appendChild(editControl);
+        editControl.focus();
+        
+        const saveEdit = () => {
+            const newValue = editControl.value;
+            cell.classList.remove('editing');
             
-            editControl.addEventListener('blur', saveEdit);
-            editControl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && field !== 'observaciones') {
-                    e.preventDefault();
-                    saveEdit();
-                } else if (e.key === 'Escape') {
-                    cell.classList.remove('editing');
-                    cell.innerHTML = `${currentValue}<span class="edit-icon">✏️</span>`;
+            if (field === 'institucion_educativa') {
+                cell.innerHTML = `${newValue}<span class="edit-icon">✏️</span>`;
+            } else {
+                cell.innerHTML = `${newValue}<span class="edit-icon">✏️</span>`;
+            }
+            
+            if (field === 'estado_avance') {
+                const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
+                if (estadosRojos.includes(newValue)) {
+                    cell.classList.add('estado-rojo');
+                } else {
+                    cell.classList.remove('estado-rojo');
                 }
+            }
+            
+            alert(`✅ Campo actualizado correctamente!\n\nNuevo valor: ${newValue}`);
+        };
+        
+        editControl.addEventListener('blur', saveEdit);
+        editControl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && field !== 'observaciones') {
+                e.preventDefault();
+                saveEdit();
+            } else if (e.key === 'Escape') {
+                cell.classList.remove('editing');
+                cell.innerHTML = `${currentValue}<span class="edit-icon">✏️</span>`;
+            }
+        });
+    }
+
+    // ========================================
+    // FUNCIONES DE UTILIDAD
+    // ========================================
+
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 50;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.width = Math.random() * 5 + 2 + 'px';
+            particle.style.height = particle.style.width;
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDuration = Math.random() * 20 + 10 + 's';
+            particle.style.animationDelay = Math.random() * 5 + 's';
+            particlesContainer.appendChild(particle);
+        }
+    }
+
+    function openMonthModal(month) {
+        document.getElementById('monthModal').classList.add('active');
+        document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 2025`;
+    }
+
+    function closeModal() {
+        document.getElementById('monthModal').classList.remove('active');
+    }
+
+    function exportData(format) {
+        alert(`📥 Exportando datos en formato ${format.toUpperCase()}...\n\nEsta funcionalidad requiere implementación en el backend.`);
+    }
+
+    // ========================================
+    // BÚSQUEDA EN TABLA
+    // ========================================
+    const searchTableTrimestral = document.getElementById('searchTableTrimestral');
+    if (searchTableTrimestral) {
+        searchTableTrimestral.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#registrosTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
             });
+        });
+    }
+
+    // ========================================
+    // AUTOCOMPLETADO RAMO-UR Y DEPENDENCIA
+    // ========================================
+    const ramosUR = ['2-0','4-0','4-A00','4-E2D','4-EZQ','4-F00','4-G00','4-K00','4-N00','4-P00','4-Q00','4-T00','4-X00','5-0','5-I00','5-J00','5-K00','6-0','6-A00','6-B00','6-C00','6-D00','6-E00','6-G0N','6-G1C','6-G1H','6-G2T','6-G3A','6-GSA','6-H00','6-HAT','6-HBW','6-HHN','6-HIU','6-HJO','6-HJY','6-HKA','6-HKI','6-KCZ','7-0','7-H0C','7-H0M','7-HXA','7-HZI','8-0','8-A1I','8-AFU','8-B00','8-C00','8-D00','8-G00','8-I00','8-I6L','8-I9H','8-IZC','8-IZI','8-JAG','8-JBK','8-JBP','8-RJL','8-VSS','8-VST','9-0','9-A00','9-C00','9-D00','9-E00','9-J0U','9-J4Q','9-J9E','9-JZL','9-JZN','9-KDI','10-0','10-K2H','10-K2N','10-K2O','10-K8V','10-LAT','10-LAU','11-0','11-A00','11-B00','11-B01','11-G00','11-K00','11-L00','11-L3P','11-L4J','11-L5N','11-L5X','11-L6H','11-L6I','11-L6J','11-L6W','11-L8G','11-L8K','11-L9T','11-M00','11-MAR','11-MAX','11-MDA','11-MDE','11-MEY','11-MGC','11-MGJ','11-O00','12-0','12-E00','12-I00','12-K00','12-L00','12-M00','12-M7F','12-M7K','12-NAW','12-NBB','12-NBD','12-NBG','12-NBV','12-NCA','12-NCD','12-NCE','12-NCG','12-NCH','12-NCK','12-NCZ','12-NDE','12-NDF','12-NDY','12-NEF','12-NHK','12-O00','12-Q00','12-R00','12-S00','12-T00','12-V00','12-Y00','13-0','13-AYH','13-J2I','13-J2K','13-J2P','13-J2R','13-J2T','13-J2U','13-J2V','13-J2W','13-J2X','13-J2Y','13-J2Z','13-J3A','13-J3B','13-J3C','13-J3D','13-J3E','13-J3F','13-J3G','13-J3L','13-J4V','13-KDN','13-N9W','14-0','14-A00','14-P7R','14-PBE','14-PBJ','14-VUY','15-0','15-B00','15-QCW','15-QDV','15-QEU','15-QEZ','16-0','16-B00','16-E00','16-F00','16-G00','16-RHQ','16-RJE','16-RJJ','18-0','18-A00','18-E00','18-T0K','18-T0O','18-T0Q','18-T0U','18-T4I','18-T4L','18-T4M','18-T4N','18-T4O','18-TOM','18-TON','18-TQA','19-HC6','20-0','20-L00','20-V3A','20-VRW','21-0','21-W3N','21-W3S','25-C00','27-0','27-T00','31-0','32-0','36-0','36-B00','36-C00','36-D00','36-E00','36-F00','36-G00','36-H00','37-0','38-90A','38-90C','38-90E','38-90G','38-90I','38-90K','38-90M','38-90O','38-90Q','38-90S','38-90U','38-90W','38-90X','38-90Y','38-91A','38-91C','38-91E','38-91I','38-91K','38-91M','38-91Q','38-91S','38-91U','38-91W','38-92M','38-9ZU','38-9ZW','38-9ZY','47-AYB','47-AYI','47-AYJ','47-AYL','47-AYM','47-AYN','47-AYO','47-EZN','47-MDL','48-0','48-D00','48-E00','48-F00','48-I00','48-J00','48-L3N','48-L6U','48-L8P','48-L9Y','48-MDB','48-MDC','48-MHL','48-VZG','50-GYR','50-ZZZ','51-GYN','52-T9G','52-T9K','52-T9M','52-T9N','53-TVV','53-UHI','53-UHN','53-UHS','53-UHX','53-UIC','53-UIH','53-UIM','53-UIR','53-UIT','53-UIW','54-0','55-0'];
+
+    const dependencias = ["ADMINISTRACIÓN DEL PATRIMONIO DE LA BENEFICENCIA PÚBLICA","ADMINISTRACIÓN DEL SISTEMA PORTUARIO LÁZARO CÁRDENAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL CABO SAN LUCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL COATZACOALCOS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL DOS BOCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ENSENADA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL GUAYMAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MANZANILLO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MAZATLÁN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO CHIAPAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO VALLARTA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL SALINA CRUZ, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TAMPICO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TOPOLOBAMPO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TUXPAN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL VERACRUZ, S.A. DE C.V.","AEROPUERTO INTERNACIONAL DE LA CIUDAD DE MÉXICO, S.A. DE C.V.","AEROPUERTO INTERNACIONAL FELIPE ÁNGELES, S.A. DE C.V.","AEROPUERTOS Y SERVICIOS AUXILIARES","AGENCIA DE TRANSFORMACIÓN DIGITAL Y TELECOMUNICACIONES","AGENCIA ESPACIAL MEXICANA","AGENCIA FEDERAL DE AVIACIÓN CIVIL","AGENCIA NACIONAL DE ADUANAS DE MÉXICO","AGENCIA NACIONAL DE SEGURIDAD INDUSTRIAL Y DE PROTECCIÓN AL MEDIO AMBIENTE DEL SECTOR HIDROCARBUROS","AGROASEMEX, S.A.","ARCHIVO GENERAL DE LA NACIÓN","AUTORIDAD EDUCATIVA FEDERAL EN LA CIUDAD DE MÉXICO","BANCO DEL BIENESTAR, S.N.C., I.B.D.","BANCO NACIONAL DE COMERCIO EXTERIOR, S.N.C.","BANCO NACIONAL DE OBRAS Y SERVICIOS PÚBLICOS, S.N.C.","BANCO NACIONAL DEL EJÉRCITO, FUERZA AÉREA Y ARMADA, S.N.C.","CAMINOS Y PUENTES FEDERALES DE INGRESOS Y SERVICIOS CONEXOS","CASA DE MONEDA DE MÉXICO","CENTRO DE CAPACITACIÓN CINEMATOGRÁFICA, A.C.","CENTRO DE ENSEÑANZA TÉCNICA INDUSTRIAL","CENTRO DE INGENIERÍA Y DESARROLLO INDUSTRIAL","CENTRO DE INVESTIGACIÓN CIENTÍFICA DE YUCATÁN, A.C.","CENTRO DE INVESTIGACIÓN CIENTÍFICA Y DE EDUCACIÓN SUPERIOR DE ENSENADA, BAJA CALIFORNIA","CENTRO DE INVESTIGACIÓN EN ALIMENTACIÓN Y DESARROLLO, A.C.","CENTRO DE INVESTIGACIÓN EN CIENCIAS DE INFORMACIÓN GEOESPACIAL, A.C.","CENTRO DE INVESTIGACIÓN EN MATEMÁTICAS, A.C.","CENTRO DE INVESTIGACIÓN EN MATERIALES AVANZADOS, S.C.","CENTRO DE INVESTIGACIÓN EN QUÍMICA APLICADA","CENTRO DE INVESTIGACIÓN Y ASISTENCIA EN TECNOLOGÍA Y DISEÑO DE JALISCO, A.C.","CENTRO DE INVESTIGACIÓN Y DE ESTUDIOS AVANZADOS DEL IPN","CENTRO DE INVESTIGACIÓN Y DESARROLLO TECNOLÓGICO EN ELECTROQUÍMICA, S.C.","CENTRO DE INVESTIGACIÓN Y DOCENCIA ECONÓMICAS, A.C.","CENTRO DE INVESTIGACIONES BIOLÓGICAS DEL NOROESTE, S.C.","CENTRO DE INVESTIGACIONES EN ÓPTICA, A.C.","CENTRO DE INVESTIGACIONES Y ESTUDIOS SUPERIORES EN ANTROPOLOGÍA SOCIAL","CENTRO DE PRODUCCIÓN DE PROGRAMAS INFORMATIVOS Y ESPECIALES","CENTRO FEDERAL DE CONCILIACIÓN Y REGISTRO LABORAL","CENTRO NACIONAL DE CONTROL DE ENERGÍA","CENTRO NACIONAL DE CONTROL DEL GAS NATURAL","CENTRO NACIONAL DE EQUIDAD DE GÉNERO Y SALUD REPRODUCTIVA","CENTRO NACIONAL DE EXCELENCIA TECNOLÓGICA EN SALUD","CENTRO NACIONAL DE LA TRANSFUSIÓN SANGUÍNEA","CENTRO NACIONAL DE METROLOGÍA","CENTRO NACIONAL DE PREVENCIÓN DE DESASTRES","CENTRO NACIONAL DE PROGRAMAS PREVENTIVOS Y CONTROL DE ENFERMEDADES","CENTRO NACIONAL DE TRASPLANTES","CENTRO NACIONAL PARA LA PREVENCIÓN Y CONTROL DEL VIH/SIDA","CENTRO NACIONAL PARA LA SALUD DE LA INFANCIA Y LA ADOLESCENCIA","CENTROS DE INTEGRACIÓN JUVENIL, A.C.","CIATEC, A.C.","CIATEQ, A.C.","COLEGIO DE BACHILLERES","COLEGIO DE POSTGRADUADOS","COLEGIO NACIONAL DE EDUCACIÓN PROFESIONAL TÉCNICA","COLEGIO SUPERIOR AGROPECUARIO DEL ESTADO DE GUERRERO","COMISIÓN DE APELACIÓN Y ARBITRAJE DEL DEPORTE","COMISIÓN DE OPERACIÓN Y FOMENTO DE ACTIVIDADES ACADÉMICAS DEL IPN","COMISIÓN EJECUTIVA DE ATENCIÓN A VÍCTIMAS","COMISIÓN FEDERAL PARA LA PROTECCIÓN CONTRA RIESGOS SANITARIOS","COMISIÓN NACIONAL BANCARIA Y DE VALORES","COMISIÓN NACIONAL DE ACUACULTURA Y PESCA","COMISIÓN NACIONAL DE ARBITRAJE MÉDICO","COMISIÓN NACIONAL DE ÁREAS NATURALES PROTEGIDAS","COMISIÓN NACIONAL DE BIOÉTICA","COMISIÓN NACIONAL DE BÚSQUEDA DE PERSONAS","COMISIÓN NACIONAL DE CULTURA FÍSICA Y DEPORTE","COMISIÓN NACIONAL DE HIDROCARBUROS","COMISIÓN NACIONAL DE LAS ZONAS ÁRIDAS","COMISIÓN NACIONAL DE LIBROS DE TEXTO GRATUITOS","COMISIÓN NACIONAL DE LOS SALARIOS MÍNIMOS","COMISIÓN NACIONAL DE MEJORA REGULATORIA","COMISIÓN NACIONAL DE SALUD MENTAL Y ADICCIONES","COMISIÓN NACIONAL DE SEGURIDAD NUCLEAR Y SALVAGUARDIAS","COMISIÓN NACIONAL DE SEGUROS Y FIANZAS","COMISIÓN NACIONAL DE VIVIENDA","COMISIÓN NACIONAL DEL AGUA","COMISIÓN NACIONAL DEL SISTEMA DE AHORRO PARA EL RETIRO","COMISIÓN NACIONAL FORESTAL","COMISIÓN NACIONAL PARA EL USO EFICIENTE DE LA ENERGÍA","COMISIÓN NACIONAL PARA LA MEJORA CONTINUA DE LA EDUCACIÓN","COMISIÓN NACIONAL PARA LA PROTECCIÓN Y DEFENSA DE LOS USUARIOS DE SERVICIOS FINANCIEROS","COMISIÓN REGULADORA DE ENERGÍA","COMITÉ NACIONAL PARA EL DESARROLLO SUSTENTABLE DE LA CAÑA DE AZÚCAR","COMPAÑÍA MEXICANA DE EXPLORACIONES, S.A. DE C.V.","COMPAÑÍA OPERADORA DEL CENTRO CULTURAL Y TURÍSTICO DE TIJUANA, S.A. DE C.V.","CONSEJERÍA JURÍDICA DEL EJECUTIVO FEDERAL","CONSEJO NACIONAL DE EVALUACIÓN DE LA POLÍTICA DE DESARROLLO SOCIAL","CONSEJO NACIONAL DE FOMENTO EDUCATIVO","CONSEJO NACIONAL DE HUMANIDADES, CIENCIAS Y TECNOLOGÍAS","CONSEJO NACIONAL PARA EL DESARROLLO Y LA INCLUSIÓN DE LAS PERSONAS CON DISCAPACIDAD","CONSEJO NACIONAL PARA PREVENIR LA DISCRIMINACIÓN","CONSOLIDADO","COORDINACIÓN GENERAL DE LA COMISIÓN MEXICANA DE AYUDA A REFUGIADOS","COORDINACIÓN NACIONAL ANTISECUESTRO Y DELITOS DE ALTO IMPACTO","COORDINACIÓN NACIONAL DE BECAS PARA EL BIENESTAR BENITO JUÁREZ","COORDINACIÓN PARA LA ATENCIÓN INTEGRAL DE LA MIGRACIÓN EN LA FRONTERA SUR","CORREDOR INTEROCEÁNICO DEL ISTMO DE TEHUANTEPEC","EDUCAL, S.A. DE C.V.","EL COLEGIO DE LA FRONTERA NORTE, A.C.","EL COLEGIO DE LA FRONTERA SUR","EL COLEGIO DE MÉXICO, A.C.","EL COLEGIO DE MICHOACÁN, A.C.","EL COLEGIO DE SAN LUIS, A.C.","ESTUDIOS CHURUBUSCO AZTECA, S.A.","EXPORTADORA DE SAL, S.A. DE C.V.","FERROCARRIL DEL ISTMO DE TEHUANTEPEC, S.A. DE C.V.","FIDEICOMISO DE FOMENTO MINERO","FIDEICOMISO DE LOS SISTEMAS NORMALIZADO DE COMPETENCIA LABORAL Y DE CERTIFICACIÓN","FIDEICOMISO DE RIESGO COMPARTIDO","FIDEICOMISO FONDO NACIONAL DE FOMENTO EJIDAL","FIDEICOMISO PARA LA CINETECA NACIONAL","FIDEICOMISO UNIVERSIDAD MARÍTIMA Y PORTUARIA DE MÉXICO","FINANCIERA PARA EL BIENESTAR","FONATUR INFRAESTRUCTURA, S.A. DE C.V.","FONDO DE CAPITALIZACIÓN E INVERSIÓN DEL SECTOR RURAL","FONDO DE CULTURA ECONÓMICA","FONDO DE GARANTÍA Y FOMENTO PARA LA AGRICULTURA, GANADERÍA Y AVICULTURA","FONDO DE LA VIVIENDA DEL ISSSTE","FONDO NACIONAL DE FOMENTO AL TURISMO","FONDO NACIONAL PARA EL FOMENTO DE LAS ARTESANÍAS","GUARDIA NACIONAL","HOSPITAL GENERAL DR. MANUEL GEA GONZÁLEZ","HOSPITAL GENERAL DE MÉXICO DR. EDUARDO LICEAGA","HOSPITAL INFANTIL DE MÉXICO FEDERICO GÓMEZ","HOSPITAL JUÁREZ DE MÉXICO","IMPRESORA Y ENCUADERNADORA PROGRESO, S.A. DE C.V.","INFOTEC CENTRO DE INVESTIGACIÓN E INNOVACIÓN EN TIC","INNOVABIENESTAR DE MÉXICO, S.A.P.I. DE C.V.","INSTITUTO DE ADMINISTRACIÓN Y AVALÚOS DE BIENES NACIONALES","INSTITUTO DE ECOLOGÍA, A.C.","INSTITUTO DE INVESTIGACIONES DR. JOSÉ MARÍA LUIS MORA","INSTITUTO DE SEGURIDAD SOCIAL PARA LAS FUERZAS ARMADAS MEXICANAS","INSTITUTO DE SEGURIDAD Y SERVICIOS SOCIALES DE LOS TRABAJADORES DEL ESTADO","INSTITUTO DEL FONDO NACIONAL PARA EL CONSUMO DE LOS TRABAJADORES","INSTITUTO MEXICANO DE CINEMATOGRAFÍA","INSTITUTO MEXICANO DE INVESTIGACIÓN EN PESCA Y ACUACULTURA SUSTENTABLES","INSTITUTO MEXICANO DE LA PROPIEDAD INDUSTRIAL","INSTITUTO MEXICANO DE LA RADIO","INSTITUTO MEXICANO DE TECNOLOGÍA DEL AGUA","INSTITUTO MEXICANO DEL PETRÓLEO","INSTITUTO MEXICANO DEL SEGURO SOCIAL","INSTITUTO MEXICANO DEL TRANSPORTE","INSTITUTO NACIONAL DE ANTROPOLOGÍA E HISTORIA","INSTITUTO NACIONAL DE ASTROFÍSICA, ÓPTICA Y ELECTRÓNICA","INSTITUTO NACIONAL DE BELLAS ARTES Y LITERATURA","INSTITUTO NACIONAL DE CANCEROLOGÍA","INSTITUTO NACIONAL DE CARDIOLOGÍA IGNACIO CHÁVEZ","INSTITUTO NACIONAL DE CIENCIAS MÉDICAS Y NUTRICIÓN SALVADOR ZUBIRÁN","INSTITUTO NACIONAL DE ECOLOGÍA Y CAMBIO CLIMÁTICO","INSTITUTO NACIONAL DE ELECTRICIDAD Y ENERGÍAS LIMPIAS","INSTITUTO NACIONAL DE ENFERMEDADES RESPIRATORIAS ISMAEL COSÍO VILLEGAS","INSTITUTO NACIONAL DE GERIATRÍA","INSTITUTO NACIONAL DE INVESTIGACIONES FORESTALES, AGRÍCOLAS Y PECUARIAS","INSTITUTO NACIONAL DE INVESTIGACIONES NUCLEARES","INSTITUTO NACIONAL DE LA ECONOMÍA SOCIAL","INSTITUTO NACIONAL DE LA INFRAESTRUCTURA FÍSICA EDUCATIVA","INSTITUTO NACIONAL DE LAS MUJERES","INSTITUTO NACIONAL DE LAS PERSONAS ADULTAS MAYORES","INSTITUTO NACIONAL DE LENGUAS INDÍGENAS","INSTITUTO NACIONAL DE LOS PUEBLOS INDÍGENAS","INSTITUTO NACIONAL DE MEDICINA GENÓMICA","INSTITUTO NACIONAL DE MIGRACIÓN","INSTITUTO NACIONAL DE NEUROLOGÍA Y NEUROCIRUGÍA MANUEL VELASCO SUÁREZ","INSTITUTO NACIONAL DE PEDIATRÍA","INSTITUTO NACIONAL DE PERINATOLOGÍA ISIDRO ESPINOSA DE LOS REYES","INSTITUTO NACIONAL DE PSIQUIATRÍA RAMÓN DE LA FUENTE MUÑIZ","INSTITUTO NACIONAL DE REHABILITACIÓN LUIS GUILLERMO IBARRA IBARRA","INSTITUTO NACIONAL DE SALUD PÚBLICA","INSTITUTO NACIONAL DEL SUELO SUSTENTABLE","INSTITUTO NACIONAL PARA EL DESARROLLO DE CAPACIDADES DEL SECTOR RURAL, A.C.","INSTITUTO NACIONAL PARA EL FEDERALISMO Y EL DESARROLLO MUNICIPAL","INSTITUTO NACIONAL PARA LA EDUCACIÓN DE LOS ADULTOS","INSTITUTO PARA DEVOLVER AL PUEBLO LO ROBADO","INSTITUTO PARA LA PROTECCIÓN AL AHORRO BANCARIO","INSTITUTO POLITÉCNICO NACIONAL","INSTITUTO POTOSINO DE INVESTIGACIÓN CIENTÍFICA Y TECNOLÓGICA, A.C.","LABORATORIOS DE BIOLÓGICOS Y REACTIVOS DE MÉXICO, S.A. DE C.V.","LITIO PARA MÉXICO","LOTERÍA NACIONAL","NACIONAL FINANCIERA, S.N.C.","OFICINA DE LA PRESIDENCIA DE LA REPÚBLICA","ORGANISMO COORDINADOR DE UNIVERSIDADES PARA EL BIENESTAR BENITO JUÁREZ","ORGANISMO PROMOTOR DE INVERSIONES EN TELECOMUNICACIONES","PATRONATO DE OBRAS E INSTALACIONES DEL IPN","PEMEX CORPORATIVO","PREVENCIÓN Y REINSERCIÓN SOCIAL","PROCURADURÍA AGRARIA","PROCURADURÍA DE LA DEFENSA DEL CONTRIBUYENTE","PROCURADURÍA FEDERAL DE LA DEFENSA DEL TRABAJO","PROCURADURÍA FEDERAL DE PROTECCIÓN AL AMBIENTE","PROCURADURÍA FEDERAL DEL CONSUMIDOR","PRODUCTORA NACIONAL DE BIOLÓGICOS VETERINARIOS","RADIO EDUCACIÓN","REGISTRO AGRARIO NACIONAL","SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO","SECRETARÍA DE AGRICULTURA Y DESARROLLO RURAL","SECRETARÍA DE BIENESTAR","SECRETARÍA DE CULTURA","SECRETARÍA DE DESARROLLO AGRARIO, TERRITORIAL Y URBANO","SECRETARÍA DE ECONOMÍA","SECRETARÍA DE EDUCACIÓN PÚBLICA","SECRETARÍA DE ENERGÍA","SECRETARÍA DE GOBERNACIÓN","SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO","SECRETARÍA DE INFRAESTRUCTURA, COMUNICACIONES Y TRANSPORTES","SECRETARÍA DE LA DEFENSA NACIONAL","SECRETARÍA DE MEDIO AMBIENTE Y RECURSOS NATURALES","SECRETARÍA DE RELACIONES EXTERIORES","SECRETARÍA DE SALUD","SECRETARÍA DE SEGURIDAD Y PROTECCIÓN CIUDADANA","SECRETARÍA DE TURISMO","SECRETARÍA DEL TRABAJO Y PREVISIÓN SOCIAL","SECRETARÍA EJECUTIVA DEL SISTEMA NACIONAL ANTICORRUPCIÓN","SECRETARÍA GENERAL DEL CONSEJO NACIONAL DE POBLACIÓN","SECRETARIADO EJECUTIVO DEL SISTEMA NACIONAL DE SEGURIDAD PÚBLICA","SEGURIDAD ALIMENTARIA MEXICANA","SERVICIO DE ADMINISTRACIÓN TRIBUTARIA","SERVICIO DE INFORMACIÓN AGROALIMENTARIA Y PESQUERA","SERVICIO DE PROTECCIÓN FEDERAL","SERVICIO GEOLÓGICO MEXICANO","SERVICIO NACIONAL DE INSPECCIÓN Y CERTIFICACIÓN DE SEMILLAS","SERVICIO NACIONAL DE SANIDAD, INOCUIDAD Y CALIDAD AGROALIMENTARIA","SERVICIO POSTAL MEXICANO","SERVICIOS A LA NAVEGACIÓN EN EL ESPACIO AÉREO MEXICANO","SERVICIOS DE SALUD DEL IMSS-BIENESTAR","SISTEMA NACIONAL PARA EL DESARROLLO INTEGRAL DE LA FAMILIA","SISTEMA PÚBLICO DE RADIODIFUSIÓN DEL ESTADO MEXICANO","SOCIEDAD HIPOTECARIA FEDERAL, S.N.C.","TALLERES GRÁFICOS DE MÉXICO","TECNOLÓGICO NACIONAL DE MÉXICO","TELEVISIÓN METROPOLITANA, S.A. DE C.V.","TREN MAYA, S.A. DE C.V.","TRIBUNAL FEDERAL DE CONCILIACIÓN Y ARBITRAJE","TRIBUNAL FEDERAL DE JUSTICIA FISCAL Y ADMINISTRATIVA","TRIBUNAL SUPERIOR AGRARIO","TURÍSTICA INTEGRAL ISLAS MARÍAS, S.A. DE C.V.","UNIDAD DEL SISTEMA PARA LA CARRERA DE LAS MAESTRAS Y LOS MAESTROS","UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO","UNIVERSIDAD AUTÓNOMA CHAPINGO","UNIVERSIDAD PEDAGÓGICA NACIONAL","XE-IPN CANAL 11"];
+
+    function initAutocomplete() {
+        const ramoInput = document.getElementById('ramoUrInput');
+        const ramoSuggestions = document.getElementById('ramoUrSuggestions');
+        const depInput = document.getElementById('dependenciaInput');
+        const depSuggestions = document.getElementById('dependenciaSuggestions');
+
+        if (ramoInput && ramoSuggestions) {
+            setupAutocomplete(ramoInput, ramoSuggestions, ramosUR);
         }
 
-        // ========================================
-        // FUNCIONES DE UTILIDAD
-        // ========================================
-
-        function createParticles() {
-            const particlesContainer = document.getElementById('particles');
-            const particleCount = 50;
-
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.width = Math.random() * 5 + 2 + 'px';
-                particle.style.height = particle.style.width;
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.top = Math.random() * 100 + '%';
-                particle.style.animationDuration = Math.random() * 20 + 10 + 's';
-                particle.style.animationDelay = Math.random() * 5 + 's';
-                particlesContainer.appendChild(particle);
-            }
+        if (depInput && depSuggestions) {
+            setupAutocomplete(depInput, depSuggestions, dependencias);
         }
+    }
 
-        function openMonthModal(month) {
-            document.getElementById('monthModal').classList.add('active');
-            document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 2025`;
-        }
+    function setupAutocomplete(input, suggestionsContainer, dataList) {
+        let currentFocus = -1;
 
-        function closeModal() {
-            document.getElementById('monthModal').classList.remove('active');
-        }
+        input.addEventListener('input', function() {
+            const value = this.value.toLowerCase();
+            currentFocus = -1;
+            suggestionsContainer.innerHTML = '';
 
-        function exportData(format) {
-            alert(`📥 Exportando datos en formato ${format.toUpperCase()}...\n\nEsta funcionalidad requiere implementación en el backend.`);
-        }
-
-        // ========================================
-        // BÚSQUEDA EN TABLA
-        // ========================================
-        const searchTableTrimestral = document.getElementById('searchTableTrimestral');
-        if (searchTableTrimestral) {
-            searchTableTrimestral.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                const rows = document.querySelectorAll('#registrosTable tbody tr');
-
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? '' : 'none';
-                });
-            });
-        }
-
-        // ========================================
-        // AUTOCOMPLETADO RAMO-UR Y DEPENDENCIA
-        // ========================================
-        const ramosUR = ['2-0','4-0','4-A00','4-E2D','4-EZQ','4-F00','4-G00','4-K00','4-N00','4-P00',
-'4-Q00','4-T00','4-X00','5-0','5-I00','5-J00','5-K00','6-0','6-A00','6-B00',
-'6-C00','6-D00','6-E00','6-G0N','6-G1C','6-G1H','6-G2T','6-G3A','6-GSA','6-H00',
-'6-HAT','6-HBW','6-HHN','6-HIU','6-HJO','6-HJY','6-HKA','6-HKI','6-KCZ','7-0',
-'7-H0C','7-H0M','7-HXA','7-HZI','8-0','8-A1I','8-AFU','8-B00','8-C00','8-D00',
-'8-G00','8-I00','8-I6L','8-I9H','8-IZC','8-IZI','8-JAG','8-JBK','8-JBP','8-RJL',
-'8-VSS','8-VST','9-0','9-A00','9-C00','9-D00','9-E00','9-J0U','9-J4Q','9-J9E',
-'9-JZL','9-JZN','9-KDI','10-0','10-K2H','10-K2N','10-K2O','10-K8V','10-LAT',
-'10-LAU','11-0','11-A00','11-B00','11-B01','11-G00','11-K00','11-L00','11-L3P',
-'11-L4J','11-L5N','11-L5X','11-L6H','11-L6I','11-L6J','11-L6W','11-L8G','11-L8K',
-'11-L9T','11-M00','11-MAR','11-MAX','11-MDA','11-MDE','11-MEY','11-MGC','11-MGJ',
-'11-O00','12-0','12-E00','12-I00','12-K00','12-L00','12-M00','12-M7F','12-M7K',
-'12-NAW','12-NBB','12-NBD','12-NBG','12-NBV','12-NCA','12-NCD','12-NCE','12-NCG',
-'12-NCH','12-NCK','12-NCZ','12-NDE','12-NDF','12-NDY','12-NEF','12-NHK','12-O00',
-'12-Q00','12-R00','12-S00','12-T00','12-V00','12-Y00','13-0','13-AYH','13-J2I',
-'13-J2K','13-J2P','13-J2R','13-J2T','13-J2U','13-J2V','13-J2W','13-J2X','13-J2Y',
-'13-J2Z','13-J3A','13-J3B','13-J3C','13-J3D','13-J3E','13-J3F','13-J3G','13-J3L',
-'13-J4V','13-KDN','13-N9W','14-0','14-A00','14-P7R','14-PBE','14-PBJ','14-VUY',
-'15-0','15-B00','15-QCW','15-QDV','15-QEU','15-QEZ','16-0','16-B00','16-E00',
-'16-F00','16-G00','16-RHQ','16-RJE','16-RJJ','18-0','18-A00','18-E00','18-T0K',
-'18-T0O','18-T0Q','18-T0U','18-T4I','18-T4L','18-T4M','18-T4N','18-T4O','18-TOM',
-'18-TON','18-TQA','19-HC6','20-0','20-L00','20-V3A','20-VRW','21-0','21-W3N',
-'21-W3S','25-C00','27-0','27-T00','31-0','32-0','36-0','36-B00','36-C00','36-D00',
-'36-E00','36-F00','36-G00','36-H00','37-0','38-90A','38-90C','38-90E','38-90G',
-'38-90I','38-90K','38-90M','38-90O','38-90Q','38-90S','38-90U','38-90W','38-90X',
-'38-90Y','38-91A','38-91C','38-91E','38-91I','38-91K','38-91M','38-91Q','38-91S',
-'38-91U','38-91W','38-92M','38-9ZU','38-9ZW','38-9ZY','47-AYB','47-AYI','47-AYJ',
-'47-AYL','47-AYM','47-AYN','47-AYO','47-EZN','47-MDL','48-0','48-D00','48-E00',
-'48-F00','48-I00','48-J00','48-L3N','48-L6U','48-L8P','48-L9Y','48-MDB','48-MDC',
-'48-MHL','48-VZG','50-GYR','50-ZZZ','51-GYN','52-T9G','52-T9K','52-T9M','52-T9N',
-'53-TVV','53-UHI','53-UHN','53-UHS','53-UHX','53-UIC','53-UIH','53-UIM','53-UIR',
-'53-UIT','53-UIW','54-0','55-0'];
-        const dependencias = [
-           "ADMINISTRACIÓN DEL PATRIMONIO DE LA BENEFICENCIA PÚBLICA","ADMINISTRACIÓN DEL SISTEMA PORTUARIO LÁZARO CÁRDENAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL CABO SAN LUCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL COATZACOALCOS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL DOS BOCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ENSENADA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL GUAYMAS, S.A. DE C.V.",
-
-"ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MANZANILLO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MAZATLÁN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO CHIAPAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO VALLARTA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL SALINA CRUZ, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TAMPICO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TOPOLOBAMPO, S.A. DE C.V.",
-
-"ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TUXPAN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL VERACRUZ, S.A. DE C.V.","AEROPUERTO INTERNACIONAL DE LA CIUDAD DE MÉXICO, S.A. DE C.V.","AEROPUERTO INTERNACIONAL FELIPE ÁNGELES, S.A. DE C.V.","AEROPUERTOS Y SERVICIOS AUXILIARES","AGENCIA DE TRANSFORMACIÓN DIGITAL Y TELECOMUNICACIONES","AGENCIA ESPACIAL MEXICANA","AGENCIA FEDERAL DE AVIACIÓN CIVIL",
-
-"AGENCIA NACIONAL DE ADUANAS DE MÉXICO","AGENCIA NACIONAL DE SEGURIDAD INDUSTRIAL Y DE PROTECCIÓN AL MEDIO AMBIENTE DEL SECTOR HIDROCARBUROS","AGROASEMEX, S.A.","ARCHIVO GENERAL DE LA NACIÓN","AUTORIDAD EDUCATIVA FEDERAL EN LA CIUDAD DE MÉXICO","BANCO DEL BIENESTAR, S.N.C., I.B.D.","BANCO NACIONAL DE COMERCIO EXTERIOR, S.N.C.","BANCO NACIONAL DE OBRAS Y SERVICIOS PÚBLICOS, S.N.C.",
-
-"BANCO NACIONAL DEL EJÉRCITO, FUERZA AÉREA Y ARMADA, S.N.C.","CAMINOS Y PUENTES FEDERALES DE INGRESOS Y SERVICIOS CONEXOS","CASA DE MONEDA DE MÉXICO","CENTRO DE CAPACITACIÓN CINEMATOGRÁFICA, A.C.","CENTRO DE ENSEÑANZA TÉCNICA INDUSTRIAL","CENTRO DE INGENIERÍA Y DESARROLLO INDUSTRIAL","CENTRO DE INVESTIGACIÓN CIENTÍFICA DE YUCATÁN, A.C.","CENTRO DE INVESTIGACIÓN CIENTÍFICA Y DE EDUCACIÓN SUPERIOR DE ENSENADA, BAJA CALIFORNIA",
-
-"CENTRO DE INVESTIGACIÓN EN ALIMENTACIÓN Y DESARROLLO, A.C.","CENTRO DE INVESTIGACIÓN EN CIENCIAS DE INFORMACIÓN GEOESPACIAL, A.C.","CENTRO DE INVESTIGACIÓN EN MATEMÁTICAS, A.C.","CENTRO DE INVESTIGACIÓN EN MATERIALES AVANZADOS, S.C.","CENTRO DE INVESTIGACIÓN EN QUÍMICA APLICADA","CENTRO DE INVESTIGACIÓN Y ASISTENCIA EN TECNOLOGÍA Y DISEÑO DE JALISCO, A.C.","CENTRO DE INVESTIGACIÓN Y DE ESTUDIOS AVANZADOS DEL IPN","CENTRO DE INVESTIGACIÓN Y DESARROLLO TECNOLÓGICO EN ELECTROQUÍMICA, S.C.",
-
-"CENTRO DE INVESTIGACIÓN Y DOCENCIA ECONÓMICAS, A.C.","CENTRO DE INVESTIGACIONES BIOLÓGICAS DEL NOROESTE, S.C.","CENTRO DE INVESTIGACIONES EN ÓPTICA, A.C.","CENTRO DE INVESTIGACIONES Y ESTUDIOS SUPERIORES EN ANTROPOLOGÍA SOCIAL","CENTRO DE PRODUCCIÓN DE PROGRAMAS INFORMATIVOS Y ESPECIALES","CENTRO FEDERAL DE CONCILIACIÓN Y REGISTRO LABORAL","CENTRO NACIONAL DE CONTROL DE ENERGÍA","CENTRO NACIONAL DE CONTROL DEL GAS NATURAL",
-
-"CENTRO NACIONAL DE EQUIDAD DE GÉNERO Y SALUD REPRODUCTIVA","CENTRO NACIONAL DE EXCELENCIA TECNOLÓGICA EN SALUD","CENTRO NACIONAL DE LA TRANSFUSIÓN SANGUÍNEA","CENTRO NACIONAL DE METROLOGÍA","CENTRO NACIONAL DE PREVENCIÓN DE DESASTRES","CENTRO NACIONAL DE PROGRAMAS PREVENTIVOS Y CONTROL DE ENFERMEDADES","CENTRO NACIONAL DE TRASPLANTES","CENTRO NACIONAL PARA LA PREVENCIÓN Y CONTROL DEL VIH/SIDA",
-
-"CENTRO NACIONAL PARA LA SALUD DE LA INFANCIA Y LA ADOLESCENCIA","CENTROS DE INTEGRACIÓN JUVENIL, A.C.","CIATEC, A.C.","CIATEQ, A.C.","COLEGIO DE BACHILLERES","COLEGIO DE POSTGRADUADOS","COLEGIO NACIONAL DE EDUCACIÓN PROFESIONAL TÉCNICA","COLEGIO SUPERIOR AGROPECUARIO DEL ESTADO DE GUERRERO",
-
-"COMISIÓN DE APELACIÓN Y ARBITRAJE DEL DEPORTE","COMISIÓN DE OPERACIÓN Y FOMENTO DE ACTIVIDADES ACADÉMICAS DEL IPN","COMISIÓN EJECUTIVA DE ATENCIÓN A VÍCTIMAS","COMISIÓN FEDERAL PARA LA PROTECCIÓN CONTRA RIESGOS SANITARIOS","COMISIÓN NACIONAL BANCARIA Y DE VALORES","COMISIÓN NACIONAL DE ACUACULTURA Y PESCA","COMISIÓN NACIONAL DE ARBITRAJE MÉDICO","COMISIÓN NACIONAL DE ÁREAS NATURALES PROTEGIDAS",
-
-"COMISIÓN NACIONAL DE BIOÉTICA","COMISIÓN NACIONAL DE BÚSQUEDA DE PERSONAS","COMISIÓN NACIONAL DE CULTURA FÍSICA Y DEPORTE","COMISIÓN NACIONAL DE HIDROCARBUROS","COMISIÓN NACIONAL DE LAS ZONAS ÁRIDAS","COMISIÓN NACIONAL DE LIBROS DE TEXTO GRATUITOS","COMISIÓN NACIONAL DE LOS SALARIOS MÍNIMOS","COMISIÓN NACIONAL DE MEJORA REGULATORIA",
-
-"COMISIÓN NACIONAL DE SALUD MENTAL Y ADICCIONES","COMISIÓN NACIONAL DE SEGURIDAD NUCLEAR Y SALVAGUARDIAS","COMISIÓN NACIONAL DE SEGUROS Y FIANZAS","COMISIÓN NACIONAL DE VIVIENDA","COMISIÓN NACIONAL DEL AGUA","COMISIÓN NACIONAL DEL SISTEMA DE AHORRO PARA EL RETIRO","COMISIÓN NACIONAL FORESTAL","COMISIÓN NACIONAL PARA EL USO EFICIENTE DE LA ENERGÍA",
-
-"COMISIÓN NACIONAL PARA LA MEJORA CONTINUA DE LA EDUCACIÓN","COMISIÓN NACIONAL PARA LA PROTECCIÓN Y DEFENSA DE LOS USUARIOS DE SERVICIOS FINANCIEROS","COMISIÓN REGULADORA DE ENERGÍA","COMITÉ NACIONAL PARA EL DESARROLLO SUSTENTABLE DE LA CAÑA DE AZÚCAR","COMPAÑÍA MEXICANA DE EXPLORACIONES, S.A. DE C.V.","COMPAÑÍA OPERADORA DEL CENTRO CULTURAL Y TURÍSTICO DE TIJUANA, S.A. DE C.V.","CONSEJERÍA JURÍDICA DEL EJECUTIVO FEDERAL","CONSEJO NACIONAL DE EVALUACIÓN DE LA POLÍTICA DE DESARROLLO SOCIAL",
-
-"CONSEJO NACIONAL DE FOMENTO EDUCATIVO","CONSEJO NACIONAL DE HUMANIDADES, CIENCIAS Y TECNOLOGÍAS","CONSEJO NACIONAL PARA EL DESARROLLO Y LA INCLUSIÓN DE LAS PERSONAS CON DISCAPACIDAD","CONSEJO NACIONAL PARA PREVENIR LA DISCRIMINACIÓN","CONSOLIDADO","COORDINACIÓN GENERAL DE LA COMISIÓN MEXICANA DE AYUDA A REFUGIADOS","COORDINACIÓN NACIONAL ANTISECUESTRO Y DELITOS DE ALTO IMPACTO","COORDINACIÓN NACIONAL DE BECAS PARA EL BIENESTAR BENITO JUÁREZ",
-
-"COORDINACIÓN PARA LA ATENCIÓN INTEGRAL DE LA MIGRACIÓN EN LA FRONTERA SUR","CORREDOR INTEROCEÁNICO DEL ISTMO DE TEHUANTEPEC","EDUCAL, S.A. DE C.V.","EL COLEGIO DE LA FRONTERA NORTE, A.C.","EL COLEGIO DE LA FRONTERA SUR","EL COLEGIO DE MÉXICO, A.C.","EL COLEGIO DE MICHOACÁN, A.C.","EL COLEGIO DE SAN LUIS, A.C.",
-
-"ESTUDIOS CHURUBUSCO AZTECA, S.A.","EXPORTADORA DE SAL, S.A. DE C.V.","FERROCARRIL DEL ISTMO DE TEHUANTEPEC, S.A. DE C.V.","FIDEICOMISO DE FOMENTO MINERO","FIDEICOMISO DE LOS SISTEMAS NORMALIZADO DE COMPETENCIA LABORAL Y DE CERTIFICACIÓN","FIDEICOMISO DE RIESGO COMPARTIDO","FIDEICOMISO FONDO NACIONAL DE FOMENTO EJIDAL","FIDEICOMISO PARA LA CINETECA NACIONAL",
-
-"FIDEICOMISO UNIVERSIDAD MARÍTIMA Y PORTUARIA DE MÉXICO","FINANCIERA PARA EL BIENESTAR","FONATUR INFRAESTRUCTURA, S.A. DE C.V.","FONDO DE CAPITALIZACIÓN E INVERSIÓN DEL SECTOR RURAL","FONDO DE CULTURA ECONÓMICA","FONDO DE GARANTÍA Y FOMENTO PARA LA AGRICULTURA, GANADERÍA Y AVICULTURA","FONDO DE LA VIVIENDA DEL ISSSTE","FONDO NACIONAL DE FOMENTO AL TURISMO",
-
-"FONDO NACIONAL PARA EL FOMENTO DE LAS ARTESANÍAS","GUARDIA NACIONAL","HOSPITAL GENERAL DR. MANUEL GEA GONZÁLEZ","HOSPITAL GENERAL DE MÉXICO DR. EDUARDO LICEAGA","HOSPITAL INFANTIL DE MÉXICO FEDERICO GÓMEZ","HOSPITAL JUÁREZ DE MÉXICO","IMPRESORA Y ENCUADERNADORA PROGRESO, S.A. DE C.V.","INFOTEC CENTRO DE INVESTIGACIÓN E INNOVACIÓN EN TIC",
-
-"INNOVABIENESTAR DE MÉXICO, S.A.P.I. DE C.V.","INSTITUTO DE ADMINISTRACIÓN Y AVALÚOS DE BIENES NACIONALES","INSTITUTO DE ECOLOGÍA, A.C.","INSTITUTO DE INVESTIGACIONES DR. JOSÉ MARÍA LUIS MORA","INSTITUTO DE SEGURIDAD SOCIAL PARA LAS FUERZAS ARMADAS MEXICANAS","INSTITUTO DE SEGURIDAD Y SERVICIOS SOCIALES DE LOS TRABAJADORES DEL ESTADO","INSTITUTO DEL FONDO NACIONAL PARA EL CONSUMO DE LOS TRABAJADORES","INSTITUTO MEXICANO DE CINEMATOGRAFÍA",
-
-"INSTITUTO MEXICANO DE INVESTIGACIÓN EN PESCA Y ACUACULTURA SUSTENTABLES","INSTITUTO MEXICANO DE LA PROPIEDAD INDUSTRIAL","INSTITUTO MEXICANO DE LA RADIO","INSTITUTO MEXICANO DE TECNOLOGÍA DEL AGUA","INSTITUTO MEXICANO DEL PETRÓLEO","INSTITUTO MEXICANO DEL SEGURO SOCIAL","INSTITUTO MEXICANO DEL TRANSPORTE","INSTITUTO NACIONAL DE ANTROPOLOGÍA E HISTORIA",
-
-"INSTITUTO NACIONAL DE ASTROFÍSICA, ÓPTICA Y ELECTRÓNICA","INSTITUTO NACIONAL DE BELLAS ARTES Y LITERATURA","INSTITUTO NACIONAL DE CANCEROLOGÍA","INSTITUTO NACIONAL DE CARDIOLOGÍA IGNACIO CHÁVEZ","INSTITUTO NACIONAL DE CIENCIAS MÉDICAS Y NUTRICIÓN SALVADOR ZUBIRÁN","INSTITUTO NACIONAL DE ECOLOGÍA Y CAMBIO CLIMÁTICO","INSTITUTO NACIONAL DE ELECTRICIDAD Y ENERGÍAS LIMPIAS","INSTITUTO NACIONAL DE ENFERMEDADES RESPIRATORIAS ISMAEL COSÍO VILLEGAS",
-
-"INSTITUTO NACIONAL DE GERIATRÍA","INSTITUTO NACIONAL DE INVESTIGACIONES FORESTALES, AGRÍCOLAS Y PECUARIAS","INSTITUTO NACIONAL DE INVESTIGACIONES NUCLEARES","INSTITUTO NACIONAL DE LA ECONOMÍA SOCIAL","INSTITUTO NACIONAL DE LA INFRAESTRUCTURA FÍSICA EDUCATIVA","INSTITUTO NACIONAL DE LAS MUJERES","INSTITUTO NACIONAL DE LAS PERSONAS ADULTAS MAYORES","INSTITUTO NACIONAL DE LENGUAS INDÍGENAS",
-
-"INSTITUTO NACIONAL DE LOS PUEBLOS INDÍGENAS","INSTITUTO NACIONAL DE MEDICINA GENÓMICA","INSTITUTO NACIONAL DE MIGRACIÓN","INSTITUTO NACIONAL DE NEUROLOGÍA Y NEUROCIRUGÍA MANUEL VELASCO SUÁREZ","INSTITUTO NACIONAL DE PEDIATRÍA","INSTITUTO NACIONAL DE PERINATOLOGÍA ISIDRO ESPINOSA DE LOS REYES","INSTITUTO NACIONAL DE PSIQUIATRÍA RAMÓN DE LA FUENTE MUÑIZ","INSTITUTO NACIONAL DE REHABILITACIÓN LUIS GUILLERMO IBARRA IBARRA",
-
-"INSTITUTO NACIONAL DE SALUD PÚBLICA","INSTITUTO NACIONAL DEL SUELO SUSTENTABLE","INSTITUTO NACIONAL PARA EL DESARROLLO DE CAPACIDADES DEL SECTOR RURAL, A.C.","INSTITUTO NACIONAL PARA EL FEDERALISMO Y EL DESARROLLO MUNICIPAL","INSTITUTO NACIONAL PARA LA EDUCACIÓN DE LOS ADULTOS","INSTITUTO PARA DEVOLVER AL PUEBLO LO ROBADO","INSTITUTO PARA LA PROTECCIÓN AL AHORRO BANCARIO","INSTITUTO POLITÉCNICO NACIONAL",
-
-"INSTITUTO POTOSINO DE INVESTIGACIÓN CIENTÍFICA Y TECNOLÓGICA, A.C.","LABORATORIOS DE BIOLÓGICOS Y REACTIVOS DE MÉXICO, S.A. DE C.V.","LITIO PARA MÉXICO","LOTERÍA NACIONAL","NACIONAL FINANCIERA, S.N.C.","OFICINA DE LA PRESIDENCIA DE LA REPÚBLICA","ORGANISMO COORDINADOR DE UNIVERSIDADES PARA EL BIENESTAR BENITO JUÁREZ","ORGANISMO PROMOTOR DE INVERSIONES EN TELECOMUNICACIONES",
-
-"PATRONATO DE OBRAS E INSTALACIONES DEL IPN","PEMEX CORPORATIVO","PREVENCIÓN Y REINSERCIÓN SOCIAL","PROCURADURÍA AGRARIA","PROCURADURÍA DE LA DEFENSA DEL CONTRIBUYENTE","PROCURADURÍA FEDERAL DE LA DEFENSA DEL TRABAJO","PROCURADURÍA FEDERAL DE PROTECCIÓN AL AMBIENTE","PROCURADURÍA FEDERAL DEL CONSUMIDOR",
-
-"PRODUCTORA NACIONAL DE BIOLÓGICOS VETERINARIOS","RADIO EDUCACIÓN","REGISTRO AGRARIO NACIONAL","SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO","SECRETARÍA DE AGRICULTURA Y DESARROLLO RURAL","SECRETARÍA DE BIENESTAR","SECRETARÍA DE CULTURA","SECRETARÍA DE DESARROLLO AGRARIO, TERRITORIAL Y URBANO",
-
-"SECRETARÍA DE ECONOMÍA","SECRETARÍA DE EDUCACIÓN PÚBLICA","SECRETARÍA DE ENERGÍA","SECRETARÍA DE GOBERNACIÓN","SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO","SECRETARÍA DE INFRAESTRUCTURA, COMUNICACIONES Y TRANSPORTES","SECRETARÍA DE LA DEFENSA NACIONAL","SECRETARÍA DE MEDIO AMBIENTE Y RECURSOS NATURALES",
-
-"SECRETARÍA DE RELACIONES EXTERIORES","SECRETARÍA DE SALUD","SECRETARÍA DE SEGURIDAD Y PROTECCIÓN CIUDADANA","SECRETARÍA DE TURISMO","SECRETARÍA DEL TRABAJO Y PREVISIÓN SOCIAL","SECRETARÍA EJECUTIVA DEL SISTEMA NACIONAL ANTICORRUPCIÓN","SECRETARÍA GENERAL DEL CONSEJO NACIONAL DE POBLACIÓN","SECRETARIADO EJECUTIVO DEL SISTEMA NACIONAL DE SEGURIDAD PÚBLICA",
-
-"SEGURIDAD ALIMENTARIA MEXICANA","SERVICIO DE ADMINISTRACIÓN TRIBUTARIA","SERVICIO DE INFORMACIÓN AGROALIMENTARIA Y PESQUERA","SERVICIO DE PROTECCIÓN FEDERAL","SERVICIO GEOLÓGICO MEXICANO","SERVICIO NACIONAL DE INSPECCIÓN Y CERTIFICACIÓN DE SEMILLAS","SERVICIO NACIONAL DE SANIDAD, INOCUIDAD Y CALIDAD AGROALIMENTARIA","SERVICIO POSTAL MEXICANO",
-
-"SERVICIOS A LA NAVEGACIÓN EN EL ESPACIO AÉREO MEXICANO","SERVICIOS DE SALUD DEL IMSS-BIENESTAR","SISTEMA NACIONAL PARA EL DESARROLLO INTEGRAL DE LA FAMILIA","SISTEMA PÚBLICO DE RADIODIFUSIÓN DEL ESTADO MEXICANO","SOCIEDAD HIPOTECARIA FEDERAL, S.N.C.","TALLERES GRÁFICOS DE MÉXICO","TECNOLÓGICO NACIONAL DE MÉXICO","TELEVISIÓN METROPOLITANA, S.A. DE C.V.",
-
-"TREN MAYA, S.A. DE C.V.","TRIBUNAL FEDERAL DE CONCILIACIÓN Y ARBITRAJE","TRIBUNAL FEDERAL DE JUSTICIA FISCAL Y ADMINISTRATIVA","TRIBUNAL SUPERIOR AGRARIO","TURÍSTICA INTEGRAL ISLAS MARÍAS, S.A. DE C.V.","UNIDAD DEL SISTEMA PARA LA CARRERA DE LAS MAESTRAS Y LOS MAESTROS","UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO","UNIVERSIDAD AUTÓNOMA CHAPINGO",
-
-"UNIVERSIDAD PEDAGÓGICA NACIONAL","XE-IPN CANAL 11"
-        ];
-
-        function initAutocomplete() {
-            const ramoInput = document.getElementById('ramoUrInput');
-            const ramoSuggestions = document.getElementById('ramoUrSuggestions');
-            const depInput = document.getElementById('dependenciaInput');
-            const depSuggestions = document.getElementById('dependenciaSuggestions');
-
-            if (ramoInput && ramoSuggestions) {
-                setupAutocomplete(ramoInput, ramoSuggestions, ramosUR);
+            if (!value) {
+                suggestionsContainer.classList.remove('show');
+                return;
             }
 
-            if (depInput && depSuggestions) {
-                setupAutocomplete(depInput, depSuggestions, dependencias);
-            }
-        }
+            const filtered = dataList.filter(item => 
+                item.toLowerCase().includes(value)
+            );
 
-        function setupAutocomplete(input, suggestionsContainer, dataList) {
-            let currentFocus = -1;
-
-            input.addEventListener('input', function() {
-                const value = this.value.toLowerCase();
-                currentFocus = -1;
-                suggestionsContainer.innerHTML = '';
-
-                if (!value) {
-                    suggestionsContainer.classList.remove('show');
-                    return;
-                }
-
-                const filtered = dataList.filter(item => 
-                    item.toLowerCase().includes(value)
-                );
-
-                if (filtered.length === 0) {
-                    suggestionsContainer.innerHTML = '<div class="no-suggestions">No se encontraron coincidencias</div>';
-                    suggestionsContainer.classList.add('show');
-                    return;
-                }
-
-                filtered.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    
-                    const pos = item.toLowerCase().indexOf(value);
-                    const beforeMatch = item.substring(0, pos);
-                    const matchText = item.substring(pos, pos + value.length);
-                    const afterMatch = item.substring(pos + value.length);
-                    
-                    div.innerHTML = beforeMatch + '<span class="suggestion-highlight">' + matchText + '</span>' + afterMatch;
-                    
-                    div.addEventListener('click', function() {
-                        input.value = item;
-                        suggestionsContainer.classList.remove('show');
-                    });
-                    
-                    suggestionsContainer.appendChild(div);
-                });
-
+            if (filtered.length === 0) {
+                suggestionsContainer.innerHTML = '<div class="no-suggestions">No se encontraron coincidencias</div>';
                 suggestionsContainer.classList.add('show');
-            });
+                return;
+            }
 
-            document.addEventListener('click', function(e) {
-                if (e.target !== input && e.target !== suggestionsContainer) {
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                
+                const pos = item.toLowerCase().indexOf(value);
+                const beforeMatch = item.substring(0, pos);
+                const matchText = item.substring(pos, pos + value.length);
+                const afterMatch = item.substring(pos + value.length);
+                
+                div.innerHTML = beforeMatch + '<span class="suggestion-highlight">' + matchText + '</span>' + afterMatch;
+                
+                div.addEventListener('click', function() {
+                    input.value = item;
                     suggestionsContainer.classList.remove('show');
-                }
+                });
+                
+                suggestionsContainer.appendChild(div);
             });
-        }
 
-        // ========================================
-        // INICIALIZACIÓN
-        // ========================================
-        window.addEventListener('load', () => {
-            createParticles();
-            initAutocomplete();
+            suggestionsContainer.classList.add('show');
         });
 
-        // Cerrar modal al hacer clic fuera
-        window.addEventListener('click', (e) => {
-            const modal = document.getElementById('monthModal');
-            if (e.target === modal) {
-                closeModal();
+        document.addEventListener('click', function(e) {
+            if (e.target !== input && e.target !== suggestionsContainer) {
+                suggestionsContainer.classList.remove('show');
             }
         });
+    }
 
-        console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
+    // ========================================
+    // INICIALIZACIÓN
+    // ========================================
+    window.addEventListener('load', () => {
+        createParticles();
+        initAutocomplete();
+    });
+
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('monthModal');
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
     </script>
 </body>
 </html>
