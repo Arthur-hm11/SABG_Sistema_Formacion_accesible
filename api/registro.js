@@ -6,7 +6,26 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// ✅ CONFIGURACIÓN CRÍTICA PARA VERCEL
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '1mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
+  // ✅ Headers CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // ✅ Manejar preflight OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // ✅ SOLO acepta POST
   if (req.method !== 'POST') {
     return res.status(405).json({ 
@@ -16,14 +35,33 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ✅ LOG: Ver qué llega del frontend
-    console.log('📥 Body recibido:', JSON.stringify(req.body, null, 2));
+    // ✅ LOG COMPLETO del request
+    console.log('📥 =================================');
+    console.log('📥 METHOD:', req.method);
+    console.log('📥 HEADERS:', JSON.stringify(req.headers, null, 2));
+    console.log('📥 RAW BODY:', req.body);
+    console.log('📥 BODY TYPE:', typeof req.body);
+    console.log('📥 =================================');
 
-    // ✅ Extraer datos del body
-    const { usuario, institucion, password } = req.body;
+    // ✅ Parsear body si viene como string
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+        console.log('✅ Body parseado desde string:', body);
+      } catch (parseError) {
+        console.error('❌ Error al parsear body string:', parseError);
+        return res.status(400).json({
+          ok: false,
+          error: 'Formato de datos inválido'
+        });
+      }
+    }
 
-    // ✅ LOG: Verificar cada campo
-    console.log('🔍 Campos extraídos:', {
+    // ✅ Extraer datos
+    const { usuario, institucion, password } = body || {};
+
+    console.log('🔍 Datos extraídos:', {
       usuario: usuario || '❌ UNDEFINED',
       institucion: institucion || '❌ UNDEFINED',
       password: password ? '✅ Presente' : '❌ UNDEFINED'
@@ -36,12 +74,13 @@ export default async function handler(req, res) {
       if (!institucion) camposFaltantes.push('institucion');
       if (!password) camposFaltantes.push('password');
 
-      console.error('❌ VALIDACIÓN FALLIDA. Campos faltantes:', camposFaltantes);
+      console.error('❌ Validación fallida:', camposFaltantes);
       
       return res.status(400).json({ 
         ok: false, 
         error: `Datos incompletos. Faltan: ${camposFaltantes.join(', ')}`,
-        camposFaltantes
+        camposFaltantes,
+        bodyRecibido: body
       });
     }
 
@@ -60,11 +99,11 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('✅ Validaciones pasadas. Verificando si usuario existe...');
+    console.log('✅ Validaciones OK. Verificando existencia...');
 
     // ✅ Verificar si el usuario ya existe
     const checkQuery = 'SELECT id FROM usuarios WHERE usuario = $1';
-    const checkResult = await pool.query(checkQuery, [usuario]);
+    const checkResult = await pool.query(checkQuery, [usuario.trim()]);
 
     if (checkResult.rows.length > 0) {
       console.log('⚠️ Usuario ya existe:', usuario);
@@ -74,14 +113,14 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('✅ Usuario disponible. Hasheando contraseña...');
+    console.log('✅ Usuario disponible. Hasheando password...');
 
-    // ✅ Hashear la contraseña
+    // ✅ Hashear password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    console.log('✅ Contraseña hasheada. Insertando en base de datos...');
+    console.log('✅ Password hasheado. Insertando...');
 
-    // ✅ Insertar nuevo usuario
+    // ✅ Insertar usuario
     const insertQuery = `
       INSERT INTO usuarios (usuario, institucion, password, rol, created_at)
       VALUES ($1, $2, $3, 'enlace', NOW())
@@ -89,18 +128,16 @@ export default async function handler(req, res) {
     `;
 
     const insertResult = await pool.query(insertQuery, [
-      usuario,
-      institucion,
+      usuario.trim(),
+      institucion.trim(),
       hashedPassword
     ]);
 
     const nuevoUsuario = insertResult.rows[0];
 
-    console.log('✅ REGISTRO EXITOSO:', {
+    console.log('✅ ¡REGISTRO EXITOSO!', {
       id: nuevoUsuario.id,
-      usuario: nuevoUsuario.usuario,
-      institucion: nuevoUsuario.institucion,
-      rol: nuevoUsuario.rol
+      usuario: nuevoUsuario.usuario
     });
 
     // ✅ Respuesta exitosa
@@ -117,27 +154,27 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('💥 ERROR EN REGISTRO:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('💥 ERROR CRÍTICO:', error);
+    console.error('Stack:', error.stack);
 
-    // Errores específicos de PostgreSQL
+    // Errores PostgreSQL
     if (error.code === '23505') {
       return res.status(409).json({ 
         ok: false, 
-        error: 'El usuario ya existe en la base de datos' 
+        error: 'El usuario ya existe' 
       });
     }
 
     if (error.code === '42P01') {
       return res.status(500).json({ 
         ok: false, 
-        error: 'Error de configuración: tabla usuarios no encontrada' 
+        error: 'Tabla usuarios no encontrada' 
       });
     }
 
     return res.status(500).json({
       ok: false,
-      error: 'Error interno del servidor al procesar el registro',
+      error: 'Error interno del servidor',
       detalles: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
