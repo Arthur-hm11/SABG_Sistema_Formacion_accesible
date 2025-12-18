@@ -3901,7 +3901,7 @@ window.addEventListener('load', initAutocomplete);
    =============================== */
 const API_REGISTRO_USUARIO = "/api/registro";
 const API_LOGIN = "/api/login";
-const API_LOGS = "/api/logs"; // SOLO PARA AUDITORÍA / LOGS
+const API_LOGS = "/api/logs"; // SOLO AUDITORÍA
 
 /* ===============================
    CONTROL MODAL REGISTRO
@@ -3971,6 +3971,14 @@ async function registrarUsuario() {
     alert("✅ Usuario registrado correctamente");
     cerrarRegistro();
 
+    // 🔎 Log opcional (NO rompe nada)
+    guardarTodo({
+      tipo: "registro_usuario",
+      usuario,
+      institucion,
+      fecha: new Date().toISOString()
+    });
+
   } catch (error) {
     console.error("❌ Error de conexión:", error);
     alert("❌ Error de conexión con el servidor");
@@ -4012,6 +4020,13 @@ async function loginUsuario() {
         alert("✅ Bienvenido " + usuario);
       }, 1200);
 
+      // 🔎 Log de login
+      guardarTodo({
+        tipo: "login",
+        usuario,
+        fecha: new Date().toISOString()
+      });
+
     } else {
       alert("❌ " + (result.message || "Credenciales incorrectas"));
     }
@@ -4023,7 +4038,7 @@ async function loginUsuario() {
 }
 
 /* ===============================
-   LOGS / AUDITORÍA (SEPARADO)
+   LOGS / AUDITORÍA (AISLADO)
    =============================== */
 async function guardarTodo(data) {
   try {
@@ -4033,12 +4048,11 @@ async function guardarTodo(data) {
       body: JSON.stringify(data)
     });
 
-    const result = await res.json();
-
     if (!res.ok) {
-      console.error("❌ Error al guardar log:", result);
+      const text = await res.text();
+      console.error("❌ Error guardando log:", text);
     } else {
-      console.log("✅ Log guardado:", result);
+      console.log("📝 Log guardado correctamente");
     }
 
   } catch (error) {
