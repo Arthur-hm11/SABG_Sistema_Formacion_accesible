@@ -2442,46 +2442,41 @@
     </div>
 
     <!-- ⬇️ MODAL REGISTRO USUARIO ⬇️ -->
-    <div id="registroModal" class="modal hidden">
-        <div class="modal-content">
-            <h3>📝 Registro de Usuario</h3>
+   <div id="registroModal" class="modal hidden">
+    <div class="modal-content">
+        <h3>📝 Registro de Usuario</h3>
+        
+        <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
+            <input
+                id="reg_usuario"
+                type="text"
+                placeholder="Usuario (mínimo 3 caracteres)"
+                required
+                minlength="3"
+            />
             
-            <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
-                <input
-                    id="reg_usuario"
-                    name="usuario"
-                    type="text"
-                    placeholder="Usuario (mínimo 3 caracteres)"
-                    autocomplete="username"
-                    required
-                    minlength="3"
-                />
-                
-                <input
-                    id="reg_institucion"
-                    name="institucion"
-                    type="text"
-                    placeholder="Institución"
-                    required
-                />
-                
-                <input
-                    id="reg_password"
-                    name="password"
-                    type="password"
-                    placeholder="Contraseña (mínimo 6 caracteres)"
-                    autocomplete="new-password"
-                    required
-                    minlength="6"
-                />
-                
-                <div class="modal-actions">
-                    <button type="submit">Registrar</button>
-                    <button type="button" onclick="cerrarRegistro()">Cancelar</button>
-                </div>
-            </form>
-        </div>
+            <input
+                id="reg_institucion"
+                type="text"
+                placeholder="Institución"
+                required
+            />
+            
+            <input
+                id="reg_password"
+                type="password"
+                placeholder="Contraseña (mínimo 6 caracteres)"
+                required
+                minlength="6"
+            />
+            
+            <div class="modal-actions">
+                <button type="submit">Registrar</button>
+                <button type="button" onclick="cerrarRegistro()">Cancelar</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <div class="fab" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" role="button" tabindex="0">⬆️</div>
 
@@ -2568,79 +2563,69 @@
         }
 
         // Registro de Usuario (SIN BACKEND - usando localStorage)
-        function registrarUsuario() {
-            console.log("🚀 Iniciando registro de usuario");
-            
-            const usuario = document.getElementById("reg_usuario").value.trim();
-            const institucion = document.getElementById("reg_institucion").value.trim();
-            const password = document.getElementById("reg_password").value.trim();
+       function registrarUsuario() {
+    console.log("🚀 Iniciando registro de usuario");
+    
+    const usuarioInput = document.getElementById("reg_usuario");
+    const institucionInput = document.getElementById("reg_institucion");
+    const passwordInput = document.getElementById("reg_password");
 
-            if (!usuario || !institucion || !password) {
-                alert("❌ Completa todos los campos");
-                return;
-            }
+    // Verificar que los elementos existan
+    if (!usuarioInput || !institucionInput || !passwordInput) {
+        console.error("❌ No se encontraron los campos del formulario");
+        alert("❌ Error: Campos del formulario no encontrados");
+        return;
+    }
 
-            if (usuario.length < 3) {
-                alert("❌ El usuario debe tener al menos 3 caracteres");
-                return;
-            }
+    const usuario = usuarioInput.value.trim();
+    const institucion = institucionInput.value.trim();
+    const password = passwordInput.value.trim();
 
-            if (password.length < 6) {
-                alert("❌ La contraseña debe tener al menos 6 caracteres");
-                return;
-            }
+    console.log("📝 Valores capturados:", { usuario, institucion, password: "***" });
 
-            // Guardar en localStorage (temporal, sin backend)
-            const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
-            
-            if (usuariosGuardados[usuario.toUpperCase()]) {
-                alert("❌ El usuario ya existe");
-                return;
-            }
+    if (!usuario || !institucion || !password) {
+        alert("❌ Completa todos los campos");
+        return;
+    }
 
-            usuariosGuardados[usuario.toUpperCase()] = {
-                password: password,
-                role: 'enlace',
-                dependencia: institucion,
-                nombre: usuario
-            };
+    if (usuario.length < 3) {
+        alert("❌ El usuario debe tener al menos 3 caracteres");
+        return;
+    }
 
-            localStorage.setItem("usuarios", JSON.stringify(usuariosGuardados));
-            
-            alert("✅ Usuario registrado correctamente");
-            cerrarRegistro();
-            
-            console.log("✅ Usuario registrado:", usuario);
+    if (password.length < 6) {
+        alert("❌ La contraseña debe tener al menos 6 caracteres");
+        return;
+    }
+
+    try {
+        // Guardar en localStorage (temporal, sin backend)
+        const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
+        
+        if (usuariosGuardados[usuario.toUpperCase()]) {
+            alert("❌ El usuario ya existe");
+            return;
         }
 
-        // Login de Usuario
-        function loginUsuario() {
-            try {
-                const usuario = document.getElementById("usuario").value.trim();
-                const password = document.getElementById("password").value.trim();
+        usuariosGuardados[usuario.toUpperCase()] = {
+            password: password,
+            role: 'enlace',
+            dependencia: institucion,
+            nombre: usuario
+        };
 
-                if (!usuario || !password) {
-                    alert("❌ Completa todos los campos");
-                    return;
-                }
-
-                // Cargar usuarios guardados de localStorage
-                const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
-                const todosLosUsuarios = { ...usuarios, ...usuariosGuardados };
-                
-                const user = todosLosUsuarios[usuario.toUpperCase()];
-                
-                if (user && user.password === password) {
-                    localStorage.setItem("SABG_TOKEN", "token_" + Date.now());
-                    localStorage.setItem("SABG_USUARIO", usuario);
-                    
-                    document.getElementById("loadingOverlay").classList.add("active");
-                    
-                    setTimeout(() => {
-                        userRole = user.role;
-                        userDependencia = user.dependencia;
-                        userName = user.nombre;
-                        
+        localStorage.setItem("usuarios", JSON.stringify(usuariosGuardados));
+        
+        console.log("✅ Usuario registrado exitosamente:", usuario);
+        alert("✅ Usuario registrado correctamente\n\nUsuario: " + usuario + "\nInstitución: " + institucion);
+        
+        cerrarRegistro();
+        
+    } catch (error) {
+        console.error("❌ Error al registrar:", error);
+        alert("❌ Error al registrar el usuario");
+    }
+}
                         // Configurar interfaz según rol
                         if (userRole === 'superadmin') {
                             document.getElementById('userName').textContent = '👤 ' + user.nombre;
