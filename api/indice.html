@@ -3749,10 +3749,52 @@ async function guardarTodo(data) {
   }
 }
 
-/* ===============================
-   LOGIN REAL (NUEVO)
-   =============================== */
+<!-- ===============================
+     MODAL REGISTRO USUARIO
+     =============================== -->
+<div id="registroModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-content">
+
+    <h3>📝 Registro de Usuario</h3>
+
+    <input
+      id="reg_usuario"
+      type="text"
+      placeholder="Usuario"
+      autocomplete="username"
+      required
+    />
+
+    <input
+      id="reg_institucion"
+      type="text"
+      placeholder="Institución"
+      required
+    />
+
+    <input
+      id="reg_password"
+      type="password"
+      placeholder="Contraseña"
+      autocomplete="new-password"
+      required
+    />
+
+    <div class="modal-actions">
+      <button type="button" onclick="registrarUsuario()">Registrar</button>
+      <button type="button" onclick="cerrarRegistro()">Cancelar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===============================
+     LOGIN + REGISTRO (JS)
+     =============================== -->
 <script>
+/* ===============================
+   LOGIN REAL
+   =============================== */
 async function loginUsuario() {
   try {
     const usuario = document.querySelector("#username").value;
@@ -3766,6 +3808,7 @@ async function loginUsuario() {
 
     const result = await res.json();
 
+    // Guardar intento de login
     guardarTodo({
       tipo: "login",
       usuario,
@@ -3780,11 +3823,15 @@ async function loginUsuario() {
     } else {
       alert("Error de login");
     }
+
   } catch (error) {
     console.error("Error login:", error);
   }
 }
 
+/* ===============================
+   MOSTRAR / CERRAR MODAL
+   =============================== */
 function mostrarRegistro() {
   document.getElementById("registroModal").classList.remove("hidden");
 }
@@ -3793,6 +3840,9 @@ function cerrarRegistro() {
   document.getElementById("registroModal").classList.add("hidden");
 }
 
+/* ===============================
+   REGISTRO DE USUARIO
+   =============================== */
 async function registrarUsuario() {
   const usuario = document.getElementById("reg_usuario").value;
   const institucion = document.getElementById("reg_institucion").value;
@@ -3803,34 +3853,24 @@ async function registrarUsuario() {
     return;
   }
 
-  const res = await fetch("/api/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuario, institucion, password })
-  });
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario, institucion, password })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (res.ok) {
-    alert("Usuario registrado correctamente");
-    cerrarRegistro();
-  } else {
-    alert(data.error || "Error al registrar");
+    if (res.ok) {
+      alert("Usuario registrado correctamente");
+      cerrarRegistro();
+    } else {
+      alert(data.error || "Error al registrar");
+    }
+
+  } catch (error) {
+    console.error("Error registro:", error);
   }
 }
 </script>
-<!-- MODAL REGISTRO USUARIO -->
-<div id="registroModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>Registro de Usuario</h3>
-
-    <input id="reg_usuario" placeholder="Usuario" />
-    <input id="reg_institucion" placeholder="Institución" />
-    <input id="reg_password" type="password" placeholder="Contraseña" />
-
-    <button onclick="registrarUsuario()">Registrar</button>
-    <button onclick="cerrarRegistro()">Cancelar</button>
-  </div>
-</div>ya quedo seguims
-</body>
-</html>
