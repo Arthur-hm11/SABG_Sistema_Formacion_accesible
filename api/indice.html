@@ -3911,46 +3911,94 @@ function cerrarRegistro() {
 }
 
 /* ===============================
-   REGISTRO DE USUARIO
+   REGISTRO DE USUARIO - CORREGIDO
    =============================== */
 async function registrarUsuario() {
+  console.log('🚀 Iniciando registro...');
+  
+  // Obtener valores de los inputs
   const usuario = document.getElementById("reg_usuario").value.trim();
   const institucion = document.getElementById("reg_institucion").value.trim();
   const password = document.getElementById("reg_password").value.trim();
 
-  // Validación
+  // LOG: Verificar qué se capturó
+  console.log('📋 Datos capturados del formulario:', {
+    usuario: usuario || '❌ VACÍO',
+    institucion: institucion || '❌ VACÍO',
+    password: password ? '✅ Presente (' + password.length + ' caracteres)' : '❌ VACÍO'
+  });
+
+  // Validación en frontend
   if (!usuario || !institucion || !password) {
-    alert("❌ Por favor completa todos los campos");
+    const camposFaltantes = [];
+    if (!usuario) camposFaltantes.push('Usuario');
+    if (!institucion) camposFaltantes.push('Institución');
+    if (!password) camposFaltantes.push('Contraseña');
+    
+    alert("❌ Por favor completa todos los campos:\n\n" + camposFaltantes.join('\n'));
     return;
   }
 
+  if (usuario.length < 3) {
+    alert("❌ El usuario debe tener al menos 3 caracteres");
+    return;
+  }
+
+  if (password.length < 6) {
+    alert("❌ La contraseña debe tener al menos 6 caracteres");
+    return;
+  }
+
+  // Preparar datos para enviar
+  const datos = {
+    usuario: usuario,
+    institucion: institucion,
+    password: password
+  };
+
+  console.log('📤 Datos a enviar al backend:', datos);
+
   try {
+    console.log('🌐 Enviando POST a /api/registro...');
+    
     const res = await fetch(API_REGISTRO, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usuario, institucion, password })
+      headers: { 
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(datos)
     });
 
+    console.log('📨 Respuesta HTTP recibida. Status:', res.status);
+
     let data;
-    try {
+    const contentType = res.headers.get("content-type");
+    
+    if (contentType && contentType.includes("application/json")) {
       data = await res.json();
-    } catch (parseError) {
-      console.error("Error al parsear JSON:", parseError);
-      alert("❌ Error del servidor al procesar la respuesta");
+      console.log('📦 Datos JSON parseados:', data);
+    } else {
+      const text = await res.text();
+      console.error('⚠️ Respuesta no es JSON:', text);
+      alert("❌ Error del servidor: respuesta no válida");
       return;
     }
 
     if (res.ok && data.ok) {
-      alert("✅ Usuario registrado correctamente\n\nYa puedes iniciar sesión con tus credenciales");
+      console.log('✅ REGISTRO EXITOSO');
+      alert("✅ Usuario registrado correctamente\n\n" + 
+            "Usuario: " + usuario + "\n" +
+            "Institución: " + institucion + "\n\n" +
+            "Ya puedes iniciar sesión con tus credenciales");
       cerrarRegistro();
     } else {
-      console.error("Error en registro:", data);
-      alert("❌ " + (data.error || "Error al registrar usuario"));
+      console.error('❌ Error en registro:', data);
+      alert("❌ Error al registrar:\n\n" + (data.error || "Error desconocido"));
     }
 
   } catch (error) {
-    console.error("Error de conexión:", error);
-    alert("❌ Error de conexión al servidor");
+    console.error("💥 Error de conexión:", error);
+    alert("❌ Error de conexión al servidor\n\nDetalles: " + error.message);
   }
 }
 
