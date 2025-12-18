@@ -2973,7 +2973,42 @@
             Para soporte técnico: correo[arroba]institucional[punto]gob[punto]mx
         </p>
     </footer>
+<!-- MODAL REGISTRO USUARIO -->
+<div id="registroModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>📝 Registro de Usuario</h3>
+    
+    <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
+      <input
+        id="reg_usuario"
+        type="text"
+        placeholder="Usuario"
+        autocomplete="username"
+        required
+      />
 
+      <input
+        id="reg_institucion"
+        type="text"
+        placeholder="Institución"
+        required
+      />
+
+      <input
+        id="reg_password"
+        type="password"
+        placeholder="Contraseña"
+        autocomplete="new-password"
+        required
+      />
+
+      <div class="modal-actions">
+        <button type="submit">Registrar</button>
+        <button type="button" onclick="cerrarRegistro()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
     <script>
         // Sistema de roles y dependencias
         let userRole = 'enlace';
