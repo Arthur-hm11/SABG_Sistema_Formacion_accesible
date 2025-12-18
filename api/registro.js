@@ -24,8 +24,11 @@ export default async function handler(req, res) {
 
     res.json({ ok: true });
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Usuario ya existe o error" });
+ catch (error) {
+  if (error.code === "23505") { // Postgres UNIQUE violation
+    return res.status(409).json({ error: "El usuario ya existe" });
   }
+
+  console.error(error);
+  return res.status(500).json({ error: "Error interno al registrar usuario" });
 }
