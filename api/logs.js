@@ -15,25 +15,34 @@ export default async function handler(req, res) {
     usuario,
     exito,
     mensaje,
-    momento,
-    pagina,
-    navegador
+    momento
   } = req.body || {};
+
+  if (!tipo || !usuario) {
+    return res.status(400).json({ ok: false });
+  }
 
   try {
     await pool.query(
       `
       INSERT INTO registros_formacion
-      (tipo, usuario, exito, mensaje, momento, pagina, navegador)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      (tipo, usuario, exito, mensaje, created_at)
+      VALUES ($1,$2,$3,$4,$5)
       `,
-      [tipo, usuario, exito, mensaje, momento, pagina, navegador]
+      [
+        tipo,
+        usuario,
+        exito ?? null,
+        mensaje ?? null,
+        momento ? new Date(momento) : new Date()
+      ]
     );
 
     return res.json({ ok: true });
 
   } catch (error) {
-    console.error("ERROR /api/logs:", error);
+    console.error("ERROR LOG:", error);
     return res.status(500).json({ ok: false });
   }
 }
+
