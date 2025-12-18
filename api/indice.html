@@ -3870,136 +3870,8 @@ window.addEventListener('load', initAutocomplete);
 /* ===============================
    ENDPOINTS
    =============================== */
-const API_SABG = "/api/logs";
+const API_REGISTRO = "/api/registro";
 const API_LOGIN = "/api/login";
-
-<!-- MODAL REGISTRO USUARIO -->
-<div id="registroModal" class="modal hidden" role="dialog" aria-modal="true">
-  <div class="modal-content">
-    <h3>📝 Registro de Usuario</h3>
-
-    <input
-      id="reg_usuario"
-      type="text"
-      placeholder="Usuario"
-      autocomplete="username"
-      required
-    />
-
-    <input
-      id="reg_institucion"
-      type="text"
-      placeholder="Institución"
-      required
-    />
-
-    <input
-      id="reg_password"
-      type="password"
-      placeholder="Contraseña"
-      autocomplete="new-password"
-      required
-    />
-
-    <div class="modal-actions">
-      <button type="button" onclick="registrarUsuario()">Registrar</button>
-      <button type="button" onclick="cerrarRegistro()">Cancelar</button>
-    </div>
-  </div>
-</div>
-<script>
-/* ===============================
-   FUNCIÓN PARA GUARDAR TODO
-   =============================== */
-async function guardarTodo(data) {
-  try {
-    const res = await fetch("/api/logs", {   // ⬅️ OJO: NO /api/registro
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Error al guardar LOG:", text);
-      return;
-    }
-
-    const json = await res.json();
-    console.log("Log guardado OK:", json);
-
-  } catch (error) {
-    console.error("Error de conexión LOG:", error);
-  }
-}
-
-/* ===============================
-   GUARDAR EVENTOS (CONTROLADO)
-   =============================== */
-async function guardarTodo(data) {
-  try {
-    await fetch("/api/registro", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-  } catch (error) {
-    console.warn("Registro omitido:", error);
-  }
-}
-
-/* ===============================
-   LOGIN REAL + JWT
-   =============================== */
-async function loginUsuario() {
-  try {
-    const usuario = document.getElementById("usuario").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!usuario || !password) {
-      alert("❌ Por favor completa todos los campos");
-      return;
-    }
-
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usuario, password })
-    });
-
-    const result = await res.json();
-
-    // Auditoría SOLO en login
-    guardarTodo({
-      tipo: "login",
-      usuario,
-      exito: result.ok,
-      mensaje: result.message || result.error,
-      momento: new Date().toISOString()
-    });
-
-    if (result.ok) {
-      localStorage.setItem("SABG_TOKEN", result.token);
-      localStorage.setItem("SABG_USUARIO", usuario);
-      
-      // Ocultar pantalla de login
-      document.getElementById("loadingOverlay").classList.add("active");
-      
-      setTimeout(() => {
-        document.getElementById("loadingOverlay").classList.remove("active");
-        document.getElementById("loginScreen").classList.add("hidden");
-        alert("✅ ¡Bienvenido " + usuario + "!");
-      }, 1500);
-      
-    } else {
-      alert("❌ " + (result.message || result.error || "Error de login"));
-    }
-
-  } catch (error) {
-    console.error("Error login:", error);
-    alert("❌ Error de conexión al servidor");
-  }
-}
 
 /* ===============================
    CONTROL MODAL REGISTRO
@@ -4031,20 +3903,17 @@ async function registrarUsuario() {
   }
 
   try {
-    const res = await fetch("/api/registro", {
+    const res = await fetch(API_REGISTRO, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        usuario: usuario,
-        institucion: institucion,
-        password: password
-      })
+      body: JSON.stringify({ usuario, institucion, password })
     });
 
     let data;
     try {
       data = await res.json();
-    } catch {
+    } catch (parseError) {
+      console.error("Error al parsear JSON:", parseError);
       alert("❌ Error del servidor al procesar la respuesta");
       return;
     }
@@ -4053,17 +3922,18 @@ async function registrarUsuario() {
       alert("✅ Usuario registrado correctamente\n\nYa puedes iniciar sesión con tus credenciales");
       cerrarRegistro();
     } else {
+      console.error("Error en registro:", data);
       alert("❌ " + (data.error || "Error al registrar usuario"));
     }
 
   } catch (error) {
-    console.error("Error registro:", error);
+    console.error("Error de conexión:", error);
     alert("❌ Error de conexión al servidor");
   }
 }
 
 /* ===============================
-   LOGIN REAL + JWT
+   LOGIN CON JWT
    =============================== */
 async function loginUsuario() {
   try {
@@ -4075,7 +3945,7 @@ async function loginUsuario() {
       return;
     }
 
-    const res = await fetch("/api/login", {
+    const res = await fetch(API_LOGIN, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ usuario, password })
