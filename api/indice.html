@@ -3735,30 +3735,6 @@ window.addEventListener('load', initAutocomplete);
 const API_REGISTRO = "/api/registro";
 const API_LOGIN = "/api/login";
 
-/* ===============================
-   GUARDAR TODO (YA EXISTE)
-   =============================== */
-async function guardarTodo(data) {
-  try {
-    const res = await fetch(API_REGISTRO, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Respuesta backend:", text);
-    } else {
-      const json = await res.json();
-      console.log("Guardado OK:", json);
-    }
-
-  } catch (error) {
-    console.error("Error fetch:", error);
-  }
-}
-
 <!-- ===============================
      MODAL REGISTRO USUARIO
      =============================== -->
@@ -3798,17 +3774,29 @@ async function guardarTodo(data) {
   </div>
 </div>
 
-<!-- ===============================
-     LOGIN + REGISTRO (JS)
-     =============================== -->
 <script>
 /* ===============================
-   LOGIN REAL
+   GUARDAR EVENTOS (CONTROLADO)
+   =============================== */
+async function guardarTodo(data) {
+  try {
+    await fetch("/api/registro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+  } catch (error) {
+    console.warn("Registro omitido:", error);
+  }
+}
+
+/* ===============================
+   LOGIN REAL + JWT
    =============================== */
 async function loginUsuario() {
   try {
-    const usuario = document.querySelector("#username").value;
-    const password = document.querySelector("#password").value;
+    const usuario = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
 
     const res = await fetch("/api/login", {
       method: "POST",
@@ -3818,7 +3806,7 @@ async function loginUsuario() {
 
     const result = await res.json();
 
-    // Guardar intento
+    // Auditoría SOLO en login
     guardarTodo({
       tipo: "login",
       usuario,
@@ -3828,10 +3816,8 @@ async function loginUsuario() {
     });
 
     if (result.ok) {
-      // 👉 GUARDAR TOKEN
       localStorage.setItem("SABG_TOKEN", result.token);
       localStorage.setItem("SABG_USUARIO", usuario);
-
       window.location.href = "/"; // dashboard
     } else {
       alert(result.message || "Error de login");
@@ -3843,7 +3829,7 @@ async function loginUsuario() {
 }
 
 /* ===============================
-   MOSTRAR / CERRAR MODAL
+   CONTROL MODAL REGISTRO
    =============================== */
 function mostrarRegistro() {
   document.getElementById("registroModal").classList.remove("hidden");
