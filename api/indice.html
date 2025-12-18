@@ -3776,6 +3776,32 @@ const API_LOGIN = "/api/login";
 
 <script>
 /* ===============================
+   FUNCIÓN PARA GUARDAR TODO
+   =============================== */
+async function guardarTodo(data) {
+  try {
+    const res = await fetch("/api/logs", {   // 🔧 ENDPOINT CORRECTO
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    if (!result.ok) {
+      console.error("Error al guardar en BD:", result);
+    } else {
+      console.log("Registro guardado en Postgres");
+    }
+
+  } catch (error) {
+    console.error("Error de conexión:", error);
+  }
+}
+
+/* ===============================
    GUARDAR EVENTOS (CONTROLADO)
    =============================== */
 async function guardarTodo(data) {
