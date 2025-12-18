@@ -13,22 +13,38 @@ export default async function handler(req, res) {
 
   const { usuario, institucion, password } = req.body;
 
+  if (!usuario || !institucion || !password) {
+    return res.status(400).json({ error: "Datos incompletos" });
+  }
+
   try {
     const hash = await bcrypt.hash(password, 10);
 
     await pool.query(
       `INSERT INTO usuarios (usuario, institucion, password_hash)
-       VALUES ($1,$2,$3)`,
+       VALUES ($1, $2, $3)`,
       [usuario, institucion, hash]
     );
 
-    res.json({ ok: true });
+    return res.status(201).json({
+      ok: true,
+      message: "Usuario registrado correctamente"
+    });
 
- catch (error) {
-  if (error.code === "23505") { // Postgres UNIQUE violation
-    return res.status(409).json({ error: "El usuario ya existe" });
+  } catch (error) {
+    // 🔐 Usuario duplicado
+    if (error.code === "23505") {
+      return res.status(409).json({
+        ok: false,
+        error: "El usuario ya existe"
+      });
+    }
+
+    console.error("ERROR REGISTER:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: "Error interno del servidor"
+    });
   }
-
-  console.error(error);
-  return res.status(500).json({ error: "Error interno al registrar usuario" });
 }
