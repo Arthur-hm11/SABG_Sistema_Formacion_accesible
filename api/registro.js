@@ -15,47 +15,60 @@ export default async function handler(req, res) {
     });
   }
 
-  // 👀 LOG DE DEPURACIÓN - Ver qué llega
-  console.log("📦 Body recibido:", req.body);
-  console.log("📦 Headers:", req.headers);
+  // 👀 LOG 1: Ver qué llega exactamente
+  console.log("📦 Body recibido (raw):", req.body);
+  console.log("📦 Tipo de req.body:", typeof req.body);
 
   // 🔎 Extraer datos
   const { usuario, institucion, password } = req.body || {};
 
-  // 👀 LOG - Ver qué se extrajo
-  console.log("📝 Datos extraídos:", { 
-    usuario, 
-    institucion, 
-    password: password ? "***" : undefined 
-  });
+  // 👀 LOG 2: Ver qué se extrajo
+  console.log("📝 Datos extraídos:");
+  console.log("  - usuario:", usuario, "(tipo:", typeof usuario, ")");
+  console.log("  - institucion:", institucion, "(tipo:", typeof institucion, ")");
+  console.log("  - password:", password ? "***" : undefined, "(tipo:", typeof password, ")");
 
-  // 🧹 Normalizar
+  // 🧹 Normalizar (trim)
   const usuarioLimpio = usuario?.trim();
   const institucionLimpia = institucion?.trim();
 
-  // 👀 LOG - Ver después del trim
-  console.log("✂️ Datos normalizados:", { 
-    usuarioLimpio, 
-    institucionLimpia, 
-    password: password ? "***" : undefined 
-  });
+  // 👀 LOG 3: Ver después del trim
+  console.log("✂️ Datos después de trim:");
+  console.log("  - usuarioLimpio:", usuarioLimpio);
+  console.log("  - institucionLimpia:", institucionLimpia);
+  console.log("  - password existe:", !!password);
 
-  // 🚨 Validación estricta
-  if (!usuarioLimpio || !institucionLimpia || !password) {
-    console.error("❌ VALIDACIÓN FALLÓ - Datos incompletos");
-    console.error("❌ usuarioLimpio:", usuarioLimpio);
-    console.error("❌ institucionLimpia:", institucionLimpia);
-    console.error("❌ password:", password ? "existe" : "NO EXISTE");
-    
+  // 🚨 Validación estricta con logs detallados
+  if (!usuarioLimpio) {
+    console.error("❌ FALTA: usuario");
     return res.status(400).json({
       ok: false,
-      error: "Datos incompletos"
+      error: "Datos incompletos: falta usuario"
     });
   }
+
+  if (!institucionLimpia) {
+    console.error("❌ FALTA: institucion");
+    return res.status(400).json({
+      ok: false,
+      error: "Datos incompletos: falta institución"
+    });
+  }
+
+  if (!password) {
+    console.error("❌ FALTA: password");
+    return res.status(400).json({
+      ok: false,
+      error: "Datos incompletos: falta contraseña"
+    });
+  }
+
+  console.log("✅ Validación OK - Procediendo a guardar...");
 
   try {
     // 🔐 Hash de contraseña
     const hash = await bcrypt.hash(password, 10);
+    console.log("🔐 Hash generado");
 
     // 📥 Insertar usuario
     await pool.query(
@@ -64,8 +77,9 @@ export default async function handler(req, res) {
       [usuarioLimpio, institucionLimpia, hash]
     );
 
+    console.log("✅ Usuario insertado en BD:", usuarioLimpio);
+
     // ✅ Respuesta OK
-    console.log("✅ Usuario registrado exitosamente:", usuarioLimpio);
     return res.status(201).json({
       ok: true,
       message: "Usuario registrado correctamente"
@@ -82,7 +96,7 @@ export default async function handler(req, res) {
     }
 
     // ❌ Error real
-    console.error("💥 ERROR /api/registro:", error);
+    console.error("💥 ERROR en BD:", error);
     return res.status(500).json({
       ok: false,
       error: "Error interno del servidor"
