@@ -1,5 +1,5 @@
-import bcrypt from "bcryptjs";
-import { Pool } from "pg";
+import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -7,99 +7,138 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
-  // 🔒 Solo POST
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      ok: false,
-      error: "Método no permitido"
+  // ✅ SOLO acepta POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      ok: false, 
+      error: 'Método no permitido. Use POST.' 
     });
   }
-
-  // 👀 LOG 1: Ver qué llega exactamente
-  console.log("📦 Body recibido (raw):", req.body);
-  console.log("📦 Tipo de req.body:", typeof req.body);
-
-  // 🔎 Extraer datos
-  const { usuario, institucion, password } = req.body || {};
-
-  // 👀 LOG 2: Ver qué se extrajo
-  console.log("📝 Datos extraídos:");
-  console.log("  - usuario:", usuario, "(tipo:", typeof usuario, ")");
-  console.log("  - institucion:", institucion, "(tipo:", typeof institucion, ")");
-  console.log("  - password:", password ? "***" : undefined, "(tipo:", typeof password, ")");
-
-  // 🧹 Normalizar (trim)
-  const usuarioLimpio = usuario?.trim();
-  const institucionLimpia = institucion?.trim();
-
-  // 👀 LOG 3: Ver después del trim
-  console.log("✂️ Datos después de trim:");
-  console.log("  - usuarioLimpio:", usuarioLimpio);
-  console.log("  - institucionLimpia:", institucionLimpia);
-  console.log("  - password existe:", !!password);
-
-  // 🚨 Validación estricta con logs detallados
-  if (!usuarioLimpio) {
-    console.error("❌ FALTA: usuario");
-    return res.status(400).json({
-      ok: false,
-      error: "Datos incompletos: falta usuario"
-    });
-  }
-
-  if (!institucionLimpia) {
-    console.error("❌ FALTA: institucion");
-    return res.status(400).json({
-      ok: false,
-      error: "Datos incompletos: falta institución"
-    });
-  }
-
-  if (!password) {
-    console.error("❌ FALTA: password");
-    return res.status(400).json({
-      ok: false,
-      error: "Datos incompletos: falta contraseña"
-    });
-  }
-
-  console.log("✅ Validación OK - Procediendo a guardar...");
 
   try {
-    // 🔐 Hash de contraseña
-    const hash = await bcrypt.hash(password, 10);
-    console.log("🔐 Hash generado");
+    // ✅ LOG: Ver qué llega del frontend
+    console.log('📥 Body recibido:', JSON.stringify(req.body, null, 2));
 
-    // 📥 Insertar usuario
-    await pool.query(
-      `INSERT INTO usuarios (usuario, institucion, password_hash)
-       VALUES ($1, $2, $3)`,
-      [usuarioLimpio, institucionLimpia, hash]
-    );
+    // ✅ Extraer datos del body
+    const { usuario, institucion, password } = req.body;
 
-    console.log("✅ Usuario insertado en BD:", usuarioLimpio);
-
-    // ✅ Respuesta OK
-    return res.status(201).json({
-      ok: true,
-      message: "Usuario registrado correctamente"
+    // ✅ LOG: Verificar cada campo
+    console.log('🔍 Campos extraídos:', {
+      usuario: usuario || '❌ UNDEFINED',
+      institucion: institucion || '❌ UNDEFINED',
+      password: password ? '✅ Presente' : '❌ UNDEFINED'
     });
 
-  } catch (error) {
-    // 🚫 Usuario duplicado
-    if (error.code === "23505") {
-      console.error("⚠️ Usuario duplicado:", usuarioLimpio);
-      return res.status(409).json({
-        ok: false,
-        error: "El usuario ya existe"
+    // ✅ Validación estricta
+    if (!usuario || !institucion || !password) {
+      const camposFaltantes = [];
+      if (!usuario) camposFaltantes.push('usuario');
+      if (!institucion) camposFaltantes.push('institucion');
+      if (!password) camposFaltantes.push('password');
+
+      console.error('❌ VALIDACIÓN FALLIDA. Campos faltantes:', camposFaltantes);
+      
+      return res.status(400).json({ 
+        ok: false, 
+        error: `Datos incompletos. Faltan: ${camposFaltantes.join(', ')}`,
+        camposFaltantes
       });
     }
 
-    // ❌ Error real
-    console.error("💥 ERROR en BD:", error);
+    // ✅ Validación de longitud
+    if (usuario.trim().length < 3) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'El usuario debe tener al menos 3 caracteres' 
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'La contraseña debe tener al menos 6 caracteres' 
+      });
+    }
+
+    console.log('✅ Validaciones pasadas. Verificando si usuario existe...');
+
+    // ✅ Verificar si el usuario ya existe
+    const checkQuery = 'SELECT id FROM usuarios WHERE usuario = $1';
+    const checkResult = await pool.query(checkQuery, [usuario]);
+
+    if (checkResult.rows.length > 0) {
+      console.log('⚠️ Usuario ya existe:', usuario);
+      return res.status(409).json({ 
+        ok: false, 
+        error: 'El usuario ya está registrado' 
+      });
+    }
+
+    console.log('✅ Usuario disponible. Hasheando contraseña...');
+
+    // ✅ Hashear la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    console.log('✅ Contraseña hasheada. Insertando en base de datos...');
+
+    // ✅ Insertar nuevo usuario
+    const insertQuery = `
+      INSERT INTO usuarios (usuario, institucion, password, rol, created_at)
+      VALUES ($1, $2, $3, 'enlace', NOW())
+      RETURNING id, usuario, institucion, rol, created_at
+    `;
+
+    const insertResult = await pool.query(insertQuery, [
+      usuario,
+      institucion,
+      hashedPassword
+    ]);
+
+    const nuevoUsuario = insertResult.rows[0];
+
+    console.log('✅ REGISTRO EXITOSO:', {
+      id: nuevoUsuario.id,
+      usuario: nuevoUsuario.usuario,
+      institucion: nuevoUsuario.institucion,
+      rol: nuevoUsuario.rol
+    });
+
+    // ✅ Respuesta exitosa
+    return res.status(201).json({
+      ok: true,
+      mensaje: 'Usuario registrado correctamente',
+      usuario: {
+        id: nuevoUsuario.id,
+        usuario: nuevoUsuario.usuario,
+        institucion: nuevoUsuario.institucion,
+        rol: nuevoUsuario.rol,
+        created_at: nuevoUsuario.created_at
+      }
+    });
+
+  } catch (error) {
+    console.error('💥 ERROR EN REGISTRO:', error);
+    console.error('Stack trace:', error.stack);
+
+    // Errores específicos de PostgreSQL
+    if (error.code === '23505') {
+      return res.status(409).json({ 
+        ok: false, 
+        error: 'El usuario ya existe en la base de datos' 
+      });
+    }
+
+    if (error.code === '42P01') {
+      return res.status(500).json({ 
+        ok: false, 
+        error: 'Error de configuración: tabla usuarios no encontrada' 
+      });
+    }
+
     return res.status(500).json({
       ok: false,
-      error: "Error interno del servidor"
+      error: 'Error interno del servidor al procesar el registro',
+      detalles: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
