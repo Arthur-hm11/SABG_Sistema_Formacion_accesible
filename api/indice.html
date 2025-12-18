@@ -3971,14 +3971,6 @@ async function registrarUsuario() {
     alert("✅ Usuario registrado correctamente");
     cerrarRegistro();
 
-    // 🔎 Log opcional (NO rompe nada)
-    guardarTodo({
-      tipo: "registro_usuario",
-      usuario,
-      institucion,
-      fecha: new Date().toISOString()
-    });
-
   } catch (error) {
     console.error("❌ Error de conexión:", error);
     alert("❌ Error de conexión con el servidor");
