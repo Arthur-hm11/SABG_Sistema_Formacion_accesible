@@ -2448,13 +2448,13 @@
         
         <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
             <input
-              id="reg_curp"
-              type="text"
-              placeholder="CURP"
-              maxlength="18"
-              style="text-transform: uppercase"
-              required
+                id="reg_usuario"
+                type="text"
+                placeholder="Usuario (mínimo 3 caracteres)"
+                required
+                minlength="3"
             />
+            
             <input
                 id="reg_institucion"
                 type="text"
