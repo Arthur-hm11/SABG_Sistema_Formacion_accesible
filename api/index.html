@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1988,7 +1989,7 @@
                 <div id="formulario" class="tab-content">
                     <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">👤 Datos del Enlace de Formación Académica</h3>
                     
-                    <form id="trimestralForm" onsubmit="event.preventDefault(); alert('✅ Registro guardado exitosamente!'); this.reset();">
+                    <form id="trimestralForm" onsubmit="event.preventDefault(); guardarRegistroTrimestral();">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="enlace_nombre">Nombre(s) <span class="required">*</span></label>
@@ -2487,7 +2488,6 @@
         <p>Sistema de Promoción de la Formación Académica</p>
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
-    <script>
         <script>
     // ========================================
     // SISTEMA DE ROLES Y VARIABLES GLOBALES
@@ -2564,142 +2564,107 @@
     }
 
     // Registro de Usuario (SIN BACKEND - usando localStorage)
-    function registrarUsuario() {
-        console.log("🚀 Iniciando registro de usuario");
-        
-        const usuarioInput = document.getElementById("reg_usuario");
-        const institucionInput = document.getElementById("reg_institucion");
-        const passwordInput = document.getElementById("reg_password");
+        async function registrarUsuario() {
+    const usuarioInput = document.getElementById("reg_usuario");
+    const institucionInput = document.getElementById("reg_institucion");
+    const passwordInput = document.getElementById("reg_password");
 
-        // Verificar que los elementos existan
-        if (!usuarioInput || !institucionInput || !passwordInput) {
-            console.error("❌ No se encontraron los campos del formulario");
-            alert("❌ Error: Campos del formulario no encontrados");
-            return;
+    const usuario = usuarioInput.value.trim();
+    const institucion = institucionInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!usuario || !institucion || !password) {
+        alert("❌ Completa todos los campos");
+        return;
+    }
+
+    if (password.length < 6) {
+        alert("❌ La contraseña debe tener al menos 6 caracteres");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, password, institucion })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert(`✅ Usuario registrado correctamente\n\nUsuario: ${usuario}\nInstitución: ${institucion}\n\nYa puedes iniciar sesión.`);
+            cerrarRegistro();
+        } else {
+            alert("❌ " + data.error);
         }
+        
+    } catch (error) {
+        console.error("❌ Error al registrar:", error);
+        alert("❌ Error de conexión con el servidor");
+    }
+}
 
-        const usuario = usuarioInput.value.trim();
-        const institucion = institucionInput.value.trim();
-        const password = passwordInput.value.trim();
+    // Login de Usuario (FUNCIÓN COMPLETA)
+    async function loginUsuario() {
+    try {
+        const usuario = document.getElementById("usuario").value.trim();
+        const password = document.getElementById("password").value.trim();
 
-        console.log("📝 Valores capturados:", { usuario, institucion, password: "***" });
-
-        if (!usuario || !institucion || !password) {
+        if (!usuario || !password) {
             alert("❌ Completa todos los campos");
             return;
         }
 
-        if (usuario.length < 3) {
-            alert("❌ El usuario debe tener al menos 3 caracteres");
-            return;
-        }
+        document.getElementById("loadingOverlay").classList.add("active");
 
-        if (password.length < 6) {
-            alert("❌ La contraseña debe tener al menos 6 caracteres");
-            return;
-        }
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, password })
+        });
 
-        try {
-            // Guardar en localStorage (temporal, sin backend)
-            const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
+        const data = await response.json();
+
+        if (data.success) {
+            localStorage.setItem("SABG_TOKEN", "token_" + Date.now());
+            localStorage.setItem("SABG_USER", JSON.stringify(data.user));
             
-            if (usuariosGuardados[usuario.toUpperCase()]) {
-                alert("❌ El usuario ya existe");
-                return;
-            }
-
-            usuariosGuardados[usuario.toUpperCase()] = {
-                password: password,
-                role: 'enlace',
-                dependencia: institucion,
-                nombre: usuario
-            };
-
-            localStorage.setItem("usuarios", JSON.stringify(usuariosGuardados));
+            userRole = data.user.rol;
+            userDependencia = data.user.dependencia;
+            userName = data.user.nombre;
             
-            console.log("✅ Usuario registrado exitosamente:", usuario);
-            alert("✅ Usuario registrado correctamente\n\nUsuario: " + usuario + "\nInstitución: " + institucion);
-            
-            cerrarRegistro();
-            
-        } catch (error) {
-            console.error("❌ Error al registrar:", error);
-            alert("❌ Error al registrar el usuario");
-        }
-    }
-
-    // Login de Usuario (FUNCIÓN COMPLETA)
-    function loginUsuario() {
-        try {
-            const usuario = document.getElementById("usuario").value.trim();
-            const password = document.getElementById("password").value.trim();
-
-            if (!usuario || !password) {
-                alert("❌ Completa todos los campos");
-                return;
-            }
-
-            // Cargar usuarios guardados de localStorage
-            const usuariosGuardados = JSON.parse(localStorage.getItem("usuarios") || "{}");
-            const todosLosUsuarios = { ...usuarios, ...usuariosGuardados };
-            
-            const user = todosLosUsuarios[usuario.toUpperCase()];
-            
-            if (user && user.password === password) {
-                localStorage.setItem("SABG_TOKEN", "token_" + Date.now());
-                localStorage.setItem("SABG_USUARIO", usuario);
-                
-                document.getElementById("loadingOverlay").classList.add("active");
-                
-                setTimeout(() => {
-                    userRole = user.role;
-                    userDependencia = user.dependencia;
-                    userName = user.nombre;
-                    
-                    // Configurar interfaz según rol
-                    if (userRole === 'superadmin') {
-                        document.getElementById('userName').textContent = '👤 ' + user.nombre;
-                        document.getElementById('userRole').textContent = 'Super Admin';
-                        document.getElementById('userRole').style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
-                        document.getElementById('adminPanelTrimestral').classList.remove('hidden');
-                        document.getElementById('adminPanelEvidencias').classList.remove('hidden');
-                        document.getElementById('tabVerTabla').classList.remove('hidden');
-                    } else {
-                        document.getElementById('userName').textContent = '👤 ' + user.nombre;
-                        document.getElementById('userRole').textContent = 'Enlace - ' + usuario.toUpperCase();
-                        document.getElementById('dropdownItemTabla').style.display = 'none';
-                        document.getElementById('dropdownItemRevision').style.display = 'none';
-                    }
-                    
-                    // Inicializar estado de celdas editables
-                    if (userRole !== 'superadmin' || edicionBloqueada) {
-                        document.querySelectorAll('.editable-cell').forEach(cell => {
-                            cell.classList.add('editable-disabled');
-                        });
-                    }
-                    
-                    // Filtrar tabla por dependencia si es enlace
-                    if (userRole === 'enlace') {
-                        filtrarTablaPorDependencia();
-                    }
-                    
-                    document.getElementById("loadingOverlay").classList.remove("active");
-                    document.getElementById("loginScreen").classList.add("hidden");
-                    
-                    const mensaje = userRole === 'superadmin' 
-                        ? `✅ ¡Bienvenido ${user.nombre}!\n\nRol: Super Administrador\nAcceso completo al sistema.`
-                        : `✅ ¡Bienvenido ${user.nombre}!\n\nRol: Enlace\nDependencia: ${userDependencia}\n\nSolo podrá visualizar información de su dependencia.`;
-                    alert(mensaje);
-                }, 1200);
+            if (userRole === 'superadmin') {
+                document.getElementById('userName').textContent = '👤 ' + data.user.nombre;
+                document.getElementById('userRole').textContent = 'Super Admin';
+                document.getElementById('userRole').style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
+                document.getElementById('adminPanelTrimestral').classList.remove('hidden');
+                document.getElementById('adminPanelEvidencias').classList.remove('hidden');
+                document.getElementById('tabVerTabla').classList.remove('hidden');
             } else {
-                alert("❌ Credenciales incorrectas");
+                document.getElementById('userName').textContent = '👤 ' + data.user.nombre;
+                document.getElementById('userRole').textContent = 'Enlace - ' + usuario.toUpperCase();
+                document.getElementById('dropdownItemTabla').style.display = 'none';
+                document.getElementById('dropdownItemRevision').style.display = 'none';
             }
-
-        } catch (error) {
-            console.error("❌ Error login:", error);
-            alert("❌ Error de conexión");
+            
+            await cargarRegistrosTrimestral();
+            
+            document.getElementById("loadingOverlay").classList.remove("active");
+            document.getElementById("loginScreen").classList.add("hidden");
+            
+            alert(`✅ ¡Bienvenido ${data.user.nombre}!`);
+        } else {
+            alert("❌ " + data.error);
         }
+
+    } catch (error) {
+        console.error("❌ Error login:", error);
+        alert("❌ Error de conexión con el servidor");
+    } finally {
+        document.getElementById("loadingOverlay").classList.remove("active");
     }
+}
 
     // Logout
     function logout() {
@@ -3211,6 +3176,105 @@
     });
 
     console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
+
+    async function cargarRegistrosTrimestral() {
+    try {
+        const url = userRole === 'superadmin' 
+            ? '/api/trimestral/list'
+            : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
+
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success) {
+            const tbody = document.querySelector('#registrosTable tbody');
+            tbody.innerHTML = '';
+
+            result.data.forEach((registro, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${registro.trimestre || ''}</td>
+                    <td>${registro.id_rusp || ''}</td>
+                    <td>${registro.primer_apellido || ''}</td>
+                    <td>${registro.segundo_apellido || ''}</td>
+                    <td>${registro.nombre || ''}</td>
+                    <td>${registro.curp || ''}</td>
+                    <td>${registro.nivel_puesto || ''}</td>
+                    <td>${registro.nivel_tabular || ''}</td>
+                    <td>${registro.ramo_ur || ''}</td>
+                    <td>${registro.dependencia || ''}</td>
+                    <td>${registro.correo_institucional || ''}</td>
+                    <td>${registro.telefono_institucional || ''}</td>
+                    <td>${registro.nivel_educativo || ''}</td>
+                    <td>${registro.institucion_educativa || ''}</td>
+                    <td>${registro.modalidad || ''}</td>
+                    <td class="${['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'].includes(registro.estado_avance) ? 'estado-rojo' : ''}">${registro.estado_avance || ''}</td>
+                    <td>${registro.observaciones || '-'}</td>
+                    <td>${registro.enlace_nombre || ''}</td>
+                    <td>${registro.enlace_primer_apellido || ''}</td>
+                    <td>${registro.enlace_segundo_apellido || ''}</td>
+                    <td>${registro.enlace_correo || ''}</td>
+                    <td>${registro.enlace_telefono || ''}</td>
+                `;
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar registros:', error);
+    }
+}
+
+async function guardarRegistroTrimestral() {
+    const form = document.getElementById('trimestralForm');
+    const formData = new FormData(form);
+    
+    const data = {
+        enlace_nombre: formData.get('enlace_nombre'),
+        enlace_primer_apellido: formData.get('enlace_apellido1'),
+        enlace_segundo_apellido: formData.get('enlace_apellido2'),
+        enlace_correo: formData.get('enlace_correo'),
+        enlace_telefono: formData.get('enlace_telefono'),
+        trimestre: formData.get('trimestre'),
+        id_rusp: formData.get('id_rusp'),
+        primer_apellido: formData.get('primer_apellido'),
+        segundo_apellido: formData.get('segundo_apellido'),
+        nombre: formData.get('nombre'),
+        curp: formData.get('curp'),
+        nivel_puesto: formData.get('nivel_puesto'),
+        nivel_tabular: formData.get('nivel_tabular'),
+        ramo_ur: formData.get('ramo_ur'),
+        dependencia: formData.get('dependencia'),
+        correo_institucional: formData.get('correo_institucional'),
+        telefono_institucional: formData.get('telefono_institucional'),
+        nivel_educativo: formData.get('nivel_educativo'),
+        institucion_educativa: formData.get('institucion_educativa'),
+        modalidad: formData.get('modalidad'),
+        estado_avance: formData.get('estado_avance'),
+        observaciones: formData.get('observaciones'),
+        usuario_registro: userName
+    };
+
+    try {
+        const response = await fetch('/api/trimestral/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('✅ Registro guardado exitosamente!');
+            form.reset();
+            await cargarRegistrosTrimestral();
+        } else {
+            alert('❌ Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error al guardar:', error);
+        alert('❌ Error de conexión con el servidor');
+    }
+}
     </script>
 </body>
 </html>
