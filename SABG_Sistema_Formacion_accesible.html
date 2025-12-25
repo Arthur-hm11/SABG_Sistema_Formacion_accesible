@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1716,17 +1717,18 @@
                         <span class="input-icon">🔒</span>
                     </div>
                 </div>
-
-                <button type="submit" class="login-btn">
-                    <span>🚀 INICIAR SESIÓN</span>
-                </button>
-                <button type="button" class="register-btn" onclick="mostrarRegistro()">
-                    📝 Registrarse
-                </button>
+                            <button type="submit" class="login-btn">
+                <span>🚀 INICIAR SESIÓN</span>
+            </button>
+            <button type="button" class="register-btn" onclick="mostrarRegistro()">
+                📝 Registrarse
+            </button>
+            <button type="button" class="btn-secondary" onclick="mostrarRestaurarPassword()" style="background: linear-gradient(135deg, #64748b, #475569) !important; margin-top: 0.5rem; width: 100%; color: white; border: none; padding: 1rem 2rem; font-size: 1rem; font-weight: bold; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);">
+                🔑 ¿Olvidaste tu contraseña?
+            </button>
             </form>
         </div>
     </div>
-
     <!-- LOADING OVERLAY -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
@@ -1919,20 +1921,16 @@
                 
                 <!-- Panel Admin (solo visible para Super Admin) -->
                 <div id="adminPanelTrimestral" class="admin-panel hidden">
-                    <h3>⚙️ Panel de Control - Super Administrador</h3>
-                    <div class="admin-controls">
-                        <button class="btn btn-warning" onclick="toggleTablaRegistros()">
-                            👁️ Mostrar/Ocultar Tabla de Registros
-                        </button>
-                        <button class="btn btn-success" onclick="desbloquearEdicion()">
-                            🔓 Desbloquear Edición
-                        </button>
-                        <button class="btn btn-danger" onclick="bloquearEdicion()">
-                            🔒 Bloquear Edición
-                        </button>
-                    </div>
+                <h3>⚙️ Panel de Control - Super Administrador</h3>
+                <div class="admin-controls">
+                    <button class="btn btn-success" onclick="desbloquearEdicion()">
+                        🔓 Desbloquear Edición
+                    </button>
+                    <button class="btn btn-danger" onclick="bloquearEdicion()">
+                        🔒 Bloquear Edición
+                    </button>
                 </div>
-
+            </div>
                 <div class="tabs">
                     <div class="tab active" onclick="showTrimestralTab('instructivo')" role="button" tabindex="0">
                         📖 Instructivo
@@ -2159,19 +2157,16 @@
                                 </select>
                             </div>
                         </div>
-
                         <div class="form-group">
                             <label for="observaciones">Observaciones</label>
                             <textarea name="observaciones" rows="4" placeholder="Ingrese observaciones adicionales (opcional)" id="observaciones"></textarea>
                         </div>
 
                         <div style="text-align: center; margin-top: 2rem;">
-                            <button type="submit" class="btn">💾 Guardar Registro</button>
-                            <button type="reset" class="btn btn-danger">🔄 Limpiar Formulario</button>
-                        </div>
+                        <button type="submit" class="btn">💾 Guardar Registro</button>
+                    </div>
                     </form>
                 </div>
-
                 <!-- TAB: TABLA DE REGISTROS (Solo visible para Super Admin) -->
                 <div id="tabla" class="tab-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
@@ -2832,21 +2827,6 @@
     // ========================================
     // FUNCIONES DE ADMINISTRACIÓN
     // ========================================
-
-    function toggleTablaRegistros() {
-        const tab = document.getElementById('tabVerTabla');
-        const content = document.getElementById('tabla');
-        
-        if (tab.classList.contains('hidden')) {
-            tab.classList.remove('hidden');
-            alert('✅ Pestaña "Ver Tabla de Registros" ahora visible');
-        } else {
-            tab.classList.add('hidden');
-            content.classList.remove('active');
-            alert('🔒 Pestaña "Ver Tabla de Registros" ahora oculta');
-        }
-    }
-
     function togglePanelRevision() {
         const panel = document.getElementById('revision');
         
