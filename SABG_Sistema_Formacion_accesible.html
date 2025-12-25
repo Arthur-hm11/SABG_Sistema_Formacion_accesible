@@ -2659,9 +2659,13 @@
     // ========================================
     // FUNCIONES DE AUTENTICACIÓN
     // ========================================
+     // Control Modal Registro
+    function mostrarRegistro() {
+        console.log("📝 Abriendo modal de registro");
+        document.getElementById("registroModal").classList.remove("hidden");
+    }
 
-    // Control Modal Registro
-   function cerrarRegistro() {
+    function cerrarRegistro() {
         console.log("❌ Cerrando modal de registro");
         document.getElementById("registroModal").classList.add("hidden");
         document.getElementById("reg_usuario").value = "";
