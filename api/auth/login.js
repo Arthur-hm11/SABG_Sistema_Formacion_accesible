@@ -42,8 +42,6 @@ module.exports = async (req, res) => {
     }
 
     const user = result.rows[0];
-
-    // Verificar contraseña
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatch) {
@@ -67,7 +65,8 @@ module.exports = async (req, res) => {
     console.error('Error en login:', error);
     return res.status(500).json({ 
       success: false,
-      error: 'Error en el servidor'
+      error: 'Error en el servidor',
+      details: error.message
     });
   }
 };
