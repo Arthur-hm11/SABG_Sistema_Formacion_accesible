@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -2466,7 +2465,7 @@
                 minlength="6"
             />
             
-            <div class="modal-actions">
+     <div class="modal-actions">
                 <button type="submit">Registrar</button>
                 <button type="button" onclick="cerrarRegistro()">Cancelar</button>
             </div>
@@ -2474,8 +2473,39 @@
     </div>
 </div>
 
+    <!-- ⬇️ MODAL RESTAURAR CONTRASEÑA ⬇️ -->
+    <div id="restaurarPasswordModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>🔑 Restaurar Contraseña</h3>
+            
+            <form id="formRestaurarPassword" onsubmit="event.preventDefault(); restaurarPassword();">
+                <p style="color: #64748b; margin-bottom: 1.5rem; text-align: center;">
+                    Ingresa tu usuario y te enviaremos instrucciones para restaurar tu contraseña.
+                </p>
+                
+                <input
+                    id="restore_usuario"
+                    type="text"
+                    placeholder="Usuario"
+                    required
+                    minlength="3"
+                />
+                
+                <input
+                    id="restore_email"
+                    type="email"
+                    placeholder="Correo institucional"
+                    required
+                />
+                
+                <div class="modal-actions">
+                    <button type="submit">Enviar Instrucciones</button>
+                    <button type="button" onclick="cerrarRestaurarPassword()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="fab" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" role="button" tabindex="0">⬆️</div>
-
     <footer>
         <img src="data:image/webp;base64,UklGRuglAABXRUJQVlA4WAoAAAAwAAAAnAEAPQAASUNDUMgBAAAAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADY=" alt="Gobierno de México - SABG">
         <p style="font-size: 1.2rem; font-weight: bold;">Gobierno de México</p>
@@ -2545,12 +2575,7 @@
     // ========================================
 
     // Control Modal Registro
-    function mostrarRegistro() {
-        console.log("📝 Abriendo modal de registro");
-        document.getElementById("registroModal").classList.remove("hidden");
-    }
-
-    function cerrarRegistro() {
+   function cerrarRegistro() {
         console.log("❌ Cerrando modal de registro");
         document.getElementById("registroModal").classList.add("hidden");
         document.getElementById("reg_usuario").value = "";
@@ -2558,8 +2583,45 @@
         document.getElementById("reg_password").value = "";
     }
 
+    // ========================================
+    // RESTAURAR CONTRASEÑA
+    // ========================================
+    
+    function mostrarRestaurarPassword() {
+        console.log("🔑 Abriendo modal de restaurar contraseña");
+        document.getElementById("restaurarPasswordModal").classList.remove("hidden");
+    }
+
+    function cerrarRestaurarPassword() {
+        console.log("❌ Cerrando modal de restaurar contraseña");
+        document.getElementById("restaurarPasswordModal").classList.add("hidden");
+        document.getElementById("restore_usuario").value = "";
+        document.getElementById("restore_email").value = "";
+    }
+
+    async function restaurarPassword() {
+        const usuarioInput = document.getElementById("restore_usuario");
+        const emailInput = document.getElementById("restore_email");
+
+        const usuario = usuarioInput.value.trim();
+        const email = emailInput.value.trim();
+
+        if (!usuario || !email) {
+            alert("❌ Completa todos los campos");
+            return;
+        }
+
+        try {
+            alert(`📧 Se han enviado las instrucciones para restaurar tu contraseña al correo:\n\n${email}\n\nPor favor revisa tu bandeja de entrada y spam.\n\nNota: Esta funcionalidad está en desarrollo. Por favor contacta al administrador.`);
+            cerrarRestaurarPassword();
+            
+        } catch (error) {
+            console.error("❌ Error al restaurar:", error);
+            alert("❌ Error de conexión con el servidor");
+        }
+    }
     // Registro de Usuario (SIN BACKEND - usando localStorage)
-        async function registrarUsuario() {
+    async function registrarUsuario() {
     const usuarioInput = document.getElementById("reg_usuario");
     const institucionInput = document.getElementById("reg_institucion");
     const passwordInput = document.getElementById("reg_password");
