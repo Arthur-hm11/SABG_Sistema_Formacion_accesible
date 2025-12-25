@@ -1,3 +1,4 @@
+cat > api/trimestral/create.js << 'EOF'
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -60,3 +61,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+EOF
