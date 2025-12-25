@@ -1,3 +1,4 @@
+cat > api/auth/register.js << 'EOF'
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 
@@ -72,3 +73,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+EOF
