@@ -3192,6 +3192,11 @@
 
             result.data.forEach((registro, index) => {
                 const row = tbody.insertRow();
+                
+                // Determinar si el estado de avance está desactualizado
+                const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
+                const claseEstadoRojo = estadosRojos.includes(registro.estado_avance) ? 'estado-rojo' : '';
+                
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${registro.trimestre || ''}</td>
@@ -3206,11 +3211,26 @@
                     <td>${registro.dependencia || ''}</td>
                     <td>${registro.correo_institucional || ''}</td>
                     <td>${registro.telefono_institucional || ''}</td>
-                    <td>${registro.nivel_educativo || ''}</td>
-                    <td>${registro.institucion_educativa || ''}</td>
-                    <td>${registro.modalidad || ''}</td>
-                    <td class="${['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'].includes(registro.estado_avance) ? 'estado-rojo' : ''}">${registro.estado_avance || ''}</td>
-                    <td>${registro.observaciones || '-'}</td>
+                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
+                        ${registro.nivel_educativo || ''}
+                        <span class="edit-icon">✏️</span>
+                    </td>
+                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0">
+                        ${registro.institucion_educativa || ''}
+                        <span class="edit-icon">✏️</span>
+                    </td>
+                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0">
+                        ${registro.modalidad || ''}
+                        <span class="edit-icon">✏️</span>
+                    </td>
+                    <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
+                        ${registro.estado_avance || ''}
+                        <span class="edit-icon">✏️</span>
+                    </td>
+                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
+                        ${registro.observaciones || '-'}
+                        <span class="edit-icon">✏️</span>
+                    </td>
                     <td>${registro.enlace_nombre || ''}</td>
                     <td>${registro.enlace_primer_apellido || ''}</td>
                     <td>${registro.enlace_segundo_apellido || ''}</td>
@@ -3223,7 +3243,6 @@
         console.error('Error al cargar registros:', error);
     }
 }
-
 async function guardarRegistroTrimestral() {
     const form = document.getElementById('trimestralForm');
     const formData = new FormData(form);
