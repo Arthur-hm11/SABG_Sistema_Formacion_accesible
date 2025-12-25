@@ -1,3 +1,4 @@
+cat > api/trimestral/list.js << 'EOF'
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -45,26 +46,4 @@ module.exports = async (req, res) => {
     });
   }
 };
-```
-
-3. Guarda como: **`list.js`** (en `api/trimestral/`)
-
----
-
-## **PASO 4: Verificar que todos los archivos estén en su lugar**
-
-Tu carpeta **`sabg-sistema`** debe verse así:
-```
-📁 sabg-sistema
-  📄 index.html
-  📄 package.json
-  📄 vercel.json
-  📁 api
-    📁 auth
-      📄 login.js
-      📄 register.js
-    📁 trimestral
-      📄 create.js
-      📄 list.js
-    📁 evidencias
-      (vacía por ahora)
+EOF
