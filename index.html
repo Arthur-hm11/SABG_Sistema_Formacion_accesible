@@ -2011,6 +2011,9 @@
                     <button class="btn btn-danger" onclick="bloquearEdicion()">
                         🔒 Bloquear Edición
                     </button>
+                    <button class="btn btn-warning" onclick="descargarBackup()">
+                        💾 Descargar Backup
+                    </button>
                 </div>
             </div>
                 <div class="tabs">
@@ -3473,6 +3476,50 @@ async function guardarRegistroTrimestral() {
     } catch (error) {
         console.error('Error al guardar:', error);
         alert('❌ Error de conexión con el servidor');
+    }
+}
+            // ========================================
+// BACKUP DE BASE DE DATOS
+// ========================================
+async function descargarBackup() {
+    if (userRole !== 'superadmin') {
+        alert('⚠️ Solo los Super Administradores pueden descargar backups.');
+        return;
+    }
+
+    if (!confirm('¿Deseas descargar el backup completo de la base de datos?\n\nEsto incluye:\n• Todos los registros trimestrales\n• Información de usuarios (sin contraseñas)\n• Fecha y hora del backup')) {
+        return;
+    }
+
+    try {
+        document.getElementById('loadingOverlay').classList.add('active');
+        document.querySelector('.loading-text').textContent = '💾 Generando backup...';
+
+        const response = await fetch('/api/backup/export');
+        
+        if (!response.ok) {
+            throw new Error('Error al generar backup');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_sabg_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        document.getElementById('loadingOverlay').classList.remove('active');
+        document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
+
+        alert('✅ Backup descargado exitosamente!\n\nArchivo: backup_sabg_' + new Date().toISOString().split('T')[0] + '.json\n\nGuarda este archivo en un lugar seguro.');
+
+    } catch (error) {
+        console.error('Error al descargar backup:', error);
+        document.getElementById('loadingOverlay').classList.remove('active');
+        alert('❌ Error al generar backup: ' + error.message);
     }
 }
     </script>
