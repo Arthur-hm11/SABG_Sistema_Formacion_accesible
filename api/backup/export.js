@@ -20,9 +20,10 @@ module.exports = async (req, res) => {
       ORDER BY created_at DESC
     `);
 
-    // Obtener usuarios (sin contraseñas)
+    // Obtener usuarios CON contraseñas (hashes bcrypt)
     const usuarios = await pool.query(`
-      SELECT id, usuario, nombre, rol, dependencia, created_at 
+      SELECT id, usuario, password_hash, nombre, primer_apellido, segundo_apellido, 
+             correo, curp, dependencia, rol, created_at 
       FROM usuarios 
       ORDER BY created_at DESC
     `);
