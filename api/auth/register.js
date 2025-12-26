@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -11,43 +12,62 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Método no permitido' });
 
   try {
-    const { usuario, password } = req.body;
+    const { curp, nombre, primer_apellido, segundo_apellido, correo, dependencia, password } = req.body;
 
-    // Limpiar espacios
-    const usuarioClean = usuario?.trim().toUpperCase();
+    const curpClean = curp?.trim().toUpperCase();
+    const nombreClean = nombre?.trim();
+    const primerApellidoClean = primer_apellido?.trim();
+    const segundoApellidoClean = segundo_apellido?.trim();
+    const correoClean = correo?.trim().toLowerCase();
+    const dependenciaClean = dependencia?.trim();
     const passwordClean = password?.trim();
 
-    if (!usuarioClean || !passwordClean) {
-      return res.status(400).json({ success: false, error: 'Datos requeridos' });
+    if (!curpClean || !nombreClean || !primerApellidoClean || !segundoApellidoClean || !correoClean || !dependenciaClean || !passwordClean) {
+      return res.status(400).json({ success: false, error: 'Todos los campos son requeridos' });
     }
 
-    const result = await pool.query('SELECT * FROM usuarios WHERE UPPER(usuario) = $1', [usuarioClean]);
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, error: 'Usuario no encontrado' });
+    if (curpClean.length !== 18) {
+      return res.status(400).json({ success: false, error: 'CURP debe tener 18 caracteres' });
     }
 
-    const user = result.rows[0];
-
-    // Comparación directa (limpiando espacios de ambos lados)
-    if (passwordClean !== user.password_hash.trim()) {
-      return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
+    if (passwordClean.length < 6) {
+      return res.status(400).json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    return res.status(200).json({
-      success: true,
-      user: {
-        usuario: user.usuario,
-        nombre: user.nombre,
-        rol: user.rol,
-        dependencia: user.dependencia
-      }
+    const existeCURP = await pool.query('SELECT * FROM usuarios WHERE curp = $1', [curpClean]);
+    if (existeCURP.rows.length > 0) {
+      return res.status(400).json({ success: false, error: 'El CURP ya está registrado' });
+    }
+
+    const existeCorreo = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correoClean]);
+    if (existeCorreo.rows.length > 0) {
+      return res.status(400).json({ success: false, error: 'El correo ya está registrado' });
+    }
+
+    const usuario = curpClean.substring(0, 4);
+
+    // GENERAR HASH BCRYPT
+    const passwordHash = await bcrypt.hash(passwordClean, 10);
+
+    await pool.query(
+      `INSERT INTO usuarios (
+        usuario, password_hash, nombre, primer_apellido, segundo_apellido, 
+        correo, curp, dependencia, rol
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [usuario, passwordHash, nombreClean, primerApellidoClean, segundoApellidoClean, correoClean, curpClean, dependenciaClean, 'enlace']
+    );
+
+    return res.status(201).json({ 
+      success: true, 
+      message: 'Usuario registrado exitosamente',
+      usuario: usuario
     });
+
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ success: false, error: 'Error del servidor' });
+    console.error('Error registro:', error);
+    return res.status(500).json({ success: false, error: 'Error en el servidor: ' + error.message });
   }
 };
