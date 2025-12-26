@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1774,7 +1773,7 @@
 
             <form class="login-form" onsubmit="event.preventDefault(); loginUsuario();">
                 <div class="form-group">
-                    <label for="usuario">USUARIO / INSTITUCIÓN</label>
+                    <label for="usuario">USUARIO</label>
                     <div class="input-wrapper">
                         <input 
                             type="text" 
@@ -2523,26 +2522,59 @@
     </div>
 
     <!-- ⬇️ MODAL REGISTRO USUARIO ⬇️ -->
-   <div id="registroModal" class="modal hidden">
+ <div id="registroModal" class="modal hidden">
     <div class="modal-content">
         <h3>📝 Registro de Usuario</h3>
         
         <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
             <input
+                id="reg_curp"
+                type="text"
+                placeholder="CURP (18 caracteres)"
+                required
+                maxlength="18"
+                pattern="[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}"
+                style="text-transform: uppercase;"
+            />
+            <input
+                id="reg_nombre"
+                type="text"
+                placeholder="Nombre(s)"
+                required
+            />
+            <input
+                id="reg_primer_apellido"
+                type="text"
+                placeholder="Primer Apellido"
+                required
+            />
+            <input
+                id="reg_segundo_apellido"
+                type="text"
+                placeholder="Segundo Apellido"
+                required
+            />
+            <input
+                id="reg_correo"
+                type="email"
+                placeholder="Correo Electrónico"
+                required
+            />
+            <input
+                id="reg_dependencia"
+                type="text"
+                placeholder="Dependencia / Institución"
+                required
+            />
+            <input
                 id="reg_usuario"
                 type="text"
-                placeholder="Usuario (mínimo 3 caracteres)"
+                placeholder="Usuario"
                 required
                 minlength="3"
+                maxlength="20"
+                style="text-transform: uppercase;"
             />
-            
-            <input
-                id="reg_institucion"
-                type="text"
-                placeholder="Institución"
-                required
-            />
-            
             <input
                 id="reg_password"
                 type="password"
@@ -2550,15 +2582,13 @@
                 required
                 minlength="6"
             />
-            
-     <div class="modal-actions">
+            <div class="modal-actions">
                 <button type="submit">Registrar</button>
                 <button type="button" onclick="cerrarRegistro()">Cancelar</button>
             </div>
         </form>
     </div>
 </div>
-
     <!-- ⬇️ MODAL RESTAURAR CONTRASEÑA ⬇️ -->
     <div id="restaurarPasswordModal" class="modal hidden">
         <div class="modal-content">
@@ -2712,16 +2742,27 @@
     }
     // Registro de Usuario (SIN BACKEND - usando localStorage)
     async function registrarUsuario() {
-    const usuarioInput = document.getElementById("reg_usuario");
-    const institucionInput = document.getElementById("reg_institucion");
-    const passwordInput = document.getElementById("reg_password");
+    const curp = document.getElementById("reg_curp").value.trim().toUpperCase();
+    const nombre = document.getElementById("reg_nombre").value.trim();
+    const primer_apellido = document.getElementById("reg_primer_apellido").value.trim();
+    const segundo_apellido = document.getElementById("reg_segundo_apellido").value.trim();
+    const correo = document.getElementById("reg_correo").value.trim();
+    const dependencia = document.getElementById("reg_dependencia").value.trim();
+    const usuario = document.getElementById("reg_usuario").value.trim().toUpperCase();
+    const password = document.getElementById("reg_password").value.trim();
 
-    const usuario = usuarioInput.value.trim();
-    const institucion = institucionInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!usuario || !institucion || !password) {
+    if (!curp || !nombre || !primer_apellido || !segundo_apellido || !correo || !dependencia || !usuario || !password) {
         alert("❌ Completa todos los campos");
+        return;
+    }
+
+    if (curp.length !== 18) {
+        alert("❌ El CURP debe tener 18 caracteres");
+        return;
+    }
+
+    if (usuario.length < 3) {
+        alert("❌ El usuario debe tener al menos 3 caracteres");
         return;
     }
 
@@ -2734,14 +2775,24 @@
         const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario, password, institucion })
+            body: JSON.stringify({ 
+                curp, 
+                nombre, 
+                primer_apellido, 
+                segundo_apellido, 
+                correo, 
+                dependencia,
+                usuario,
+                password 
+            })
         });
 
         const data = await response.json();
 
         if (data.success) {
-            alert(`✅ Usuario registrado correctamente\n\nUsuario: ${usuario}\nInstitución: ${institucion}\n\nYa puedes iniciar sesión.`);
+            alert(`✅ Usuario registrado correctamente\n\n👤 Usuario: ${usuario}\n🔑 Ya puedes iniciar sesión con tus credenciales.`);
             cerrarRegistro();
+            document.getElementById("formRegistro").reset();
         } else {
             alert("❌ " + data.error);
         }
