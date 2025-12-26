@@ -2522,7 +2522,7 @@
     </div>
 
     <!-- ⬇️ MODAL REGISTRO USUARIO ⬇️ -->
-  <div id="registroModal" class="modal hidden">
+ <div id="registroModal" class="modal hidden">
     <div class="modal-content">
         <h3>📝 Registro de Usuario</h3>
         
@@ -2571,6 +2571,21 @@
                 placeholder="Dependencia / Institución"
                 required
             />
+
+            <div style="position: relative;">
+                <input
+                    id="reg_usuario"
+                    type="text"
+                    placeholder="Usuario (ejemplo: SABG, INEGI, SEP)"
+                    required
+                    minlength="3"
+                    maxlength="20"
+                    style="text-transform: uppercase;"
+                />
+                <small style="color: #666; font-size: 11px; display: block; margin-top: 5px;">
+                    💡 Sugerencia: Usa las siglas de tu institución
+                </small>
+            </div>
             
             <input
                 id="reg_password"
@@ -2746,15 +2761,21 @@
     const segundo_apellido = document.getElementById("reg_segundo_apellido").value.trim();
     const correo = document.getElementById("reg_correo").value.trim();
     const dependencia = document.getElementById("reg_dependencia").value.trim();
+    const usuario = document.getElementById("reg_usuario").value.trim().toUpperCase();
     const password = document.getElementById("reg_password").value.trim();
 
-    if (!curp || !nombre || !primer_apellido || !segundo_apellido || !correo || !dependencia || !password) {
+    if (!curp || !nombre || !primer_apellido || !segundo_apellido || !correo || !dependencia || !usuario || !password) {
         alert("❌ Completa todos los campos");
         return;
     }
 
     if (curp.length !== 18) {
         alert("❌ El CURP debe tener 18 caracteres");
+        return;
+    }
+
+    if (usuario.length < 3) {
+        alert("❌ El usuario debe tener al menos 3 caracteres");
         return;
     }
 
@@ -2773,7 +2794,8 @@
                 primer_apellido, 
                 segundo_apellido, 
                 correo, 
-                dependencia, 
+                dependencia,
+                usuario,
                 password 
             })
         });
@@ -2781,7 +2803,7 @@
         const data = await response.json();
 
         if (data.success) {
-            alert(`✅ Usuario registrado correctamente\n\nTu usuario es: ${data.usuario}\nCURP: ${curp}\n\nYa puedes iniciar sesión.`);
+            alert(`✅ Usuario registrado correctamente\n\n👤 Usuario: ${usuario}\n🔑 Ya puedes iniciar sesión con tus credenciales.`);
             cerrarRegistro();
             document.getElementById("formRegistro").reset();
         } else {
