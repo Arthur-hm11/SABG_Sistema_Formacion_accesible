@@ -1654,23 +1654,32 @@
             font-weight: bold;
         }
 
-        #registroModal input {
-            width: 100%;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
+       #registroModal input {
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: white;
+}
 
-        #registroModal input:focus {
-            outline: none;
-            border-color: var(--guinda);
-            box-shadow: 0 5px 15px rgba(107, 44, 64, 0.3);
-            transform: scale(1.01);
-        }
+#registroModal input:focus {
+    outline: none;
+    border-color: var(--guinda);
+    box-shadow: 0 5px 15px rgba(107, 44, 64, 0.3);
+    transform: scale(1.01);
+}
+
+#registroModal input::placeholder {
+    color: #94a3b8;
+    opacity: 1;
+}
 
         #registroModal .modal-actions {
             display: flex;
@@ -2802,63 +2811,145 @@
 }
 
     // Login de Usuario (FUNCIÓN COMPLETA)
-    async function loginUsuario() {
+   async function registrarUsuario() {
+    // Obtener valores y limpiar
+    let curp = document.getElementById("reg_curp").value || "";
+    let nombre = document.getElementById("reg_nombre").value || "";
+    let primer_apellido = document.getElementById("reg_primer_apellido").value || "";
+    let segundo_apellido = document.getElementById("reg_segundo_apellido").value || "";
+    let correo = document.getElementById("reg_correo").value || "";
+    let dependencia = document.getElementById("reg_dependencia").value || "";
+    let usuario = document.getElementById("reg_usuario").value || "";
+    let password = document.getElementById("reg_password").value || "";
+
+    // Limpiar espacios y convertir a mayúsculas donde corresponda
+    curp = curp.trim().toUpperCase();
+    nombre = nombre.trim();
+    primer_apellido = primer_apellido.trim();
+    segundo_apellido = segundo_apellido.trim();
+    correo = correo.trim().toLowerCase();
+    dependencia = dependencia.trim();
+    usuario = usuario.trim().toUpperCase();
+    password = password.trim();
+
+    // Validar campos vacíos
+    if (!curp) {
+        alert("❌ El campo CURP es obligatorio");
+        document.getElementById("reg_curp").focus();
+        return;
+    }
+
+    if (!nombre) {
+        alert("❌ El campo Nombre es obligatorio");
+        document.getElementById("reg_nombre").focus();
+        return;
+    }
+
+    if (!primer_apellido) {
+        alert("❌ El campo Primer Apellido es obligatorio");
+        document.getElementById("reg_primer_apellido").focus();
+        return;
+    }
+
+    if (!segundo_apellido) {
+        alert("❌ El campo Segundo Apellido es obligatorio");
+        document.getElementById("reg_segundo_apellido").focus();
+        return;
+    }
+
+    if (!correo) {
+        alert("❌ El campo Correo es obligatorio");
+        document.getElementById("reg_correo").focus();
+        return;
+    }
+
+    if (!dependencia) {
+        alert("❌ El campo Dependencia es obligatorio");
+        document.getElementById("reg_dependencia").focus();
+        return;
+    }
+
+    if (!usuario) {
+        alert("❌ El campo Usuario es obligatorio");
+        document.getElementById("reg_usuario").focus();
+        return;
+    }
+
+    if (!password) {
+        alert("❌ El campo Contraseña es obligatorio");
+        document.getElementById("reg_password").focus();
+        return;
+    }
+
+    // Validar longitud CURP
+    if (curp.length !== 18) {
+        alert("❌ CURP inválido\n\nDebe tener exactamente 18 caracteres.\nActualmente tiene: " + curp.length + " caracteres");
+        document.getElementById("reg_curp").focus();
+        return;
+    }
+
+    // Validar formato CURP
+    const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/;
+    if (!curpPattern.test(curp)) {
+        alert("❌ Formato de CURP inválido\n\nFormato correcto:\n• 4 letras\n• 6 números\n• H o M\n• 5 letras\n• 2 números\n\nEjemplo: SALR990312MDFLPC06");
+        document.getElementById("reg_curp").focus();
+        return;
+    }
+
+    // Validar usuario
+    if (usuario.length < 3) {
+        alert("❌ El usuario debe tener al menos 3 caracteres");
+        document.getElementById("reg_usuario").focus();
+        return;
+    }
+
+    // Validar contraseña
+    if (password.length < 6) {
+        alert("❌ La contraseña debe tener al menos 6 caracteres");
+        document.getElementById("reg_password").focus();
+        return;
+    }
+
+    // Validar email
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(correo)) {
+        alert("❌ Formato de correo electrónico inválido");
+        document.getElementById("reg_correo").focus();
+        return;
+    }
+
     try {
-        const usuario = document.getElementById("usuario").value.trim();
-        const password = document.getElementById("password").value.trim();
-
-        if (!usuario || !password) {
-            alert("❌ Completa todos los campos");
-            return;
-        }
-
-        document.getElementById("loadingOverlay").classList.add("active");
-
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/api/auth/register', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario, password })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ 
+                curp: curp,
+                nombre: nombre,
+                primer_apellido: primer_apellido,
+                segundo_apellido: segundo_apellido,
+                correo: correo,
+                dependencia: dependencia,
+                usuario: usuario,
+                password: password
+            })
         });
 
         const data = await response.json();
 
         if (data.success) {
-            localStorage.setItem("SABG_TOKEN", "token_" + Date.now());
-            localStorage.setItem("SABG_USER", JSON.stringify(data.user));
-            
-            userRole = data.user.rol;
-            userDependencia = data.user.dependencia;
-            userName = data.user.nombre;
-            
-            if (userRole === 'superadmin') {
-                document.getElementById('userName').textContent = '👤 ' + data.user.nombre;
-                document.getElementById('userRole').textContent = 'Super Admin';
-                document.getElementById('userRole').style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
-                document.getElementById('adminPanelTrimestral').classList.remove('hidden');
-                document.getElementById('adminPanelEvidencias').classList.remove('hidden');
-                document.getElementById('tabVerTabla').classList.remove('hidden');
-            } else {
-                document.getElementById('userName').textContent = '👤 ' + data.user.nombre;
-                document.getElementById('userRole').textContent = 'Enlace - ' + usuario.toUpperCase();
-                document.getElementById('dropdownItemTabla').style.display = 'none';
-                document.getElementById('dropdownItemRevision').style.display = 'none';
-            }
-            
-            await cargarRegistrosTrimestral();
-            
-            document.getElementById("loadingOverlay").classList.remove("active");
-            document.getElementById("loginScreen").classList.add("hidden");
-            
-            alert(`✅ ¡Bienvenido ${data.user.nombre}!`);
+            alert("✅ Usuario registrado correctamente\n\n👤 Usuario: " + data.usuario + "\n\n🔑 Ya puedes iniciar sesión con tus credenciales.");
+            cerrarRegistro();
+            document.getElementById("formRegistro").reset();
         } else {
-            alert("❌ " + data.error);
+            alert("❌ Error al registrar:\n\n" + data.error);
         }
-
+        
     } catch (error) {
-        console.error("❌ Error login:", error);
-        alert("❌ Error de conexión con el servidor");
-    } finally {
-        document.getElementById("loadingOverlay").classList.remove("active");
+        console.error("❌ Error:", error);
+        alert("❌ Error de conexión con el servidor.\n\nPor favor verifica tu conexión a internet e intenta nuevamente.");
     }
 }
 
