@@ -2023,6 +2023,12 @@
                     <button class="btn btn-warning" onclick="descargarBackup()">
                         💾 Descargar Backup
                     </button>
+                    <button class="btn btn-success" onclick="exportData('json')">
+                        📥 Exportar JSON
+                    </button>
+                    <button class="btn btn-success" onclick="exportData('csv')">
+                        📥 Exportar CSV
+                    </button>
                 </div>
             </div>
                 <div class="tabs">
@@ -2267,11 +2273,6 @@
                         <h3 style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
                     </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
-                   <div style="margin-bottom: 1rem;">
-                    <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a JSON (Excel compatible)</button>
-                    <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
-                    <button class="btn btn-secondary" onclick="exportData('sql')" disabled style="opacity: 0.5; cursor: not-allowed;">📥 Exportar a SQL (Próximamente)</button>
-                </div>
                     <div id="estadoEdicion" style="padding: 1rem; background: var(--gradient1); color: white; border-radius: 10px; margin-bottom: 1rem; text-align: center; font-weight: bold;">
                         🔒 Edición BLOQUEADA
                     </div>
@@ -3278,7 +3279,7 @@
         document.getElementById('monthModal').classList.remove('active');
     }
 
-    async function exportData(format) {
+   async function exportData(format) {
     if (userRole !== 'superadmin') {
         alert('⚠️ Solo los Super Administradores pueden exportar datos.');
         return;
@@ -3290,21 +3291,13 @@
 
         let url = '';
         let filename = '';
-        let contentType = '';
 
-        if (format === 'excel' || format === 'json') {
+        if (format === 'json') {
             url = '/api/export/excel?format=json';
             filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.json`;
-            contentType = 'application/json';
         } else if (format === 'csv') {
             url = '/api/export/excel?format=csv';
             filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.csv`;
-            contentType = 'text/csv';
-        } else if (format === 'sql') {
-            // Para SQL, generamos un dump simple
-            alert('⚠️ Exportación SQL disponible próximamente.\n\nPor ahora usa JSON o CSV y luego importa a tu base de datos.');
-            document.getElementById('loadingOverlay').classList.remove('active');
-            return;
         }
 
         const response = await fetch(url);
@@ -3326,7 +3319,7 @@
         document.getElementById('loadingOverlay').classList.remove('active');
         document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
 
-        alert(`✅ Datos exportados exitosamente!\n\nFormato: ${format.toUpperCase()}\nArchivo: ${filename}\n\nTotal de registros: ${format === 'csv' ? 'Ver archivo' : 'Ver archivo'}`);
+        alert(`✅ Datos exportados exitosamente!\n\nFormato: ${format.toUpperCase()}\nArchivo: ${filename}`);
 
     } catch (error) {
         console.error('Error al exportar:', error);
@@ -3335,7 +3328,6 @@
         alert('❌ Error al exportar datos: ' + error.message);
     }
 }
-
     // ========================================
     // BÚSQUEDA EN TABLA
     // ========================================
