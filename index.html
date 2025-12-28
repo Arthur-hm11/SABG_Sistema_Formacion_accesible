@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -2023,6 +2024,12 @@
                     <button class="btn btn-warning" onclick="descargarBackup()">
                         💾 Descargar Backup
                     </button>
+                    <button class="btn btn-success" onclick="exportData('json')">
+                        📥 Exportar JSON
+                    </button>
+                    <button class="btn btn-success" onclick="exportData('csv')">
+                        📥 Exportar CSV
+                    </button>
                 </div>
             </div>
                 <div class="tabs">
@@ -2267,11 +2274,6 @@
                         <h3 style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
                     </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
-                   <div style="margin-bottom: 1rem;">
-                    <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a JSON (Excel compatible)</button>
-                    <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
-                    <button class="btn btn-secondary" onclick="exportData('sql')" disabled style="opacity: 0.5; cursor: not-allowed;">📥 Exportar a SQL (Próximamente)</button>
-                </div>
                     <div id="estadoEdicion" style="padding: 1rem; background: var(--gradient1); color: white; border-radius: 10px; margin-bottom: 1rem; text-align: center; font-weight: bold;">
                         🔒 Edición BLOQUEADA
                     </div>
@@ -2536,12 +2538,16 @@
         <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
             <input
                 id="reg_curp"
-                type="text"
+                type="tel"
                 placeholder="CURP (18 caracteres)"
                 required
                 maxlength="18"
-                pattern="[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}"
+                minlength="18"
                 style="text-transform: uppercase;"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="characters"
+                inputmode="text"
             />
             <input
                 id="reg_nombre"
@@ -2696,7 +2702,7 @@
     // ========================================
     // FUNCIONES DE AUTENTICACIÓN
     // ========================================
-     // Control Modal Registro
+    // Control Modal Registro
     function mostrarRegistro() {
         console.log("📝 Abriendo modal de registro");
         document.getElementById("registroModal").classList.remove("hidden");
@@ -2705,9 +2711,7 @@
     function cerrarRegistro() {
         console.log("❌ Cerrando modal de registro");
         document.getElementById("registroModal").classList.add("hidden");
-        document.getElementById("reg_usuario").value = "";
-        document.getElementById("reg_institucion").value = "";
-        document.getElementById("reg_password").value = "";
+        document.getElementById("formRegistro").reset();
     }
 
     // ========================================
@@ -2724,6 +2728,71 @@
         document.getElementById("restaurarPasswordModal").classList.add("hidden");
         document.getElementById("restore_usuario").value = "";
         document.getElementById("restore_email").value = "";
+    }
+
+    // ========================================
+    // LOGIN DE USUARIO (CON BACKEND)
+    // ========================================
+    async function loginUsuario() {
+        const usuarioInput = document.getElementById("usuario");
+        const passwordInput = document.getElementById("password");
+        
+        const usuario = usuarioInput.value.trim().toUpperCase();
+        const password = passwordInput.value.trim();
+
+        if (!usuario || !password) {
+            alert("❌ Por favor completa todos los campos");
+            return;
+        }
+
+        try {
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                userRole = result.role;
+                userDependencia = result.dependencia;
+                userName = result.nombre;
+
+                document.getElementById('userName').textContent = '👤 ' + userName;
+                document.getElementById('userRole').textContent = userRole === 'superadmin' ? 'Super Admin' : 'Enlace';
+
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('loadingOverlay').classList.remove('active');
+
+                if (userRole === 'superadmin') {
+                    document.getElementById('adminPanelTrimestral').classList.remove('hidden');
+                    document.getElementById('adminPanelEvidencias').classList.remove('hidden');
+                    document.getElementById('tabVerTabla').classList.remove('hidden');
+                    document.getElementById('dropdownItemTabla').classList.remove('hidden');
+                    document.getElementById('dropdownItemRevision').classList.remove('hidden');
+                } else {
+                    document.getElementById('adminPanelTrimestral').classList.add('hidden');
+                    document.getElementById('adminPanelEvidencias').classList.add('hidden');
+                    document.getElementById('tabVerTabla').classList.add('hidden');
+                    document.getElementById('dropdownItemTabla').classList.add('hidden');
+                    document.getElementById('dropdownItemRevision').classList.add('hidden');
+                }
+
+                await cargarRegistrosTrimestral();
+
+                alert('✅ Bienvenido ' + userName + '\n\nRol: ' + (userRole === 'superadmin' ? 'Super Administrador' : 'Enlace'));
+            } else {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                alert('❌ ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error al iniciar sesión:', error);
+            document.getElementById('loadingOverlay').classList.remove('active');
+            alert('❌ Error de conexión con el servidor');
+        }
     }
 
     async function restaurarPassword() {
@@ -2747,211 +2816,149 @@
             alert("❌ Error de conexión con el servidor");
         }
     }
-    // Registro de Usuario (SIN BACKEND - usando localStorage)
+
+    // Registro de Usuario
     async function registrarUsuario() {
-    const curp = document.getElementById("reg_curp").value.trim().toUpperCase();
-    const nombre = document.getElementById("reg_nombre").value.trim();
-    const primer_apellido = document.getElementById("reg_primer_apellido").value.trim();
-    const segundo_apellido = document.getElementById("reg_segundo_apellido").value.trim();
-    const correo = document.getElementById("reg_correo").value.trim();
-    const dependencia = document.getElementById("reg_dependencia").value.trim();
-    const usuario = document.getElementById("reg_usuario").value.trim().toUpperCase();
-    const password = document.getElementById("reg_password").value.trim();
+        // Obtener valores y limpiar
+        let curp = document.getElementById("reg_curp").value || "";
+        let nombre = document.getElementById("reg_nombre").value || "";
+        let primer_apellido = document.getElementById("reg_primer_apellido").value || "";
+        let segundo_apellido = document.getElementById("reg_segundo_apellido").value || "";
+        let correo = document.getElementById("reg_correo").value || "";
+        let dependencia = document.getElementById("reg_dependencia").value || "";
+        let usuario = document.getElementById("reg_usuario").value || "";
+        let password = document.getElementById("reg_password").value || "";
 
-    if (!curp || !nombre || !primer_apellido || !segundo_apellido || !correo || !dependencia || !usuario || !password) {
-        alert("❌ Completa todos los campos");
-        return;
-    }
+        // Limpiar espacios y convertir a mayúsculas donde corresponda
+        curp = curp.trim().toUpperCase();
+        nombre = nombre.trim();
+        primer_apellido = primer_apellido.trim();
+        segundo_apellido = segundo_apellido.trim();
+        correo = correo.trim().toLowerCase();
+        dependencia = dependencia.trim();
+        usuario = usuario.trim().toUpperCase();
+        password = password.trim();
 
-    if (curp.length !== 18) {
-        alert("❌ El CURP debe tener 18 caracteres");
-        return;
-    }
-
-    if (usuario.length < 3) {
-        alert("❌ El usuario debe tener al menos 3 caracteres");
-        return;
-    }
-
-    if (password.length < 6) {
-        alert("❌ La contraseña debe tener al menos 6 caracteres");
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                curp, 
-                nombre, 
-                primer_apellido, 
-                segundo_apellido, 
-                correo, 
-                dependencia,
-                usuario,
-                password 
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            alert(`✅ Usuario registrado correctamente\n\n👤 Usuario: ${usuario}\n🔑 Ya puedes iniciar sesión con tus credenciales.`);
-            cerrarRegistro();
-            document.getElementById("formRegistro").reset();
-        } else {
-            alert("❌ " + data.error);
+        // Validar campos vacíos
+        if (!curp) {
+            alert("❌ El campo CURP es obligatorio");
+            document.getElementById("reg_curp").focus();
+            return;
         }
-        
-    } catch (error) {
-        console.error("❌ Error al registrar:", error);
-        alert("❌ Error de conexión con el servidor");
-    }
-}
 
-    // Login de Usuario (FUNCIÓN COMPLETA)
-   async function registrarUsuario() {
-    // Obtener valores y limpiar
-    let curp = document.getElementById("reg_curp").value || "";
-    let nombre = document.getElementById("reg_nombre").value || "";
-    let primer_apellido = document.getElementById("reg_primer_apellido").value || "";
-    let segundo_apellido = document.getElementById("reg_segundo_apellido").value || "";
-    let correo = document.getElementById("reg_correo").value || "";
-    let dependencia = document.getElementById("reg_dependencia").value || "";
-    let usuario = document.getElementById("reg_usuario").value || "";
-    let password = document.getElementById("reg_password").value || "";
-
-    // Limpiar espacios y convertir a mayúsculas donde corresponda
-    curp = curp.trim().toUpperCase();
-    nombre = nombre.trim();
-    primer_apellido = primer_apellido.trim();
-    segundo_apellido = segundo_apellido.trim();
-    correo = correo.trim().toLowerCase();
-    dependencia = dependencia.trim();
-    usuario = usuario.trim().toUpperCase();
-    password = password.trim();
-
-    // Validar campos vacíos
-    if (!curp) {
-        alert("❌ El campo CURP es obligatorio");
-        document.getElementById("reg_curp").focus();
-        return;
-    }
-
-    if (!nombre) {
-        alert("❌ El campo Nombre es obligatorio");
-        document.getElementById("reg_nombre").focus();
-        return;
-    }
-
-    if (!primer_apellido) {
-        alert("❌ El campo Primer Apellido es obligatorio");
-        document.getElementById("reg_primer_apellido").focus();
-        return;
-    }
-
-    if (!segundo_apellido) {
-        alert("❌ El campo Segundo Apellido es obligatorio");
-        document.getElementById("reg_segundo_apellido").focus();
-        return;
-    }
-
-    if (!correo) {
-        alert("❌ El campo Correo es obligatorio");
-        document.getElementById("reg_correo").focus();
-        return;
-    }
-
-    if (!dependencia) {
-        alert("❌ El campo Dependencia es obligatorio");
-        document.getElementById("reg_dependencia").focus();
-        return;
-    }
-
-    if (!usuario) {
-        alert("❌ El campo Usuario es obligatorio");
-        document.getElementById("reg_usuario").focus();
-        return;
-    }
-
-    if (!password) {
-        alert("❌ El campo Contraseña es obligatorio");
-        document.getElementById("reg_password").focus();
-        return;
-    }
-
-    // Validar longitud CURP
-    if (curp.length !== 18) {
-        alert("❌ CURP inválido\n\nDebe tener exactamente 18 caracteres.\nActualmente tiene: " + curp.length + " caracteres");
-        document.getElementById("reg_curp").focus();
-        return;
-    }
-
-    // Validar formato CURP
-    const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/;
-    if (!curpPattern.test(curp)) {
-        alert("❌ Formato de CURP inválido\n\nFormato correcto:\n• 4 letras\n• 6 números\n• H o M\n• 5 letras\n• 2 números\n\nEjemplo: SALR990312MDFLPC06");
-        document.getElementById("reg_curp").focus();
-        return;
-    }
-
-    // Validar usuario
-    if (usuario.length < 3) {
-        alert("❌ El usuario debe tener al menos 3 caracteres");
-        document.getElementById("reg_usuario").focus();
-        return;
-    }
-
-    // Validar contraseña
-    if (password.length < 6) {
-        alert("❌ La contraseña debe tener al menos 6 caracteres");
-        document.getElementById("reg_password").focus();
-        return;
-    }
-
-    // Validar email
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(correo)) {
-        alert("❌ Formato de correo electrónico inválido");
-        document.getElementById("reg_correo").focus();
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ 
-                curp: curp,
-                nombre: nombre,
-                primer_apellido: primer_apellido,
-                segundo_apellido: segundo_apellido,
-                correo: correo,
-                dependencia: dependencia,
-                usuario: usuario,
-                password: password
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            alert("✅ Usuario registrado correctamente\n\n👤 Usuario: " + data.usuario + "\n\n🔑 Ya puedes iniciar sesión con tus credenciales.");
-            cerrarRegistro();
-            document.getElementById("formRegistro").reset();
-        } else {
-            alert("❌ Error al registrar:\n\n" + data.error);
+        if (!nombre) {
+            alert("❌ El campo Nombre es obligatorio");
+            document.getElementById("reg_nombre").focus();
+            return;
         }
-        
-    } catch (error) {
-        console.error("❌ Error:", error);
-        alert("❌ Error de conexión con el servidor.\n\nPor favor verifica tu conexión a internet e intenta nuevamente.");
+
+        if (!primer_apellido) {
+            alert("❌ El campo Primer Apellido es obligatorio");
+            document.getElementById("reg_primer_apellido").focus();
+            return;
+        }
+
+        if (!segundo_apellido) {
+            alert("❌ El campo Segundo Apellido es obligatorio");
+            document.getElementById("reg_segundo_apellido").focus();
+            return;
+        }
+
+        if (!correo) {
+            alert("❌ El campo Correo es obligatorio");
+            document.getElementById("reg_correo").focus();
+            return;
+        }
+
+        if (!dependencia) {
+            alert("❌ El campo Dependencia es obligatorio");
+            document.getElementById("reg_dependencia").focus();
+            return;
+        }
+
+        if (!usuario) {
+            alert("❌ El campo Usuario es obligatorio");
+            document.getElementById("reg_usuario").focus();
+            return;
+        }
+
+        if (!password) {
+            alert("❌ El campo Contraseña es obligatorio");
+            document.getElementById("reg_password").focus();
+            return;
+        }
+
+        // Validar longitud CURP
+        if (curp.length !== 18) {
+            alert("❌ CURP inválido\n\nDebe tener exactamente 18 caracteres.\nActualmente tiene: " + curp.length + " caracteres");
+            document.getElementById("reg_curp").focus();
+            return;
+        }
+
+        // Validar formato CURP
+        const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/;
+        if (!curpPattern.test(curp)) {
+            alert("❌ Formato de CURP inválido\n\nFormato correcto:\n• 4 letras\n• 6 números\n• H o M\n• 5 letras\n• 2 números\n\nEjemplo: SALR990312MDFLPC06");
+            document.getElementById("reg_curp").focus();
+            return;
+        }
+
+        // Validar usuario
+        if (usuario.length < 3) {
+            alert("❌ El usuario debe tener al menos 3 caracteres");
+            document.getElementById("reg_usuario").focus();
+            return;
+        }
+
+        // Validar contraseña
+        if (password.length < 6) {
+            alert("❌ La contraseña debe tener al menos 6 caracteres");
+            document.getElementById("reg_password").focus();
+            return;
+        }
+
+        // Validar email
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(correo)) {
+            alert("❌ Formato de correo electrónico inválido");
+            document.getElementById("reg_correo").focus();
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    curp: curp,
+                    nombre: nombre,
+                    primer_apellido: primer_apellido,
+                    segundo_apellido: segundo_apellido,
+                    correo: correo,
+                    dependencia: dependencia,
+                    usuario: usuario,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert("✅ Usuario registrado correctamente\n\n👤 Usuario: " + data.usuario + "\n\n🔑 Ya puedes iniciar sesión con tus credenciales.");
+                cerrarRegistro();
+                document.getElementById("formRegistro").reset();
+            } else {
+                alert("❌ Error al registrar:\n\n" + data.error);
+            }
+            
+        } catch (error) {
+            console.error("❌ Error:", error);
+            alert("❌ Error de conexión con el servidor.\n\nPor favor verifica tu conexión a internet e intenta nuevamente.");
+        }
     }
-}
 
     // Logout
     function logout() {
@@ -3338,62 +3345,54 @@
     }
 
     async function exportData(format) {
-    if (userRole !== 'superadmin') {
-        alert('⚠️ Solo los Super Administradores pueden exportar datos.');
-        return;
-    }
-
-    try {
-        document.getElementById('loadingOverlay').classList.add('active');
-        document.querySelector('.loading-text').textContent = `📥 Exportando a ${format.toUpperCase()}...`;
-
-        let url = '';
-        let filename = '';
-        let contentType = '';
-
-        if (format === 'excel' || format === 'json') {
-            url = '/api/export/excel?format=json';
-            filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.json`;
-            contentType = 'application/json';
-        } else if (format === 'csv') {
-            url = '/api/export/excel?format=csv';
-            filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.csv`;
-            contentType = 'text/csv';
-        } else if (format === 'sql') {
-            // Para SQL, generamos un dump simple
-            alert('⚠️ Exportación SQL disponible próximamente.\n\nPor ahora usa JSON o CSV y luego importa a tu base de datos.');
-            document.getElementById('loadingOverlay').classList.remove('active');
+        if (userRole !== 'superadmin') {
+            alert('⚠️ Solo los Super Administradores pueden exportar datos.');
             return;
         }
 
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error('Error al exportar datos');
+        try {
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.querySelector('.loading-text').textContent = `📥 Exportando a ${format.toUpperCase()}...`;
+
+            let url = '';
+            let filename = '';
+
+            if (format === 'json') {
+                url = '/api/export/excel?format=json';
+                filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.json`;
+            } else if (format === 'csv') {
+                url = '/api/export/excel?format=csv';
+                filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.csv`;
+            }
+
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error('Error al exportar datos');
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            document.getElementById('loadingOverlay').classList.remove('active');
+            document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
+
+            alert(`✅ Datos exportados exitosamente!\n\nFormato: ${format.toUpperCase()}\nArchivo: ${filename}`);
+
+        } catch (error) {
+            console.error('Error al exportar:', error);
+            document.getElementById('loadingOverlay').classList.remove('active');
+            document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
+            alert('❌ Error al exportar datos: ' + error.message);
         }
-
-        const blob = await response.blob();
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        document.body.removeChild(a);
-
-        document.getElementById('loadingOverlay').classList.remove('active');
-        document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
-
-        alert(`✅ Datos exportados exitosamente!\n\nFormato: ${format.toUpperCase()}\nArchivo: ${filename}\n\nTotal de registros: ${format === 'csv' ? 'Ver archivo' : 'Ver archivo'}`);
-
-    } catch (error) {
-        console.error('Error al exportar:', error);
-        document.getElementById('loadingOverlay').classList.remove('active');
-        document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
-        alert('❌ Error al exportar datos: ' + error.message);
     }
-}
 
     // ========================================
     // BÚSQUEDA EN TABLA
@@ -3416,7 +3415,7 @@
     // ========================================
     const ramosUR = ['2-0','4-0','4-A00','4-E2D','4-EZQ','4-F00','4-G00','4-K00','4-N00','4-P00','4-Q00','4-T00','4-X00','5-0','5-I00','5-J00','5-K00','6-0','6-A00','6-B00','6-C00','6-D00','6-E00','6-G0N','6-G1C','6-G1H','6-G2T','6-G3A','6-GSA','6-H00','6-HAT','6-HBW','6-HHN','6-HIU','6-HJO','6-HJY','6-HKA','6-HKI','6-KCZ','7-0','7-H0C','7-H0M','7-HXA','7-HZI','8-0','8-A1I','8-AFU','8-B00','8-C00','8-D00','8-G00','8-I00','8-I6L','8-I9H','8-IZC','8-IZI','8-JAG','8-JBK','8-JBP','8-RJL','8-VSS','8-VST','9-0','9-A00','9-C00','9-D00','9-E00','9-J0U','9-J4Q','9-J9E','9-JZL','9-JZN','9-KDI','10-0','10-K2H','10-K2N','10-K2O','10-K8V','10-LAT','10-LAU','11-0','11-A00','11-B00','11-B01','11-G00','11-K00','11-L00','11-L3P','11-L4J','11-L5N','11-L5X','11-L6H','11-L6I','11-L6J','11-L6W','11-L8G','11-L8K','11-L9T','11-M00','11-MAR','11-MAX','11-MDA','11-MDE','11-MEY','11-MGC','11-MGJ','11-O00','12-0','12-E00','12-I00','12-K00','12-L00','12-M00','12-M7F','12-M7K','12-NAW','12-NBB','12-NBD','12-NBG','12-NBV','12-NCA','12-NCD','12-NCE','12-NCG','12-NCH','12-NCK','12-NCZ','12-NDE','12-NDF','12-NDY','12-NEF','12-NHK','12-O00','12-Q00','12-R00','12-S00','12-T00','12-V00','12-Y00','13-0','13-AYH','13-J2I','13-J2K','13-J2P','13-J2R','13-J2T','13-J2U','13-J2V','13-J2W','13-J2X','13-J2Y','13-J2Z','13-J3A','13-J3B','13-J3C','13-J3D','13-J3E','13-J3F','13-J3G','13-J3L','13-J4V','13-KDN','13-N9W','14-0','14-A00','14-P7R','14-PBE','14-PBJ','14-VUY','15-0','15-B00','15-QCW','15-QDV','15-QEU','15-QEZ','16-0','16-B00','16-E00','16-F00','16-G00','16-RHQ','16-RJE','16-RJJ','18-0','18-A00','18-E00','18-T0K','18-T0O','18-T0Q','18-T0U','18-T4I','18-T4L','18-T4M','18-T4N','18-T4O','18-TOM','18-TON','18-TQA','19-HC6','20-0','20-L00','20-V3A','20-VRW','21-0','21-W3N','21-W3S','25-C00','27-0','27-T00','31-0','32-0','36-0','36-B00','36-C00','36-D00','36-E00','36-F00','36-G00','36-H00','37-0','38-90A','38-90C','38-90E','38-90G','38-90I','38-90K','38-90M','38-90O','38-90Q','38-90S','38-90U','38-90W','38-90X','38-90Y','38-91A','38-91C','38-91E','38-91I','38-91K','38-91M','38-91Q','38-91S','38-91U','38-91W','38-92M','38-9ZU','38-9ZW','38-9ZY','47-AYB','47-AYI','47-AYJ','47-AYL','47-AYM','47-AYN','47-AYO','47-EZN','47-MDL','48-0','48-D00','48-E00','48-F00','48-I00','48-J00','48-L3N','48-L6U','48-L8P','48-L9Y','48-MDB','48-MDC','48-MHL','48-VZG','50-GYR','50-ZZZ','51-GYN','52-T9G','52-T9K','52-T9M','52-T9N','53-TVV','53-UHI','53-UHN','53-UHS','53-UHX','53-UIC','53-UIH','53-UIM','53-UIR','53-UIT','53-UIW','54-0','55-0'];
 
-    const dependencias = ["ADMINISTRACIÓN DEL PATRIMONIO DE LA BENEFICENCIA PÚBLICA","ADMINISTRACIÓN DEL SISTEMA PORTUARIO LÁZARO CÁRDENAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL CABO SAN LUCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL COATZACOALCOS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL DOS BOCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ENSENADA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL GUAYMAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MANZANILLO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MAZATLÁN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO CHIAPAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO VALLARTA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL SALINA CRUZ, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TAMPICO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TOPOLOBAMPO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TUXPAN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL VERACRUZ, S.A. DE C.V.","AEROPUERTO INTERNACIONAL DE LA CIUDAD DE MÉXICO, S.A. DE C.V.","AEROPUERTO INTERNACIONAL FELIPE ÁNGELES, S.A. DE C.V.","AEROPUERTOS Y SERVICIOS AUXILIARES","AGENCIA DE TRANSFORMACIÓN DIGITAL Y TELECOMUNICACIONES","AGENCIA ESPACIAL MEXICANA","AGENCIA FEDERAL DE AVIACIÓN CIVIL","AGENCIA NACIONAL DE ADUANAS DE MÉXICO","AGENCIA NACIONAL DE SEGURIDAD INDUSTRIAL Y DE PROTECCIÓN AL MEDIO AMBIENTE DEL SECTOR HIDROCARBUROS","AGROASEMEX, S.A.","ARCHIVO GENERAL DE LA NACIÓN","AUTORIDAD EDUCATIVA FEDERAL EN LA CIUDAD DE MÉXICO","BANCO DEL BIENESTAR, S.N.C., I.B.D.","BANCO NACIONAL DE COMERCIO EXTERIOR, S.N.C.","BANCO NACIONAL DE OBRAS Y SERVICIOS PÚBLICOS, S.N.C.","BANCO NACIONAL DEL EJÉRCITO, FUERZA AÉREA Y ARMADA, S.N.C.","CAMINOS Y PUENTES FEDERALES DE INGRESOS Y SERVICIOS CONEXOS","CASA DE MONEDA DE MÉXICO","CENTRO DE CAPACITACIÓN CINEMATOGRÁFICA, A.C.","CENTRO DE ENSEÑANZA TÉCNICA INDUSTRIAL","CENTRO DE INGENIERÍA Y DESARROLLO INDUSTRIAL","CENTRO DE INVESTIGACIÓN CIENTÍFICA DE YUCATÁN, A.C.","CENTRO DE INVESTIGACIÓN CIENTÍFICA Y DE EDUCACIÓN SUPERIOR DE ENSENADA, BAJA CALIFORNIA","CENTRO DE INVESTIGACIÓN EN ALIMENTACIÓN Y DESARROLLO, A.C.","CENTRO DE INVESTIGACIÓN EN CIENCIAS DE INFORMACIÓN GEOESPACIAL, A.C.","CENTRO DE INVESTIGACIÓN EN MATEMÁTICAS, A.C.","CENTRO DE INVESTIGACIÓN EN MATERIALES AVANZADOS, S.C.","CENTRO DE INVESTIGACIÓN EN QUÍMICA APLICADA","CENTRO DE INVESTIGACIÓN Y ASISTENCIA EN TECNOLOGÍA Y DISEÑO DE JALISCO, A.C.","CENTRO DE INVESTIGACIÓN Y DE ESTUDIOS AVANZADOS DEL IPN","CENTRO DE INVESTIGACIÓN Y DESARROLLO TECNOLÓGICO EN ELECTROQUÍMICA, S.C.","CENTRO DE INVESTIGACIÓN Y DOCENCIA ECONÓMICAS, A.C.","CENTRO DE INVESTIGACIONES BIOLÓGICAS DEL NOROESTE, S.C.","CENTRO DE INVESTIGACIONES EN ÓPTICA, A.C.","CENTRO DE INVESTIGACIONES Y ESTUDIOS SUPERIORES EN ANTROPOLOGÍA SOCIAL","CENTRO DE PRODUCCIÓN DE PROGRAMAS INFORMATIVOS Y ESPECIALES","CENTRO FEDERAL DE CONCILIACIÓN Y REGISTRO LABORAL","CENTRO NACIONAL DE CONTROL DE ENERGÍA","CENTRO NACIONAL DE CONTROL DEL GAS NATURAL","CENTRO NACIONAL DE EQUIDAD DE GÉNERO Y SALUD REPRODUCTIVA","CENTRO NACIONAL DE EXCELENCIA TECNOLÓGICA EN SALUD","CENTRO NACIONAL DE LA TRANSFUSIÓN SANGUÍNEA","CENTRO NACIONAL DE METROLOGÍA","CENTRO NACIONAL DE PREVENCIÓN DE DESASTRES","CENTRO NACIONAL DE PROGRAMAS PREVENTIVOS Y CONTROL DE ENFERMEDADES","CENTRO NACIONAL DE TRASPLANTES","CENTRO NACIONAL PARA LA PREVENCIÓN Y CONTROL DEL VIH/SIDA","CENTRO NACIONAL PARA LA SALUD DE LA INFANCIA Y LA ADOLESCENCIA","CENTROS DE INTEGRACIÓN JUVENIL, A.C.","CIATEC, A.C.","CIATEQ, A.C.","COLEGIO DE BACHILLERES","COLEGIO DE POSTGRADUADOS","COLEGIO NACIONAL DE EDUCACIÓN PROFESIONAL TÉCNICA","COLEGIO SUPERIOR AGROPECUARIO DEL ESTADO DE GUERRERO","COMISIÓN DE APELACIÓN Y ARBITRAJE DEL DEPORTE","COMISIÓN DE OPERACIÓN Y FOMENTO DE ACTIVIDADES ACADÉMICAS DEL IPN","COMISIÓN EJECUTIVA DE ATENCIÓN A VÍCTIMAS","COMISIÓN FEDERAL PARA LA PROTECCIÓN CONTRA RIESGOS SANITARIOS","COMISIÓN NACIONAL BANCARIA Y DE VALORES","COMISIÓN NACIONAL DE ACUACULTURA Y PESCA","COMISIÓN NACIONAL DE ARBITRAJE MÉDICO","COMISIÓN NACIONAL DE ÁREAS NATURALES PROTEGIDAS","COMISIÓN NACIONAL DE BIOÉTICA","COMISIÓN NACIONAL DE BÚSQUEDA DE PERSONAS","COMISIÓN NACIONAL DE CULTURA FÍSICA Y DEPORTE","COMISIÓN NACIONAL DE HIDROCARBUROS","COMISIÓN NACIONAL DE LAS ZONAS ÁRIDAS","COMISIÓN NACIONAL DE LIBROS DE TEXTO GRATUITOS","COMISIÓN NACIONAL DE LOS SALARIOS MÍNIMOS","COMISIÓN NACIONAL DE MEJORA REGULATORIA","COMISIÓN NACIONAL DE SALUD MENTAL Y ADICCIONES","COMISIÓN NACIONAL DE SEGURIDAD NUCLEAR Y SALVAGUARDIAS","COMISIÓN NACIONAL DE SEGUROS Y FIANZAS","COMISIÓN NACIONAL DE VIVIENDA","COMISIÓN NACIONAL DEL AGUA","COMISIÓN NACIONAL DEL SISTEMA DE AHORRO PARA EL RETIRO","COMISIÓN NACIONAL FORESTAL","COMISIÓN NACIONAL PARA EL USO EFICIENTE DE LA ENERGÍA","COMISIÓN NACIONAL PARA LA MEJORA CONTINUA DE LA EDUCACIÓN","COMISIÓN NACIONAL PARA LA PROTECCIÓN Y DEFENSA DE LOS USUARIOS DE SERVICIOS FINANCIEROS","COMISIÓN REGULADORA DE ENERGÍA","COMITÉ NACIONAL PARA EL DESARROLLO SUSTENTABLE DE LA CAÑA DE AZÚCAR","COMPAÑÍA MEXICANA DE EXPLORACIONES, S.A. DE C.V.","COMPAÑÍA OPERADORA DEL CENTRO CULTURAL Y TURÍSTICO DE TIJUANA, S.A. DE C.V.","CONSEJERÍA JURÍDICA DEL EJECUTIVO FEDERAL","CONSEJO NACIONAL DE EVALUACIÓN DE LA POLÍTICA DE DESARROLLO SOCIAL","CONSEJO NACIONAL DE FOMENTO EDUCATIVO","CONSEJO NACIONAL DE HUMANIDADES, CIENCIAS Y TECNOLOGÍAS","CONSEJO NACIONAL PARA EL DESARROLLO Y LA INCLUSIÓN DE LAS PERSONAS CON DISCAPACIDAD","CONSEJO NACIONAL PARA PREVENIR LA DISCRIMINACIÓN","CONSOLIDADO","COORDINACIÓN GENERAL DE LA COMISIÓN MEXICANA DE AYUDA A REFUGIADOS","COORDINACIÓN NACIONAL ANTISECUESTRO Y DELITOS DE ALTO IMPACTO","COORDINACIÓN NACIONAL DE BECAS PARA EL BIENESTAR BENITO JUÁREZ","COORDINACIÓN PARA LA ATENCIÓN INTEGRAL DE LA MIGRACIÓN EN LA FRONTERA SUR","CORREDOR INTEROCEÁNICO DEL ISTMO DE TEHUANTEPEC","EDUCAL, S.A. DE C.V.","EL COLEGIO DE LA FRONTERA NORTE, A.C.","EL COLEGIO DE LA FRONTERA SUR","EL COLEGIO DE MÉXICO, A.C.","EL COLEGIO DE MICHOACÁN, A.C.","EL COLEGIO DE SAN LUIS, A.C.","ESTUDIOS CHURUBUSCO AZTECA, S.A.","EXPORTADORA DE SAL, S.A. DE C.V.","FERROCARRIL DEL ISTMO DE TEHUANTEPEC, S.A. DE C.V.","FIDEICOMISO DE FOMENTO MINERO","FIDEICOMISO DE LOS SISTEMAS NORMALIZADO DE COMPETENCIA LABORAL Y DE CERTIFICACIÓN","FIDEICOMISO DE RIESGO COMPARTIDO","FIDEICOMISO FONDO NACIONAL DE FOMENTO EJIDAL","FIDEICOMISO PARA LA CINETECA NACIONAL","FIDEICOMISO UNIVERSIDAD MARÍTIMA Y PORTUARIA DE MÉXICO","FINANCIERA PARA EL BIENESTAR","FONATUR INFRAESTRUCTURA, S.A. DE C.V.","FONDO DE CAPITALIZACIÓN E INVERSIÓN DEL SECTOR RURAL","FONDO DE CULTURA ECONÓMICA","FONDO DE GARANTÍA Y FOMENTO PARA LA AGRICULTURA, GANADERÍA Y AVICULTURA","FONDO DE LA VIVIENDA DEL ISSSTE","FONDO NACIONAL DE FOMENTO AL TURISMO","FONDO NACIONAL PARA EL FOMENTO DE LAS ARTESANÍAS","GUARDIA NACIONAL","HOSPITAL GENERAL DR. MANUEL GEA GONZÁLEZ","HOSPITAL GENERAL DE MÉXICO DR. EDUARDO LICEAGA","HOSPITAL INFANTIL DE MÉXICO FEDERICO GÓMEZ","HOSPITAL JUÁREZ DE MÉXICO","IMPRESORA Y ENCUADERNADORA PROGRESO, S.A. DE C.V.","INFOTEC CENTRO DE INVESTIGACIÓN E INNOVACIÓN EN TIC","INNOVABIENESTAR DE MÉXICO, S.A.P.I. DE C.V.","INSTITUTO DE ADMINISTRACIÓN Y AVALÚOS DE BIENES NACIONALES","INSTITUTO DE ECOLOGÍA, A.C.","INSTITUTO DE INVESTIGACIONES DR. JOSÉ MARÍA LUIS MORA","INSTITUTO DE SEGURIDAD SOCIAL PARA LAS FUERZAS ARMADAS MEXICANAS","INSTITUTO DE SEGURIDAD Y SERVICIOS SOCIALES DE LOS TRABAJADORES DEL ESTADO","INSTITUTO DEL FONDO NACIONAL PARA EL CONSUMO DE LOS TRABAJADORES","INSTITUTO MEXICANO DE CINEMATOGRAFÍA","INSTITUTO MEXICANO DE INVESTIGACIÓN EN PESCA Y ACUACULTURA SUSTENTABLES","INSTITUTO MEXICANO DE LA PROPIEDAD INDUSTRIAL","INSTITUTO MEXICANO DE LA RADIO","INSTITUTO MEXICANO DE TECNOLOGÍA DEL AGUA","INSTITUTO MEXICANO DEL PETRÓLEO","INSTITUTO MEXICANO DEL SEGURO SOCIAL","INSTITUTO MEXICANO DEL TRANSPORTE","INSTITUTO NACIONAL DE ANTROPOLOGÍA E HISTORIA","INSTITUTO NACIONAL DE ASTROFÍSICA, ÓPTICA Y ELECTRÓNICA","INSTITUTO NACIONAL DE BELLAS ARTES Y LITERATURA","INSTITUTO NACIONAL DE CANCEROLOGÍA","INSTITUTO NACIONAL DE CARDIOLOGÍA IGNACIO CHÁVEZ","INSTITUTO NACIONAL DE CIENCIAS MÉDICAS Y NUTRICIÓN SALVADOR ZUBIRÁN","INSTITUTO NACIONAL DE ECOLOGÍA Y CAMBIO CLIMÁTICO","INSTITUTO NACIONAL DE ELECTRICIDAD Y ENERGÍAS LIMPIAS","INSTITUTO NACIONAL DE ENFERMEDADES RESPIRATORIAS ISMAEL COSÍO VILLEGAS","INSTITUTO NACIONAL DE GERIATRÍA","INSTITUTO NACIONAL DE INVESTIGACIONES FORESTALES, AGRÍCOLAS Y PECUARIAS","INSTITUTO NACIONAL DE INVESTIGACIONES NUCLEARES","INSTITUTO NACIONAL DE LA ECONOMÍA SOCIAL","INSTITUTO NACIONAL DE LA INFRAESTRUCTURA FÍSICA EDUCATIVA","INSTITUTO NACIONAL DE LAS MUJERES","INSTITUTO NACIONAL DE LAS PERSONAS ADULTAS MAYORES","INSTITUTO NACIONAL DE LENGUAS INDÍGENAS","INSTITUTO NACIONAL DE LOS PUEBLOS INDÍGENAS","INSTITUTO NACIONAL DE MEDICINA GENÓMICA","INSTITUTO NACIONAL DE MIGRACIÓN","INSTITUTO NACIONAL DE NEUROLOGÍA Y NEUROCIRUGÍA MANUEL VELASCO SUÁREZ","INSTITUTO NACIONAL DE PEDIATRÍA","INSTITUTO NACIONAL DE PERINATOLOGÍA ISIDRO ESPINOSA DE LOS REYES","INSTITUTO NACIONAL DE PSIQUIATRÍA RAMÓN DE LA FUENTE MUÑIZ","INSTITUTO NACIONAL DE REHABILITACIÓN LUIS GUILLERMO IBARRA IBARRA","INSTITUTO NACIONAL DE SALUD PÚBLICA","INSTITUTO NACIONAL DEL SUELO SUSTENTABLE","INSTITUTO NACIONAL PARA EL DESARROLLO DE CAPACIDADES DEL SECTOR RURAL, A.C.","INSTITUTO NACIONAL PARA EL FEDERALISMO Y EL DESARROLLO MUNICIPAL","INSTITUTO NACIONAL PARA LA EDUCACIÓN DE LOS ADULTOS","INSTITUTO PARA DEVOLVER AL PUEBLO LO ROBADO","INSTITUTO PARA LA PROTECCIÓN AL AHORRO BANCARIO","INSTITUTO POLITÉCNICO NACIONAL","INSTITUTO POTOSINO DE INVESTIGACIÓN CIENTÍFICA Y TECNOLÓGICA, A.C.","LABORATORIOS DE BIOLÓGICOS Y REACTIVOS DE MÉXICO, S.A. DE C.V.","LITIO PARA MÉXICO","LOTERÍA NACIONAL","NACIONAL FINANCIERA, S.N.C.","OFICINA DE LA PRESIDENCIA DE LA REPÚBLICA","ORGANISMO COORDINADOR DE UNIVERSIDADES PARA EL BIENESTAR BENITO JUÁREZ","ORGANISMO PROMOTOR DE INVERSIONES EN TELECOMUNICACIONES","PATRONATO DE OBRAS E INSTALACIONES DEL IPN","PEMEX CORPORATIVO","PREVENCIÓN Y REINSERCIÓN SOCIAL","PROCURADURÍA AGRARIA","PROCURADURÍA DE LA DEFENSA DEL CONTRIBUYENTE","PROCURADURÍA FEDERAL DE LA DEFENSA DEL TRABAJO","PROCURADURÍA FEDERAL DE PROTECCIÓN AL AMBIENTE","PROCURADURÍA FEDERAL DEL CONSUMIDOR","PRODUCTORA NACIONAL DE BIOLÓGICOS VETERINARIOS","RADIO EDUCACIÓN","REGISTRO AGRARIO NACIONAL","SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO","SECRETARÍA DE AGRICULTURA Y DESARROLLO RURAL","SECRETARÍA DE BIENESTAR","SECRETARÍA DE CULTURA","SECRETARÍA DE DESARROLLO AGRARIO, TERRITORIAL Y URBANO","SECRETARÍA DE ECONOMÍA","SECRETARÍA DE EDUCACIÓN PÚBLICA","SECRETARÍA DE ENERGÍA","SECRETARÍA DE GOBERNACIÓN","SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO","SECRETARÍA DE INFRAESTRUCTURA, COMUNICACIONES Y TRANSPORTES","SECRETARÍA DE LA DEFENSA NACIONAL","SECRETARÍA DE MEDIO AMBIENTE Y RECURSOS NATURALES","SECRETARÍA DE RELACIONES EXTERIORES","SECRETARÍA DE SALUD","SECRETARÍA DE SEGURIDAD Y PROTECCIÓN CIUDADANA","SECRETARÍA DE TURISMO","SECRETARÍA DEL TRABAJO Y PREVISIÓN SOCIAL","SECRETARÍA EJECUTIVA DEL SISTEMA NACIONAL ANTICORRUPCIÓN","SECRETARÍA GENERAL DEL CONSEJO NACIONAL DE POBLACIÓN","SECRETARIADO EJECUTIVO DEL SISTEMA NACIONAL DE SEGURIDAD PÚBLICA","SEGURIDAD ALIMENTARIA MEXICANA","SERVICIO DE ADMINISTRACIÓN TRIBUTARIA","SERVICIO DE INFORMACIÓN AGROALIMENTARIA Y PESQUERA","SERVICIO DE PROTECCIÓN FEDERAL","SERVICIO GEOLÓGICO MEXICANO","SERVICIO NACIONAL DE INSPECCIÓN Y CERTIFICACIÓN DE SEMILLAS","SERVICIO NACIONAL DE SANIDAD, INOCUIDAD Y CALIDAD AGROALIMENTARIA","SERVICIO POSTAL MEXICANO","SERVICIOS A LA NAVEGACIÓN EN EL ESPACIO AÉREO MEXICANO","SERVICIOS DE SALUD DEL IMSS-BIENESTAR","SISTEMA NACIONAL PARA EL DESARROLLO INTEGRAL DE LA FAMILIA","SISTEMA PÚBLICO DE RADIODIFUSIÓN DEL ESTADO MEXICANO","SOCIEDAD HIPOTECARIA FEDERAL, S.N.C.","TALLERES GRÁFICOS DE MÉXICO","TECNOLÓGICO NACIONAL DE MÉXICO","TELEVISIÓN METROPOLITANA, S.A. DE C.V.","TREN MAYA, S.A. DE C.V.","TRIBUNAL FEDERAL DE CONCILIACIÓN Y ARBITRAJE","TRIBUNAL FEDERAL DE JUSTICIA FISCAL Y ADMINISTRATIVA","TRIBUNAL SUPERIOR AGRARIO","TURÍSTICA INTEGRAL ISLAS MARÍAS, S.A. DE C.V.","UNIDAD DEL SISTEMA PARA LA CARRERA DE LAS MAESTRAS Y LOS MAESTROS","UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO","UNIVERSIDAD AUTÓNOMA CHAPINGO","UNIVERSIDAD PEDAGÓGICA NACIONAL","XE-IPN CANAL 11"];
+    const dependencias = ["ADMINISTRACIÓN DEL PATRIMONIO DE LA BENEFICENCIA PÚBLICA","ADMINISTRACIÓN DEL SISTEMA PORTUARIO LÁZARO CÁRDENAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL CABO SAN LUCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL COATZACOALCOS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL DOS BOCAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ENSENADA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL GUAYMAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MANZANILLO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL MAZATLÁN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO CHIAPAS, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PUERTO VALLARTA, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL SALINA CRUZ, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TAMPICO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TOPOLOBAMPO, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL TUXPAN, S.A. DE C.V.","ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL VERACRUZ, S.A. DE C.V.","SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO","SECRETARÍA DE COMUNICACIONES Y TRANSPORTES","SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO","SECRETARÍA DE EDUCACIÓN PÚBLICA"];
 
     function initAutocomplete() {
         const ramoInput = document.getElementById('ramoUrInput');
@@ -3486,6 +3485,169 @@
     }
 
     // ========================================
+    // FUNCIONES DE BACKEND
+    // ========================================
+    async function cargarRegistrosTrimestral() {
+        try {
+            const url = userRole === 'superadmin' 
+                ? '/api/trimestral/list'
+                : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+
+            if (result.success) {
+                const tbody = document.querySelector('#registrosTable tbody');
+                tbody.innerHTML = '';
+
+                result.data.forEach((registro, index) => {
+                    const row = tbody.insertRow();
+                    
+                    const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
+                    const claseEstadoRojo = estadosRojos.includes(registro.estado_avance) ? 'estado-rojo' : '';
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${registro.trimestre || ''}</td>
+                        <td>${registro.id_rusp || ''}</td>
+                        <td>${registro.primer_apellido || ''}</td>
+                        <td>${registro.segundo_apellido || ''}</td>
+                        <td>${registro.nombre || ''}</td>
+                        <td>${registro.curp || ''}</td>
+                        <td>${registro.nivel_puesto || ''}</td>
+                        <td>${registro.nivel_tabular || ''}</td>
+                        <td>${registro.ramo_ur || ''}</td>
+                        <td>${registro.dependencia || ''}</td>
+                        <td>${registro.correo_institucional || ''}</td>
+                        <td>${registro.telefono_institucional || ''}</td>
+                        <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
+                            ${registro.nivel_educativo || ''}
+                            <span class="edit-icon">✏️</span>
+                        </td>
+                        <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0">
+                            ${registro.institucion_educativa || ''}
+                            <span class="edit-icon">✏️</span>
+                        </td>
+                        <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0">
+                            ${registro.modalidad || ''}
+                            <span class="edit-icon">✏️</span>
+                        </td>
+                        <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
+                            ${registro.estado_avance || ''}
+                            <span class="edit-icon">✏️</span>
+                        </td>
+                        <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
+                            ${registro.observaciones || '-'}
+                            <span class="edit-icon">✏️</span>
+                        </td>
+                        <td>${registro.enlace_nombre || ''}</td>
+                        <td>${registro.enlace_primer_apellido || ''}</td>
+                        <td>${registro.enlace_segundo_apellido || ''}</td>
+                        <td>${registro.enlace_correo || ''}</td>
+                        <td>${registro.enlace_telefono || ''}</td>
+                    `;
+                });
+            }
+        } catch (error) {
+            console.error('Error al cargar registros:', error);
+        }
+    }
+
+    async function guardarRegistroTrimestral() {
+        const form = document.getElementById('trimestralForm');
+        const formData = new FormData(form);
+        
+        const data = {
+            enlace_nombre: formData.get('enlace_nombre'),
+            enlace_primer_apellido: formData.get('enlace_apellido1'),
+            enlace_segundo_apellido: formData.get('enlace_apellido2'),
+            enlace_correo: formData.get('enlace_correo'),
+            enlace_telefono: formData.get('enlace_telefono'),
+            trimestre: formData.get('trimestre'),
+            id_rusp: formData.get('id_rusp'),
+            primer_apellido: formData.get('primer_apellido'),
+            segundo_apellido: formData.get('segundo_apellido'),
+            nombre: formData.get('nombre'),
+            curp: formData.get('curp'),
+            nivel_puesto: formData.get('nivel_puesto'),
+            nivel_tabular: formData.get('nivel_tabular'),
+            ramo_ur: formData.get('ramo_ur'),
+            dependencia: formData.get('dependencia'),
+            correo_institucional: formData.get('correo_institucional'),
+            telefono_institucional: formData.get('telefono_institucional'),
+            nivel_educativo: formData.get('nivel_educativo'),
+            institucion_educativa: formData.get('institucion_educativa'),
+            modalidad: formData.get('modalidad'),
+            estado_avance: formData.get('estado_avance'),
+            observaciones: formData.get('observaciones'),
+            usuario_registro: userName
+        };
+
+        try {
+            const response = await fetch('/api/trimestral/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('✅ Registro guardado exitosamente!');
+                form.reset();
+                await cargarRegistrosTrimestral();
+            } else {
+                alert('❌ Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error al guardar:', error);
+            alert('❌ Error de conexión con el servidor');
+        }
+    }
+
+    async function descargarBackup() {
+        if (userRole !== 'superadmin') {
+            alert('⚠️ Solo los Super Administradores pueden descargar backups.');
+            return;
+        }
+
+        if (!confirm('¿Deseas descargar el backup completo de la base de datos?\n\nEsto incluye:\n• Todos los registros trimestrales\n• Información de usuarios (sin contraseñas)\n• Fecha y hora del backup')) {
+            return;
+        }
+
+        try {
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.querySelector('.loading-text').textContent = '💾 Generando backup...';
+
+            const response = await fetch('/api/backup/export');
+            
+            if (!response.ok) {
+                throw new Error('Error al generar backup');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_sabg_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            document.getElementById('loadingOverlay').classList.remove('active');
+            document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
+
+            alert('✅ Backup descargado exitosamente!\n\nArchivo: backup_sabg_' + new Date().toISOString().split('T')[0] + '.json\n\nGuarda este archivo en un lugar seguro.');
+
+        } catch (error) {
+            console.error('Error al descargar backup:', error);
+            document.getElementById('loadingOverlay').classList.remove('active');
+            alert('❌ Error al generar backup: ' + error.message);
+        }
+    }
+
+    // ========================================
     // INICIALIZACIÓN
     // ========================================
     window.addEventListener('load', () => {
@@ -3493,7 +3655,6 @@
         initAutocomplete();
     });
 
-    // Cerrar modal al hacer clic fuera
     window.addEventListener('click', (e) => {
         const modal = document.getElementById('monthModal');
         if (e.target === modal) {
@@ -3502,211 +3663,6 @@
     });
 
     console.log('✅ Sistema de Promoción de la Formación Académica cargado exitosamente!');
-
-    async function cargarRegistrosTrimestral() {
-    try {
-        const url = userRole === 'superadmin' 
-            ? '/api/trimestral/list'
-            : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
-
-        const response = await fetch(url);
-        const result = await response.json();
-
-        if (result.success) {
-            const tbody = document.querySelector('#registrosTable tbody');
-            tbody.innerHTML = '';
-
-            result.data.forEach((registro, index) => {
-                const row = tbody.insertRow();
-                
-                // Determinar si el estado de avance está desactualizado
-                const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
-                const claseEstadoRojo = estadosRojos.includes(registro.estado_avance) ? 'estado-rojo' : '';
-                
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${registro.trimestre || ''}</td>
-                    <td>${registro.id_rusp || ''}</td>
-                    <td>${registro.primer_apellido || ''}</td>
-                    <td>${registro.segundo_apellido || ''}</td>
-                    <td>${registro.nombre || ''}</td>
-                    <td>${registro.curp || ''}</td>
-                    <td>${registro.nivel_puesto || ''}</td>
-                    <td>${registro.nivel_tabular || ''}</td>
-                    <td>${registro.ramo_ur || ''}</td>
-                    <td>${registro.dependencia || ''}</td>
-                    <td>${registro.correo_institucional || ''}</td>
-                    <td>${registro.telefono_institucional || ''}</td>
-                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.nivel_educativo || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.institucion_educativa || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.modalidad || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.estado_avance || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.observaciones || '-'}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td>${registro.enlace_nombre || ''}</td>
-                    <td>${registro.enlace_primer_apellido || ''}</td>
-                    <td>${registro.enlace_segundo_apellido || ''}</td>
-                    <td>${registro.enlace_correo || ''}</td>
-                    <td>${registro.enlace_telefono || ''}</td>
-                `;
-            });
-        }
-    } catch (error) {
-        console.error('Error al cargar registros:', error);
-    }
-}
-async function guardarRegistroTrimestral() {
-    const form = document.getElementById('trimestralForm');
-    const formData = new FormData(form);
-    
-    const data = {
-        enlace_nombre: formData.get('enlace_nombre'),
-        enlace_primer_apellido: formData.get('enlace_apellido1'),
-        enlace_segundo_apellido: formData.get('enlace_apellido2'),
-        enlace_correo: formData.get('enlace_correo'),
-        enlace_telefono: formData.get('enlace_telefono'),
-        trimestre: formData.get('trimestre'),
-        id_rusp: formData.get('id_rusp'),
-        primer_apellido: formData.get('primer_apellido'),
-        segundo_apellido: formData.get('segundo_apellido'),
-        nombre: formData.get('nombre'),
-        curp: formData.get('curp'),
-        nivel_puesto: formData.get('nivel_puesto'),
-        nivel_tabular: formData.get('nivel_tabular'),
-        ramo_ur: formData.get('ramo_ur'),
-        dependencia: formData.get('dependencia'),
-        correo_institucional: formData.get('correo_institucional'),
-        telefono_institucional: formData.get('telefono_institucional'),
-        nivel_educativo: formData.get('nivel_educativo'),
-        institucion_educativa: formData.get('institucion_educativa'),
-        modalidad: formData.get('modalidad'),
-        estado_avance: formData.get('estado_avance'),
-        observaciones: formData.get('observaciones'),
-        usuario_registro: userName
-    };
-
-    try {
-        const response = await fetch('/api/trimestral/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            alert('✅ Registro guardado exitosamente!');
-            form.reset();
-            await cargarRegistrosTrimestral();
-        } else {
-            alert('❌ Error: ' + result.error);
-        }
-    } catch (error) {
-        console.error('Error al guardar:', error);
-        alert('❌ Error de conexión con el servidor');
-    }
-}
-            // ========================================
-// BACKUP DE BASE DE DATOS
-// ========================================
-async function descargarBackup() {
-    if (userRole !== 'superadmin') {
-        alert('⚠️ Solo los Super Administradores pueden descargar backups.');
-        return;
-    }
-
-    if (!confirm('¿Deseas descargar el backup completo de la base de datos?\n\nEsto incluye:\n• Todos los registros trimestrales\n• Información de usuarios (sin contraseñas)\n• Fecha y hora del backup')) {
-        return;
-    }
-
-    try {
-        document.getElementById('loadingOverlay').classList.add('active');
-        document.querySelector('.loading-text').textContent = '💾 Generando backup...';
-
-        const response = await fetch('/api/backup/export');
-        
-        if (!response.ok) {
-            throw new Error('Error al generar backup');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup_sabg_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        document.getElementById('loadingOverlay').classList.remove('active');
-        document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
-
-        alert('✅ Backup descargado exitosamente!\n\nArchivo: backup_sabg_' + new Date().toISOString().split('T')[0] + '.json\n\nGuarda este archivo en un lugar seguro.');
-
-    } catch (error) {
-        console.error('Error al descargar backup:', error);
-        document.getElementById('loadingOverlay').classList.remove('active');
-        alert('❌ Error al generar backup: ' + error.message);
-    }
-}
     </script>
- <script>
-async function loginUsuario(event) {
-  event.preventDefault();
-
-  const usuario = document.getElementById('usuario').value.trim();
-  const password = document.getElementById('password').value.trim();
-
-  try {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario, password })
-    });
-
-    const result = await response.json();
-    console.log('LOGIN RESPONSE:', result);
-
-    if (!response.ok || !result.success) {
-      alert(result.error || 'Error al iniciar sesión');
-      return;
-    }
-
-    const u = result.usuario;
-
-    localStorage.setItem('rol', u.rol);
-    localStorage.setItem('usuario', u.usuario);
-
-    alert(`Bienvenido ${u.nombre || u.usuario}\nRol: ${u.rol}`);
-  } catch (err) {
-    console.error(err);
-    alert('Error de conexión');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('loginForm');
-  if (form) {
-    form.addEventListener('submit', loginUsuario);
-  } else {
-    console.error('❌ No existe #loginForm');
-  }
-});
-</script>
 </body>
 </html>
