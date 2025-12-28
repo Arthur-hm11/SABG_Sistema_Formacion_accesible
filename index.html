@@ -3665,5 +3665,44 @@ async function descargarBackup() {
     }
 }
     </script>
+    <script>
+async function loginUsuario(event) {
+  event.preventDefault();
+
+  const usuario = document.getElementById('usuario').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, password })
+    });
+
+    const result = await response.json();
+    console.log('LOGIN RESPONSE:', result);
+
+    if (!response.ok || !result.success) {
+      alert(result.error || 'Error al iniciar sesión');
+      return;
+    }
+
+    const u = result.usuario;
+
+    localStorage.setItem('rol', u.rol);
+    localStorage.setItem('usuario', u.usuario);
+
+    alert(`Bienvenido ${u.nombre || u.usuario}\nRol: ${u.rol}`);
+  } catch (err) {
+    console.error(err);
+    alert('Error de conexión');
+  }
+}
+
+// 🔗 Vincular el formulario al JS
+document.getElementById('loginForm')
+  .addEventListener('submit', loginUsuario);
+</script>
+
 </body>
 </html>
