@@ -2751,6 +2751,66 @@
             alert("❌ Error de conexión con el servidor");
         }
     }
+            // ========================================
+// LOGIN DE USUARIO
+// ========================================
+async function loginUsuario() {
+    const usuario = document.getElementById("usuario").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!usuario || !password) {
+        alert("❌ Por favor completa todos los campos");
+        return;
+    }
+
+    try {
+        document.getElementById('loadingOverlay').classList.add('active');
+        
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ usuario, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            userRole = data.rol;
+            userName = data.nombre;
+            userDependencia = data.dependencia;
+
+            document.getElementById('userName').textContent = `👤 ${data.nombre}`;
+            document.getElementById('userRole').textContent = data.rol === 'superadmin' ? 'Super Admin' : 'Enlace';
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('active');
+
+            if (userRole === 'superadmin') {
+                document.getElementById('adminPanelTrimestral').classList.remove('hidden');
+                document.getElementById('adminPanelEvidencias').classList.remove('hidden');
+                document.getElementById('tabVerTabla').classList.remove('hidden');
+                document.getElementById('dropdownItemTabla').classList.remove('admin-only');
+                document.getElementById('dropdownItemRevision').classList.remove('admin-only');
+            }
+
+            await cargarRegistrosTrimestral();
+
+            alert(`✅ ¡Bienvenido ${data.nombre}!\n\nRol: ${data.rol === 'superadmin' ? 'Super Administrador' : 'Enlace'}`);
+            
+        } else {
+            document.getElementById('loadingOverlay').classList.remove('active');
+            alert('❌ ' + data.error);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error de login:', error);
+        document.getElementById('loadingOverlay').classList.remove('active');
+        alert('❌ Error de conexión con el servidor.\n\nPor favor verifica tu conexión a internet.');
+    }
+}
     // Login de Usuario (FUNCIÓN COMPLETA)
    async function registrarUsuario() {
     // Obtener valores y limpiar
