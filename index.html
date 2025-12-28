@@ -3665,7 +3665,7 @@ async function descargarBackup() {
     }
 }
     </script>
-    <script>
+ <script>
 async function loginUsuario(event) {
   event.preventDefault();
 
@@ -3699,10 +3699,14 @@ async function loginUsuario(event) {
   }
 }
 
-// 🔗 Vincular el formulario al JS
-document.getElementById('loginForm')
-  .addEventListener('submit', loginUsuario);
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('loginForm');
+  if (form) {
+    form.addEventListener('submit', loginUsuario);
+  } else {
+    console.error('❌ No existe #loginForm');
+  }
+});
 </script>
-
 </body>
 </html>
