@@ -2724,12 +2724,73 @@
         document.getElementById("restaurarPasswordModal").classList.remove("hidden");
     }
 
-    function cerrarRestaurarPassword() {
-        console.log("❌ Cerrando modal de restaurar contraseña");
-        document.getElementById("restaurarPasswordModal").classList.add("hidden");
-        document.getElementById("restore_usuario").value = "";
-        document.getElementById("restore_email").value = "";
+   // ========================================
+// LOGIN DE USUARIO
+// ========================================
+async function loginUsuario() {
+    const usuarioInput = document.getElementById("usuario");
+    const passwordInput = document.getElementById("password");
+    
+    const usuario = usuarioInput.value.trim().toUpperCase();
+    const password = passwordInput.value.trim();
+
+    if (!usuario || !password) {
+        alert("❌ Por favor completa todos los campos");
+        return;
     }
+
+    try {
+        document.getElementById('loadingOverlay').classList.add('active');
+
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, password })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            userRole = result.role;
+            userDependencia = result.dependencia;
+            userName = result.nombre;
+
+            document.getElementById('userName').textContent = '👤 ' + userName;
+            document.getElementById('userRole').textContent = userRole === 'superadmin' ? 'Super Admin' : 'Enlace';
+
+            // Ocultar pantalla de login
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('active');
+
+            // Configurar permisos según rol
+            if (userRole === 'superadmin') {
+                document.getElementById('adminPanelTrimestral').classList.remove('hidden');
+                document.getElementById('adminPanelEvidencias').classList.remove('hidden');
+                document.getElementById('tabVerTabla').classList.remove('hidden');
+                document.getElementById('dropdownItemTabla').classList.remove('hidden');
+                document.getElementById('dropdownItemRevision').classList.remove('hidden');
+            } else {
+                document.getElementById('adminPanelTrimestral').classList.add('hidden');
+                document.getElementById('adminPanelEvidencias').classList.add('hidden');
+                document.getElementById('tabVerTabla').classList.add('hidden');
+                document.getElementById('dropdownItemTabla').classList.add('hidden');
+                document.getElementById('dropdownItemRevision').classList.add('hidden');
+            }
+
+            // Cargar registros
+            await cargarRegistrosTrimestral();
+
+            alert('✅ Bienvenido ' + userName + '\n\nRol: ' + (userRole === 'superadmin' ? 'Super Administrador' : 'Enlace'));
+        } else {
+            document.getElementById('loadingOverlay').classList.remove('active');
+            alert('❌ ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        document.getElementById('loadingOverlay').classList.remove('active');
+        alert('❌ Error de conexión con el servidor');
+    }
+}
 
     async function restaurarPassword() {
         const usuarioInput = document.getElementById("restore_usuario");
