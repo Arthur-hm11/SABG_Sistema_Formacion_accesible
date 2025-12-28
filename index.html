@@ -2023,12 +2023,6 @@
                     <button class="btn btn-warning" onclick="descargarBackup()">
                         💾 Descargar Backup
                     </button>
-                    <button class="btn btn-success" onclick="exportData('json')">
-                        📥 Exportar JSON
-                    </button>
-                    <button class="btn btn-success" onclick="exportData('csv')">
-                        📥 Exportar CSV
-                    </button>
                 </div>
             </div>
                 <div class="tabs">
@@ -2273,6 +2267,11 @@
                         <h3 style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
                     </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
+                   <div style="margin-bottom: 1rem;">
+                    <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a JSON (Excel compatible)</button>
+                    <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
+                    <button class="btn btn-secondary" onclick="exportData('sql')" disabled style="opacity: 0.5; cursor: not-allowed;">📥 Exportar a SQL (Próximamente)</button>
+                </div>
                     <div id="estadoEdicion" style="padding: 1rem; background: var(--gradient1); color: white; border-radius: 10px; margin-bottom: 1rem; text-align: center; font-weight: bold;">
                         🔒 Edición BLOQUEADA
                     </div>
@@ -2537,16 +2536,12 @@
         <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
             <input
                 id="reg_curp"
-                type="tel"
+                type="text"
                 placeholder="CURP (18 caracteres)"
                 required
                 maxlength="18"
-                minlength="18"
+                pattern="[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}"
                 style="text-transform: uppercase;"
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="characters"
-                inputmode="text"
             />
             <input
                 id="reg_nombre"
@@ -2752,6 +2747,69 @@
             alert("❌ Error de conexión con el servidor");
         }
     }
+    // Registro de Usuario (SIN BACKEND - usando localStorage)
+    async function registrarUsuario() {
+    const curp = document.getElementById("reg_curp").value.trim().toUpperCase();
+    const nombre = document.getElementById("reg_nombre").value.trim();
+    const primer_apellido = document.getElementById("reg_primer_apellido").value.trim();
+    const segundo_apellido = document.getElementById("reg_segundo_apellido").value.trim();
+    const correo = document.getElementById("reg_correo").value.trim();
+    const dependencia = document.getElementById("reg_dependencia").value.trim();
+    const usuario = document.getElementById("reg_usuario").value.trim().toUpperCase();
+    const password = document.getElementById("reg_password").value.trim();
+
+    if (!curp || !nombre || !primer_apellido || !segundo_apellido || !correo || !dependencia || !usuario || !password) {
+        alert("❌ Completa todos los campos");
+        return;
+    }
+
+    if (curp.length !== 18) {
+        alert("❌ El CURP debe tener 18 caracteres");
+        return;
+    }
+
+    if (usuario.length < 3) {
+        alert("❌ El usuario debe tener al menos 3 caracteres");
+        return;
+    }
+
+    if (password.length < 6) {
+        alert("❌ La contraseña debe tener al menos 6 caracteres");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                curp, 
+                nombre, 
+                primer_apellido, 
+                segundo_apellido, 
+                correo, 
+                dependencia,
+                usuario,
+                password 
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert(`✅ Usuario registrado correctamente\n\n👤 Usuario: ${usuario}\n🔑 Ya puedes iniciar sesión con tus credenciales.`);
+            cerrarRegistro();
+            document.getElementById("formRegistro").reset();
+        } else {
+            alert("❌ " + data.error);
+        }
+        
+    } catch (error) {
+        console.error("❌ Error al registrar:", error);
+        alert("❌ Error de conexión con el servidor");
+    }
+}
+
     // Login de Usuario (FUNCIÓN COMPLETA)
    async function registrarUsuario() {
     // Obtener valores y limpiar
@@ -3279,7 +3337,7 @@
         document.getElementById('monthModal').classList.remove('active');
     }
 
-   async function exportData(format) {
+    async function exportData(format) {
     if (userRole !== 'superadmin') {
         alert('⚠️ Solo los Super Administradores pueden exportar datos.');
         return;
@@ -3291,13 +3349,21 @@
 
         let url = '';
         let filename = '';
+        let contentType = '';
 
-        if (format === 'json') {
+        if (format === 'excel' || format === 'json') {
             url = '/api/export/excel?format=json';
             filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.json`;
+            contentType = 'application/json';
         } else if (format === 'csv') {
             url = '/api/export/excel?format=csv';
             filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.csv`;
+            contentType = 'text/csv';
+        } else if (format === 'sql') {
+            // Para SQL, generamos un dump simple
+            alert('⚠️ Exportación SQL disponible próximamente.\n\nPor ahora usa JSON o CSV y luego importa a tu base de datos.');
+            document.getElementById('loadingOverlay').classList.remove('active');
+            return;
         }
 
         const response = await fetch(url);
@@ -3319,7 +3385,7 @@
         document.getElementById('loadingOverlay').classList.remove('active');
         document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
 
-        alert(`✅ Datos exportados exitosamente!\n\nFormato: ${format.toUpperCase()}\nArchivo: ${filename}`);
+        alert(`✅ Datos exportados exitosamente!\n\nFormato: ${format.toUpperCase()}\nArchivo: ${filename}\n\nTotal de registros: ${format === 'csv' ? 'Ver archivo' : 'Ver archivo'}`);
 
     } catch (error) {
         console.error('Error al exportar:', error);
@@ -3328,6 +3394,7 @@
         alert('❌ Error al exportar datos: ' + error.message);
     }
 }
+
     // ========================================
     // BÚSQUEDA EN TABLA
     // ========================================
