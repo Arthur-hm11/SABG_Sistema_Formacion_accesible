@@ -57,14 +57,13 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
     }
 
+    // ✅ CORRECCIÓN: Quitar el objeto "user" y devolver los datos directamente
     return res.status(200).json({
       success: true,
-      user: {
-        usuario: user.usuario,
-        nombre: user.nombre,
-        rol: user.rol,
-        dependencia: user.dependencia
-      }
+      usuario: user.usuario,
+      nombre: user.nombre,
+      rol: user.rol,
+      dependencia: user.dependencia
     });
 
   } catch (error) {
