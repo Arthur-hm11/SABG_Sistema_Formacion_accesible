@@ -26,12 +26,13 @@
             --gradient3: linear-gradient(135deg, #6B2C40 0%, #D4C4A8 100%);
             --gradient4: linear-gradient(135deg, #D4C4A8 0%, #E8DCC4 100%);
         }
-
-        body {
+            body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #6B2C40 0%, #8B3A52 25%, #A0475E 50%, #D4C4A8 100%);
             background-attachment: fixed;
             min-height: 100vh;
+            /* Agregar padding-top para compensar el header fijo */
+            padding-top: 80px;
         }
 
         /* Login Screen */
@@ -510,7 +511,7 @@
             padding: 0;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             position: sticky;
-            top: 0;
+            top: 80px; /* Posicionado debajo del header fijo del gobierno */
             z-index: 1000;
             animation: slideDown 0.8s ease;
         }
@@ -1471,6 +1472,14 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            body {
+                padding-top: 64px;
+            }
+            
+            header {
+                top: 64px;
+            }
+            
             h1 { font-size: 1.5rem; }
             .subtitle { font-size: 0.9rem; }
             .main-nav-btn { padding: 0.8rem 1.5rem; font-size: 1rem; }
@@ -1770,15 +1779,16 @@
   }
 
   /* ===== HEADER FIJO SABG (PEGAR AQUÍ) ===== */
-  .sabg-header-fixed{
+  .sabg-header-fixed {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 9999;
     background: #fff;
-    border-bottom: 1px solid #e6e6e6;
-  }
+    border-bottom: 3px solid #b38e5d;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
 
   .sabg-header-inner{
     max-width: 1400px;
@@ -1812,10 +1822,13 @@
   }
 
   @media (max-width: 600px){
-    .sabg-logo{ height: 38px; }
-    .sabg-divider{ height: 32px; }
-    .sabg-header-spacer{ height: 58px; }
-  }
+    .sabg-logo{ height: 40px; }
+    .sabg-divider{ height: 34px; }
+    .sabg-header-spacer{ height: 64px; }
+    body {
+        padding-top: 64px;
+    }
+}
     </style>
 </head>
 <body>
