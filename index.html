@@ -1760,6 +1760,40 @@
         .register-btn:active {
             transform: translateY(0);
         }
+        /* ===============================
+   FIX SOLO LOGOS HEADER (SIN ROMPER NADA)
+   =============================== */
+
+/* Evita que el contenedor “aplane” o corte imágenes */
+.header-top,
+.header-left{
+  align-items: center !important;
+}
+
+/* Asegura que los logos nunca se deformen ni se recorten */
+.header-logo-escudo,
+.header-logo-sabg,
+.header-top img{
+  height: 55px;           /* ajusta solo tamaño visual */
+  width: auto !important; /* mantiene proporción */
+  max-width: 100%;
+  object-fit: contain !important;
+  display: block;
+}
+
+/* Si el escudo se ve “muy grande”, bájalo un poco sin afectar el otro */
+.header-logo-escudo{
+  height: 60px;
+}
+
+/* Si en móvil se cortan, reduce tamaño */
+@media (max-width: 700px){
+  .header-logo-escudo,
+  .header-logo-sabg,
+  .header-top img{
+    height: 40px;
+  }
+}
     </style>
 </head>
 <body>
