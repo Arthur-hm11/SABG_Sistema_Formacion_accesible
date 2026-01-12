@@ -1760,6 +1760,62 @@
         .register-btn:active {
             transform: translateY(0);
         }
+        .register-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+  }
+
+  .register-btn:active {
+      transform: translateY(0);
+  }
+
+  /* ===== HEADER FIJO SABG (PEGAR AQUÍ) ===== */
+  .sabg-header-fixed{
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: #fff;
+    border-bottom: 1px solid #e6e6e6;
+  }
+
+  .sabg-header-inner{
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 10px 16px;
+  }
+
+  .sabg-logos{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    white-space: nowrap;
+  }
+
+  .sabg-logo{
+    height: 52px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  .sabg-divider{
+    width: 2px;
+    height: 42px;
+    background: #bdbdbd;
+    flex: 0 0 auto;
+  }
+
+  .sabg-header-spacer{
+    height: 74px;
+  }
+
+  @media (max-width: 600px){
+    .sabg-logo{ height: 38px; }
+    .sabg-divider{ height: 32px; }
+    .sabg-header-spacer{ height: 58px; }
+  }
     </style>
 </head>
 <body>
