@@ -1759,9 +1759,88 @@
         .register-btn:active {
             transform: translateY(0);
         }
+                /* ===============================
+           HEADER FIJO SABG
+           =============================== */
+        .sabg-header-fixed{
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 10002;
+          background: #ffffff;
+          border-bottom: 1px solid #e6e6e6;
+        }
+        
+        .sabg-header-inner{
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 10px 16px;
+        }
+        
+        .sabg-logos{
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          flex-wrap: wrap;
+          row-gap: 8px;
+        }
+        
+        .sabg-logo{
+          height: 54px;
+          width: auto;
+          display: block;
+          object-fit: contain;
+        }
+        
+        .sabg-divider{
+          width: 2px;
+          height: 46px;
+          background: #bdbdbd;
+          flex: 0 0 auto;
+        }
+        
+        .sabg-header-spacer{
+          height: 78px;
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 900px){
+          .sabg-logo{ height: 46px; }
+          .sabg-divider{ height: 38px; }
+          .sabg-header-spacer{ height: 70px; }
+        }
+        
+        @media (max-width: 600px){
+          .sabg-logos{
+            justify-content: center;
+            gap: 12px;
+          }
+          .sabg-logo{ height: 38px; }
+          .sabg-divider{ height: 30px; }
+          .sabg-header-spacer{ height: 64px; }
+        }
+        
+        @media (max-width: 380px){
+          .sabg-logo{ height: 34px; }
+          .sabg-divider{ height: 26px; }
+          .sabg-header-spacer{ height: 60px; }
+        }
     </style>
 </head>
 <body>
+    <header class="sabg-header-fixed">
+  <div class="sabg-header-inner">
+    <div class="sabg-logos">
+      <img src="assets/img/logo-gobmx.png" alt="Gobierno de México" class="sabg-logo">
+      <span class="sabg-divider"></span>
+      <img src="assets/img/logo-sabg.png" alt="Secretaría Anticorrupción y Buen Gobierno" class="sabg-logo">
+    </div>
+  </div>
+</header>
+
+<div class="sabg-header-spacer"></div>
+
 <!-- LOGIN SCREEN -->
     <div id="loginScreen">
         <div class="login-shapes">
