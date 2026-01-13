@@ -1778,7 +1778,27 @@
   max-width: 520px !important; /* limita ancho para que no se salga */
   object-fit: contain !important;
 }
+/* ===== LOGO COMBINADO HEADER (IMAGEN GENERADA) ===== */
+.header-logo-combinado{
+  height: 64px;          /* tamaño ideal escritorio */
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
 
+/* Ajuste responsive */
+@media (max-width: 768px){
+  .header-logo-combinado{
+    height: 48px;
+  }
+}
+
+@media (max-width: 480px){
+  .header-logo-combinado{
+    height: 40px;
+  }
+}
     </style>
 </head>
 <body>
@@ -2651,7 +2671,9 @@
     </div>
     <div class="fab" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" role="button" tabindex="0">⬆️</div>
     <footer>
-        <img src="data:image/webp;base64,UklGRuglAABXRUJQVlA4WAoAAAAwAAAAnAEAPQAASUNDUMgBAAAAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADY=" alt="Gobierno de México - SABG">
+        <img src="assets/img/header-gobmx-sabg.png"
+     alt="Gobierno de México | Secretaría Anticorrupción y Buen Gobierno"
+     class="header-logo-combinado">
         <p style="font-size: 1.2rem; font-weight: bold;">Gobierno de México</p>
         <p>Secretaría Anticorrupción y Buen Gobierno</p>
         <p>Sistema de Promoción de la Formación Académica</p>
