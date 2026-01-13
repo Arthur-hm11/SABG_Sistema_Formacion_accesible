@@ -524,12 +524,17 @@
             border-bottom: 3px solid var(--guinda);
         }
         
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
+       .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+
+    /* IMPORTANTE: permite que los hijos (logo/texto) se ajusten sin “cortarse” */
+    min-width: 0;
+
+    /* Si la pantalla es angosta, permite acomodarse sin romper */
+    flex-wrap: nowrap;
+}       
         .header-right {
             display: flex;
             align-items: center;
@@ -537,11 +542,23 @@
         }
         
         .header-logo-escudo {
-            height: 70px;
-            width: auto;
-            filter: brightness(0.3) contrast(1.8) saturate(0);
-        }
-        
+    /* Mantiene el alto visual del header */
+    max-height: 70px;
+    height: auto;
+
+    /* Evita que se “corte” el banner: lo obliga a ajustarse al espacio disponible */
+    max-width: min(520px, 38vw);
+    width: 100%;
+
+    /* Siempre completo, sin recortes */
+    object-fit: contain;
+
+    /* Conserva tu estilo del logo */
+    filter: brightness(0.3) contrast(1.8) saturate(0);
+
+    /* Quita espacio raro debajo de imágenes inline */
+    display: block;
+}
         .header-logo-sabg {
             height: 60px;
             width: auto;
