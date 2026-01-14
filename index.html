@@ -1788,6 +1788,44 @@
             cursor: default !important;
         }
 
+
+
+/* === Dependencia / Institución: Autocomplete (mostrar texto completo) === */
+.dep-autocomplete{position:relative;width:100%;}
+.autocomplete-menu{
+  position:absolute;
+  left:0; right:0;
+  top:calc(100% + 8px);
+  background:rgba(15,18,22,0.98);
+  border:1px solid rgba(196,157,104,0.22);
+  border-radius:14px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.35);
+  max-height:340px;
+  overflow:auto;
+  padding:8px;
+  z-index:9999;
+  display:none;
+}
+.autocomplete-menu.open{display:block;}
+.autocomplete-item{
+  width:100%;
+  text-align:left;
+  background:transparent;
+  border:0;
+  color:#fff;
+  padding:12px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  white-space:normal;      /* ✅ permite varias líneas */
+  line-height:1.35;
+  font-weight:600;
+}
+.autocomplete-item:hover,
+.autocomplete-item.active{
+  background:rgba(98,17,50,0.35);
+  outline:none;
+}
+.autocomplete-item small{opacity:.85;font-weight:500;}
 </style>
 </head>
 <body>
@@ -2596,14 +2634,20 @@
                 placeholder="Correo Electrónico"
                 required
             />
+            <div class="dep-autocomplete">
             <input
                 id="reg_dependencia"
                 type="text"
                 placeholder="Dependencia / Institución"
                 required
-                list="dep_reg_list"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="dep_reg_menu"
+                aria-expanded="false"
             />
+            <div id="dep_reg_menu" class="autocomplete-menu" role="listbox" aria-label="Dependencias"></div>
             <datalist id="dep_reg_list"></datalist>
+        </div>
 <input
                 id="reg_usuario"
                 type="text"
@@ -3840,26 +3884,137 @@ document.getElementById('loadingOverlay').classList.remove('active');
 }
     
     function populateRegDependencias() {
-        try {
-            const dl = document.getElementById('dep_reg_list');
-            if (!dl || typeof dependencias === 'undefined' || !Array.isArray(dependencias)) return;
-            dl.innerHTML = '';
-            // Unique + sorted
-            const uniq = Array.from(new Set(dependencias.map(d => String(d).trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'es'));
-            const frag = document.createDocumentFragment();
-            uniq.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d;
-                frag.appendChild(opt);
-            });
-            dl.appendChild(frag);
-        } catch(e) {
-            // silencioso
-        }
+        const dl = document.getElementById('dep_reg_list');
+        if (!dl || typeof dependencias === 'undefined' || !Array.isArray(dependencias)) return [];
+        dl.innerHTML = '';
+        // Unique + sorted
+        const uniq = Array.from(new Set(dependencias.map(d => String(d).trim()).filter(Boolean)))
+            .sort((a, b) => a.localeCompare(b, 'es'));
+        const frag = document.createDocumentFragment();
+        uniq.forEach((d) => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            frag.appendChild(opt);
+        });
+        dl.appendChild(frag);
+        return uniq;
     }
 
 
-document.addEventListener('DOMContentLoaded', ()=>{ populateRegDependencias(); });
+function initDependenciaAutocomplete() {
+        const input = document.getElementById('reg_dependencia');
+        const menu = document.getElementById('dep_reg_menu');
+        if (!input || !menu) return;
+
+        const data = populateRegDependencias();
+        let currentIndex = -1;
+
+        const setExpanded = (v) => {
+            input.setAttribute('aria-expanded', v ? 'true' : 'false');
+        };
+
+        const closeMenu = () => {
+            menu.classList.remove('open');
+            menu.innerHTML = '';
+            currentIndex = -1;
+            setExpanded(false);
+        };
+
+        const openMenu = () => {
+            menu.classList.add('open');
+            setExpanded(true);
+        };
+
+        const render = (query) => {
+            const q = String(query || '').toLowerCase().trim();
+            const matches = data
+                .filter((d) => d.toLowerCase().includes(q))
+                .slice(0, 250);
+
+            menu.innerHTML = '';
+            currentIndex = -1;
+
+            if (!matches.length) {
+                closeMenu();
+                return;
+            }
+
+            const frag = document.createDocumentFragment();
+            matches.forEach((d, i) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'autocomplete-item';
+                btn.setAttribute('role', 'option');
+                btn.setAttribute('data-index', String(i));
+                btn.textContent = d;
+
+                // mousedown para no perder focus antes de seleccionar
+                btn.addEventListener('mousedown', (ev) => {
+                    ev.preventDefault();
+                    input.value = d;
+                    closeMenu();
+                });
+
+                frag.appendChild(btn);
+            });
+
+            menu.appendChild(frag);
+            openMenu();
+        };
+
+        const highlight = () => {
+            const items = Array.from(menu.querySelectorAll('.autocomplete-item'));
+            items.forEach((el, idx) => {
+                el.classList.toggle('active', idx === currentIndex);
+            });
+            if (currentIndex >= 0 && items[currentIndex]) {
+                items[currentIndex].scrollIntoView({ block: 'nearest' });
+            }
+        };
+
+        input.addEventListener('focus', () => render(input.value));
+        input.addEventListener('input', () => render(input.value));
+
+        input.addEventListener('keydown', (e) => {
+            if (!menu.classList.contains('open')) return;
+
+            const items = Array.from(menu.querySelectorAll('.autocomplete-item'));
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentIndex = Math.min(currentIndex + 1, items.length - 1);
+                highlight();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentIndex = Math.max(currentIndex - 1, 0);
+                highlight();
+            } else if (e.key === 'Enter') {
+                if (currentIndex >= 0 && items[currentIndex]) {
+                    e.preventDefault();
+                    input.value = items[currentIndex].textContent || '';
+                    closeMenu();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeMenu();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target === input) return;
+            if (menu.contains(e.target)) return;
+            closeMenu();
+        });
+
+        // Si la lista es muy grande, abre al inicio para facilitar búsqueda
+        // (solo si el campo está vacío)
+        input.addEventListener('click', () => {
+            if (!input.value) render('');
+        });
+    }
+
+document.addEventListener('DOMContentLoaded', () => { initDependenciaAutocomplete(); });
 </script>
 </body>
 </html>
