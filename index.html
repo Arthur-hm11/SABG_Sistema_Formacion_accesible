@@ -1827,9 +1827,15 @@
 }
 .autocomplete-item small{opacity:.85;font-weight:500;}
 
-/* Ocultar tabs Instructivo y Formulario de Registro */
-.tab-button[data-tab="instructivo"],
-.tab-button[data-tab="registro"] {
+/* === OCULTAR BOTONES DE TAB SUPERIORES === */
+.tab-button,
+.tabs .tab-button {
+    display: none !important;
+}
+
+/* === OCULTAR OPCIONES DEL DROPDOWN (SIN ROMPER DESPLIEGUE) === */
+.dropdown-menu .dropdown-item:nth-child(1),
+.dropdown-menu .dropdown-item:nth-child(2) {
     display: none !important;
 }
 
