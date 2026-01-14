@@ -3241,9 +3241,6 @@ async function loginUsuario() {
 
         auditLog('UNLOCK_EDIT', 'OK', { section: 'trimestral' });
         alert('✅ Edición desbloqueada.');
-    });
-        
-        alert('✅ Edición desbloqueada. Los usuarios pueden ahora modificar los campos editables.');
     }
 
     function bloquearEdicion() {
@@ -3263,9 +3260,6 @@ async function loginUsuario() {
 
         auditLog('LOCK_EDIT', 'OK', { section: 'trimestral' });
         alert('🔒 Edición bloqueada.');
-    });
-        
-        alert('🔒 Edición bloqueada. Los usuarios no pueden modificar los registros.');
     }
 
     function filtrarTablaPorDependencia() {
