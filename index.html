@@ -2836,7 +2836,8 @@ function updateStatsFromRegistros(registros){
     function cerrarRegistro() {
         document.getElementById("registroModal").classList.add("hidden");
         document.getElementById("reg_usuario").value = "";
-        document.getElementById("reg_institucion").value = "";
+        const regDep = document.getElementById("reg_dependencia") || document.getElementById("reg_institucion");
+        if (regDep) regDep.value = "";
         document.getElementById("reg_password").value = "";
     }
 
