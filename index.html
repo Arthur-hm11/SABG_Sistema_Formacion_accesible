@@ -2693,15 +2693,14 @@ function auditLog(action, status, details = {}) {
             body: JSON.stringify(entry)
         }).catch(() => {});
     } catch (e) {
-  auditSilent('JS_EXCEPTION', { where: 'runtime', message: (e && e.message) ? e.message : String(e) });
-}
+        // Silencioso: no romper la app
+    }
 
 
 function formatNumberMX(n){
     try{
         return new Intl.NumberFormat('es-MX').format(Number(n) || 0);
-    }catch (e) {
-        auditSilent('JS_EXCEPTION', { where: 'format', message: (e && e.message) ? e.message : String(e) });
+    }catch(e){
         return (Number(n)||0).toString();
     }
 }
@@ -2849,7 +2848,7 @@ function updateStatsFromRegistros(registros){
             // ========================================
 // LOGIN DE USUARIO
 // ========================================
-async function loginUsuario() { // NOSONAR (mantener lógica por estabilidad)
+async function loginUsuario() {
     const usuario = document.getElementById("usuario").value.trim();
     const password = document.getElementById("password").value.trim();
 
@@ -3576,6 +3575,8 @@ async function loginUsuario() { // NOSONAR (mantener lógica por estabilidad)
     }
 
     function setupAutocomplete(input, suggestionsContainer, dataList) {
+        let currentFocus = -1;
+
         input.addEventListener('input', function() {
             const value = this.value.toLowerCase();
 
@@ -3834,11 +3835,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ populateRegDependencias(); }
             const arr=JSON.parse(localStorage.getItem(key)||"[]");
             arr.push(entry);
             localStorage.setItem(key, JSON.stringify(arr.slice(-500)));
-        }catch (e) {
-    // No romper la app si falla la auditoría local
-    try { window.__AUDIT_FAILS__ = (window.__AUDIT_FAILS__ || 0) + 1; window.__AUDIT_LAST_ERR__ = (e && e.message) ? e.message : String(e); } catch (_) { /* ignore */ }
-  }
-
+        }catch(e){}
     }
 </script>
 </body>
