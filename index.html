@@ -3419,35 +3419,25 @@ async function loginUsuario() {
     }
 
     function makeEditable(cell) {
-        // Campo objetivo
-        const field = cell.dataset.field;
-
-        // Permisos:
-        // - superadmin: puede editar todo
-        // - enlace: SOLO puede editar "observaciones"
-        const puedeEditar =
-            (userRole === 'superadmin') ||
-            (userRole === 'enlace' && field === 'observaciones');
-
-        if (!puedeEditar) {
-            alert('⚠️ Como ENLACE, solo puedes editar la columna OBSERVACIONES.');
+        if (userRole !== 'superadmin') {
+            alert('⚠️ Solo los super administradores pueden editar estos campos.');
             return;
         }
-
-        // Respetar bloqueo global de edición (control DCEVE)
+        
         if (edicionBloqueada) {
             alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
             return;
         }
-
+        
         if (cell.classList.contains('editing')) {
             return;
         }
-
+        
+        const field = cell.dataset.field;
         const currentValue = cell.textContent.trim().replace('✏️', '').trim();
-
+        
         cell.classList.add('editing');
-
+        
         let editControl;
         
         if (field === 'nivel_educativo') {
@@ -3505,10 +3495,6 @@ async function loginUsuario() {
             editControl = document.createElement('textarea');
             editControl.value = currentValue;
             editControl.rows = 3;
-            editControl.maxLength = 150;
-            editControl.addEventListener('input', () => {
-                if (editControl.value.length > 150) editControl.value = editControl.value.slice(0, 150);
-            });
         }
         
         cell.innerHTML = '';
