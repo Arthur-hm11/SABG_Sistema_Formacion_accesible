@@ -1,18 +1,21 @@
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
+import { Pool } from 'pg';
+import bcrypt from 'bcrypt';
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Preflight
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Solo POST
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Método no permitido' });
   }
@@ -38,7 +41,7 @@ module.exports = async (req, res) => {
     const user = result.rows[0];
     let passwordMatch = false;
 
-    // Legacy: texto plano
+    // INTENTO 1: texto plano (legacy)
     if (
       user.password_hash &&
       !user.password_hash.startsWith('$2b$') &&
@@ -46,13 +49,17 @@ module.exports = async (req, res) => {
     ) {
       passwordMatch = true;
 
+      // Migrar automáticamente a bcrypt
       const newHash = await bcrypt.hash(passwordClean, 10);
-      await pool.query('UPDATE usuarios SET password_hash = $1 WHERE id = $2', [newHash, user.id]);
+      await pool.query(
+        'UPDATE usuarios SET password_hash = $1 WHERE id = $2',
+        [newHash, user.id]
+      );
 
-      console.log(`✅ Hash actualizado para ${user.usuario}`);
+      console.log(`✅ Hash auto-generado para usuario ${user.usuario}`);
     }
 
-    // bcrypt
+    // INTENTO 2: bcrypt
     if (!passwordMatch && user.password_hash?.startsWith('$2b$')) {
       passwordMatch = await bcrypt.compare(passwordClean, user.password_hash);
     }
@@ -61,6 +68,7 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
     }
 
+    // OK
     return res.status(200).json({
       success: true,
       usuario: user.usuario,
@@ -73,4 +81,4 @@ module.exports = async (req, res) => {
     console.error('❌ Error login:', err);
     return res.status(500).json({ success: false, error: 'Error del servidor' });
   }
-};
+}
