@@ -2972,7 +2972,9 @@ async function loginUsuario() {
                 'adminPanelTrimestral',
                 'exportButtonsTrimestral',
                 'estadoEdicion',
-                'notasTablaTrimestral',            ];
+                'notasTablaTrimestral',
+                'tabVerTabla'
+            ];
             adminEls.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -3301,8 +3303,13 @@ async function loginUsuario() {
     }
 
     function showTrimestralTab(tabId) {
-        // ✅ Acceso a la tabla habilitado para todos los usuarios
-const tabs = document.querySelectorAll('#trimestral .tab');
+        // Seguridad: solo SUPERADMIN puede ver la tabla completa de registros
+        if (tabId === 'tabla' && !requireSuperAdmin('VIEW_TRIMESTRAL_TABLE')) {
+            alert('⛔ Acceso restringido. Esta sección es solo para administradores autorizados.');
+            // Mantener al usuario en el instructivo
+            tabId = 'instructivo';
+        }
+        const tabs = document.querySelectorAll('#trimestral .tab');
         const tabContents = document.querySelectorAll('#trimestral .tab-content');
 
         tabs.forEach(tab => {
