@@ -4075,5 +4075,53 @@ function initDependenciaAutocomplete() {
 
 document.addEventListener('DOMContentLoaded', () => { initDependenciaAutocomplete(); });
 </script>
+
+<script>
+async function loginUsuario() {
+  const usuario = document.getElementById('usuario')?.value?.trim();
+  const password = document.getElementById('password')?.value?.trim();
+
+  if (!usuario || !password) {
+    alert('Ingrese usuario y contraseña');
+    return;
+  }
+
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.add('active');
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Error de autenticación');
+    }
+
+    // Guardar sesión
+    localStorage.setItem('usuario', data.usuario);
+    localStorage.setItem('nombre', data.nombre);
+    localStorage.setItem('rol', data.rol);
+    localStorage.setItem('dependencia', data.dependencia);
+
+    // Redirigir
+    window.location.href = '/index.html';
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    if (overlay) overlay.classList.remove('active');
+  }
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.reload();
+}
+</script>
+
 </body>
 </html>
