@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 
 /* =========================
-   CONEXIÓN A BASE DE DATOS
+   CONEXIÓN A LA BD
 ========================= */
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -10,7 +10,7 @@ const pool = new Pool({
 });
 
 /* =========================
-   HANDLER LOGIN
+   LOGIN ÚNICO
 ========================= */
 module.exports = async (req, res) => {
   // CORS
@@ -23,14 +23,17 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  // Método permitido
+  // Solo POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Método no permitido' });
+    return res.status(405).json({
+      success: false,
+      error: 'Método no permitido'
+    });
   }
 
   try {
     /* =========================
-       DATOS DE ENTRADA
+       INPUT
     ========================= */
     const { usuario, password } = req.body || {};
     const usuarioClean = usuario?.trim().toUpperCase();
@@ -47,7 +50,7 @@ module.exports = async (req, res) => {
        BUSCAR USUARIO
     ========================= */
     const result = await pool.query(
-      'SELECT * FROM usuarios WHERE UPPER(usuario) = $1',
+      'SELECT id, usuario, nombre, rol, dependencia, password_hash FROM usuarios WHERE UPPER(usuario) = $1',
       [usuarioClean]
     );
 
@@ -62,7 +65,7 @@ module.exports = async (req, res) => {
     let passwordMatch = false;
 
     /* =========================
-       INTENTO 1: TEXTO PLANO
+       TEXTO PLANO (LEGACY)
     ========================= */
     if (
       user.password_hash &&
@@ -71,25 +74,21 @@ module.exports = async (req, res) => {
     ) {
       passwordMatch = true;
 
-      // Convertir a bcrypt automáticamente
+      // Auto-hash a bcrypt
       const newHash = await bcrypt.hash(passwordClean, 10);
       await pool.query(
         'UPDATE usuarios SET password_hash = $1 WHERE id = $2',
         [newHash, user.id]
       );
 
-      console.log(`✅ Hash auto-generado para usuario ${user.usuario}`);
+      console.log(`✅ Hash actualizado para ${user.usuario}`);
     }
 
     /* =========================
-       INTENTO 2: BCRYPT
+       BCRYPT
     ========================= */
     if (!passwordMatch && user.password_hash?.startsWith('$2b$')) {
-      try {
-        passwordMatch = await bcrypt.compare(passwordClean, user.password_hash);
-      } catch (err) {
-        console.error('Error bcrypt compare:', err);
-      }
+      passwordMatch = await bcrypt.compare(passwordClean, user.password_hash);
     }
 
     if (!passwordMatch) {
@@ -100,7 +99,7 @@ module.exports = async (req, res) => {
     }
 
     /* =========================
-       LOGIN EXITOSO
+       RESPUESTA FINAL
     ========================= */
     return res.status(200).json({
       success: true,
@@ -111,7 +110,7 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error login:', error);
+    console.error('❌ Error login:', error);
     return res.status(500).json({
       success: false,
       error: 'Error del servidor'
