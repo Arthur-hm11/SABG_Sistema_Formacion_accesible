@@ -1790,6 +1790,17 @@
 
 
 
+
+        /* ✅ EXCEPCIÓN: permitir edición SOLO en OBSERVACIONES para TODOS los roles */
+        body:not(.role-superadmin) td.editable-cell[data-field="observaciones"]{
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+        }
+        body:not(.role-superadmin) td.editable-cell[data-field="observaciones"]:hover{
+            background: #fef3c7 !important;
+            box-shadow: inset 0 0 0 2px var(--warning);
+        }
 /* === Dependencia / Institución: Autocomplete (mostrar texto completo) === */
 .dep-autocomplete{position:relative;width:100%;}
 .autocomplete-menu{
@@ -3406,12 +3417,19 @@ async function loginUsuario() {
     }
 
     function makeEditable(cell) {
-        if (userRole !== 'superadmin') {
-            alert('⚠️ Solo los super administradores pueden editar estos campos.');
+        // Campo objetivo
+        // Permisos:
+        // - superadmin: puede editar todo
+        // - cualquier otro rol: SOLO puede editar "observaciones"
+        const puedeEditar =
+            (userRole === 'superadmin') ||
+            (field === 'observaciones');
+
+        if (!puedeEditar) {
+            alert('⚠️ Solo se puede editar la columna OBSERVACIONES.');
             return;
         }
-        
-        if (edicionBloqueada) {
+if (edicionBloqueada) {
             alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
             return;
         }
@@ -3480,7 +3498,12 @@ async function loginUsuario() {
             editControl.value = currentValue;
         } else if (field === 'observaciones') {
             editControl = document.createElement('textarea');
-            editControl.value = currentValue;
+            editControl.maxLength = 150;
+            
+            editControl.addEventListener('input', function () {
+                if (this.value.length > 150) this.value = this.value.slice(0, 150);
+            });
+editControl.value = currentValue;
             editControl.rows = 3;
         }
         
