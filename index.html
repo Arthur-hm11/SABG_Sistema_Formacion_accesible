@@ -2982,7 +2982,7 @@ async function loginUsuario() {
         document.getElementById('loadingOverlay')?.classList.add('active');
 
         // ✅ ÚNICA RUTA
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -3329,7 +3329,13 @@ async function loginUsuario() {
             
             document.getElementById(tabId).classList.add('active');
         }
-    }
+    
+        // ✅ Cargar datos reales al abrir la pestaña "Tabla de Registros" (evita que se queden filas de muestra)
+        if (sectionId === 'trimestral' && tabId === 'tabla') {
+            try { cargarRegistrosTrimestral(); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
+        }
+
+}
 
     function showMainSection(sectionId) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
