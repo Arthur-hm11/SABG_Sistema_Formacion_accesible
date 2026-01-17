@@ -1837,6 +1837,31 @@
             background: #fef3c7 !important;
             box-shadow: inset 0 0 0 2px var(--warning);
         }
+
+        /* ================== ESTILO CARGA EXCEL ================== */
+        .excel-upload-box {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin: 16px 0;
+            padding: 12px;
+            border: 1px dashed #8b3a4a;
+            border-radius: 8px;
+            background: #fff6f8;
+        }
+        .excel-upload-box button {
+            background: #8b3a4a;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .excel-upload-box button:hover {
+            opacity: 0.9;
+        }
+        /* ========================================================= */
+
 </style>
 </head>
 <body>
@@ -1951,7 +1976,14 @@
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-                <div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
+                
+        <!-- ================== CARGA DE EXCEL ================== -->
+        <div class="excel-upload-box">
+            <input type="file" id="excelFile" accept=".xlsx,.xls" />
+            <button onclick="uploadExcel()">📥 Cargar Excel</button>
+        </div>
+        <!-- ===================================================== -->
+<div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
 </div>
@@ -2933,6 +2965,10 @@ function updateStatsFromRegistros(registros){
             // ========================================
 // LOGIN DE USUARIO
 // ========================================
+
+// ========================================
+// LOGIN DE USUARIO
+// ========================================
 async function loginUsuario() {
     const usuario = document.getElementById("usuario").value.trim();
     const password = document.getElementById("password").value.trim();
@@ -2943,84 +2979,103 @@ async function loginUsuario() {
     }
 
     try {
-        document.getElementById('loadingOverlay').classList.add('active');
-        
-        const response = await fetch('/api/auth/login', {
+        document.getElementById('loadingOverlay')?.classList.add('active');
+
+        // ✅ ÚNICA RUTA
+        const response = await fetch('/api/login', {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
             body: JSON.stringify({ usuario, password })
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-            userRole = data.rol;
-            auditLog('LOGIN', 'OK', { usuario });
-            userName = data.nombre;
-            userDependencia = data.dependencia;
-
-            document.getElementById('userName').textContent = `👤 ${data.nombre}`;
-            document.getElementById('userRole').textContent = '';
-
-            document.getElementById('loginScreen').classList.add('hidden');
-
-            // Visibilidad estricta de controles admin (defensa en profundidad)
-            const adminEls = [
-                'adminPanelTrimestral',
-                'exportButtonsTrimestral',
-                'estadoEdicion',
-                'notasTablaTrimestral',
-                'tabVerTabla'
-            ];
-            adminEls.forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                if (userRole === 'superadmin') el.classList.remove('hidden');
-                else el.classList.add('hidden');
-            });
-            document.getElementById('loadingOverlay').classList.remove('active');
-
-            if (userRole === 'superadmin') {
-                document.getElementById('adminPanelTrimestral').classList.remove('hidden');
-                document.getElementById('exportButtonsTrimestral')?.classList.remove('hidden');
-                document.getElementById('estadoEdicion')?.classList.remove('hidden');
-                document.getElementById('notasTablaTrimestral')?.classList.remove('hidden');
-                document.getElementById('adminPanelEvidencias').classList.remove('hidden');
-                document.getElementById('tabVerTabla').classList.remove('hidden');
-                document.getElementById('dropdownItemTabla').classList.remove('admin-only');
-                document.getElementById('dropdownItemRevision').classList.remove('admin-only');
-            }
-
-            await cargarRegistrosTrimestral();
-
-
-            // Refresco en "tiempo real" (cada 60s) de tabla y métricas, sin romper si no hay sesión
-            try {
-                if (window.__rtTrimestralInterval) clearInterval(window.__rtTrimestralInterval);
-                window.__rtTrimestralInterval = setInterval(() => {
-                    // Solo refrescar si hay sesión iniciada
-                    const u = localStorage.getItem('SABG_USUARIO');
-                    if (u) cargarRegistrosTrimestral();
-                }, 60000);
-            } catch (e) {}
-
-
-            alert(`✅ ¡Bienvenido ${data.nombre}!`);
-            
+        // Leer respuesta de forma segura (evita: Unexpected token / [object Object])
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+            data = await response.json();
         } else {
-            document.getElementById('loadingOverlay').classList.remove('active');
-            alert('❌ ' + data.error);
+            const text = await response.text();
+            throw new Error(`Respuesta no JSON (HTTP ${response.status}). ${text.slice(0,120)}`);
         }
-        
+
+        if (!response.ok || !data?.success) {
+            const msg = data?.error || data?.message || `Error HTTP ${response.status}`;
+            throw new Error(msg);
+        }
+
+        // ✅ Variables de sesión (en memoria)
+        userRole = data.rol;
+        userName = data.nombre;
+        userDependencia = data.dependencia;
+
+        // ✅ Persistir para refrescos/permiso (sin token por ahora)
+        localStorage.setItem('SABG_USUARIO', data.usuario || usuario);
+        localStorage.setItem('SABG_NOMBRE', data.nombre || '');
+        localStorage.setItem('SABG_ROL', data.rol || '');
+        localStorage.setItem('SABG_DEPENDENCIA', data.dependencia || '');
+
+        // Auditoría
+        try { auditLog('LOGIN', 'OK', { usuario: (data.usuario || usuario) }); } catch(e) {}
+
+        // UI
+        const userNameEl = document.getElementById('userName');
+        if (userNameEl) userNameEl.textContent = `👤 ${data.nombre}`;
+        const userRoleEl = document.getElementById('userRole');
+        if (userRoleEl) userRoleEl.textContent = '';
+
+        document.getElementById('loginScreen')?.classList.add('hidden');
+
+        // Visibilidad estricta de controles admin
+        const adminEls = [
+            'adminPanelTrimestral',
+            'exportButtonsTrimestral',
+            'estadoEdicion',
+            'notasTablaTrimestral'
+        ];
+        adminEls.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (userRole === 'superadmin') el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        });
+
+        if (userRole === 'superadmin') {
+            document.getElementById('adminPanelTrimestral')?.classList.remove('hidden');
+            document.getElementById('exportButtonsTrimestral')?.classList.remove('hidden');
+            document.getElementById('estadoEdicion')?.classList.remove('hidden');
+            document.getElementById('notasTablaTrimestral')?.classList.remove('hidden');
+            document.getElementById('adminPanelEvidencias')?.classList.remove('hidden');
+            document.getElementById('tabVerTabla')?.classList.remove('hidden');
+            document.getElementById('dropdownItemTabla')?.classList.remove('admin-only');
+            document.getElementById('dropdownItemRevision')?.classList.remove('admin-only');
+        }
+
+        await cargarRegistrosTrimestral();
+
+        // Refresco cada 60s
+        try {
+            if (window.__rtTrimestralInterval) clearInterval(window.__rtTrimestralInterval);
+            window.__rtTrimestralInterval = setInterval(() => {
+                const u = localStorage.getItem('SABG_USUARIO');
+                if (u) cargarRegistrosTrimestral();
+            }, 60000);
+        } catch (e) {}
+
+        alert(`✅ ¡Bienvenido ${data.nombre}!`);
+
     } catch (error) {
-        document.getElementById('loadingOverlay').classList.remove('active');
-        alert('❌ Error de conexión con el servidor.\n\nPor favor verifica tu conexión a internet.');
+        // Nunca alert(objeto)
+        alert('❌ ' + (error?.message || 'Error de conexión con el servidor'));
+    } finally {
+        document.getElementById('loadingOverlay')?.classList.remove('active');
     }
 }
-    // Login de Usuario (FUNCIÓN COMPLETA)
+
+// Login de Usuario (FUNCIÓN COMPLETA)
+
    async function registrarUsuario() {
     // Obtener valores y limpiar
     let curp = document.getElementById("reg_curp").value || "";
@@ -3174,7 +3229,9 @@ async function loginUsuario() {
             
             localStorage.removeItem('SABG_TOKEN');
             localStorage.removeItem('SABG_USUARIO');
-            
+            localStorage.removeItem('SABG_NOMBRE');
+            localStorage.removeItem('SABG_ROL');
+            localStorage.removeItem('SABG_DEPENDENCIA');
             document.getElementById('loginScreen').classList.remove('hidden');
             
             document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
@@ -3303,13 +3360,8 @@ async function loginUsuario() {
     }
 
     function showTrimestralTab(tabId) {
-        // Seguridad: solo SUPERADMIN puede ver la tabla completa de registros
-        if (tabId === 'tabla' && !requireSuperAdmin('VIEW_TRIMESTRAL_TABLE')) {
-            alert('⛔ Acceso restringido. Esta sección es solo para administradores autorizados.');
-            // Mantener al usuario en el instructivo
-            tabId = 'instructivo';
-        }
-        const tabs = document.querySelectorAll('#trimestral .tab');
+        // ✅ Acceso a la tabla habilitado para todos los usuarios
+const tabs = document.querySelectorAll('#trimestral .tab');
         const tabContents = document.querySelectorAll('#trimestral .tab-content');
 
         tabs.forEach(tab => {
