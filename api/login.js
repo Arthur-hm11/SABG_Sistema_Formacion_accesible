@@ -12,6 +12,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Método no permitido' });
   }
@@ -37,7 +38,7 @@ module.exports = async (req, res) => {
     const user = result.rows[0];
     let passwordMatch = false;
 
-    // Intento 1: texto plano (legacy)
+    // Legacy: texto plano
     if (
       user.password_hash &&
       !user.password_hash.startsWith('$2b$') &&
@@ -45,13 +46,13 @@ module.exports = async (req, res) => {
     ) {
       passwordMatch = true;
 
-      // Migrar a bcrypt automáticamente
       const newHash = await bcrypt.hash(passwordClean, 10);
       await pool.query('UPDATE usuarios SET password_hash = $1 WHERE id = $2', [newHash, user.id]);
-      console.log(`✅ Hash auto-generado para usuario ${user.usuario}`);
+
+      console.log(`✅ Hash actualizado para ${user.usuario}`);
     }
 
-    // Intento 2: bcrypt
+    // bcrypt
     if (!passwordMatch && user.password_hash?.startsWith('$2b$')) {
       passwordMatch = await bcrypt.compare(passwordClean, user.password_hash);
     }
@@ -68,8 +69,8 @@ module.exports = async (req, res) => {
       dependencia: user.dependencia
     });
 
-  } catch (error) {
-    console.error('❌ Error login:', error);
+  } catch (err) {
+    console.error('❌ Error login:', err);
     return res.status(500).json({ success: false, error: 'Error del servidor' });
   }
 };
