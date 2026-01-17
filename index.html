@@ -1827,9 +1827,15 @@
 }
 .autocomplete-item small{opacity:.85;font-weight:500;}
 
-/* Ocultar tabs Instructivo y Formulario de Registro */
-.tab-button[data-tab="instructivo"],
-.tab-button[data-tab="registro"] {
+/* === OCULTAR BOTONES DE TAB SUPERIORES === */
+.tab-button,
+.tabs .tab-button {
+    display: none !important;
+}
+
+/* === OCULTAR OPCIONES DEL DROPDOWN (SIN ROMPER DESPLIEGUE) === */
+.dropdown-menu .dropdown-item:nth-child(1),
+.dropdown-menu .dropdown-item:nth-child(2) {
     display: none !important;
 }
 
@@ -3413,25 +3419,35 @@ async function loginUsuario() {
     }
 
     function makeEditable(cell) {
-        if (userRole !== 'superadmin') {
-            alert('⚠️ Solo los super administradores pueden editar estos campos.');
+        // Campo objetivo
+        const field = cell.dataset.field;
+
+        // Permisos:
+        // - superadmin: puede editar todo
+        // - enlace: SOLO puede editar "observaciones"
+        const puedeEditar =
+            (userRole === 'superadmin') ||
+            (userRole === 'enlace' && field === 'observaciones');
+
+        if (!puedeEditar) {
+            alert('⚠️ Como ENLACE, solo puedes editar la columna OBSERVACIONES.');
             return;
         }
-        
+
+        // Respetar bloqueo global de edición (control DCEVE)
         if (edicionBloqueada) {
             alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
             return;
         }
-        
+
         if (cell.classList.contains('editing')) {
             return;
         }
-        
-        const field = cell.dataset.field;
+
         const currentValue = cell.textContent.trim().replace('✏️', '').trim();
-        
+
         cell.classList.add('editing');
-        
+
         let editControl;
         
         if (field === 'nivel_educativo') {
