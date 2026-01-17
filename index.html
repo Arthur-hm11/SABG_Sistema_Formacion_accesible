@@ -1837,6 +1837,31 @@
             background: #fef3c7 !important;
             box-shadow: inset 0 0 0 2px var(--warning);
         }
+
+        /* ================== ESTILO CARGA EXCEL ================== */
+        .excel-upload-box {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin: 16px 0;
+            padding: 12px;
+            border: 1px dashed #8b3a4a;
+            border-radius: 8px;
+            background: #fff6f8;
+        }
+        .excel-upload-box button {
+            background: #8b3a4a;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .excel-upload-box button:hover {
+            opacity: 0.9;
+        }
+        /* ========================================================= */
+
 </style>
 </head>
 <body>
@@ -1951,7 +1976,14 @@
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-                <div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
+                
+        <!-- ================== CARGA DE EXCEL ================== -->
+        <div class="excel-upload-box">
+            <input type="file" id="excelFile" accept=".xlsx,.xls" />
+            <button onclick="uploadExcel()">📥 Cargar Excel</button>
+        </div>
+        <!-- ===================================================== -->
+<div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
 </div>
