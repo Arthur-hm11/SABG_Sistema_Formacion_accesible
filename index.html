@@ -1826,6 +1826,17 @@
   outline:none;
 }
 .autocomplete-item small{opacity:.85;font-weight:500;}
+
+        /* ✅ EXCEPCIÓN: permitir edición SOLO en OBSERVACIONES para TODOS los roles */
+        body:not(.role-superadmin) td.editable-cell[data-field="observaciones"]{
+            pointer-events: auto !important;
+            cursor: text !important;
+            opacity: 1 !important;
+        }
+        body:not(.role-superadmin) td.editable-cell[data-field="observaciones"]:hover{
+            background: #fef3c7 !important;
+            box-shadow: inset 0 0 0 2px var(--warning);
+        }
 </style>
 </head>
 <body>
@@ -3406,23 +3417,22 @@ async function loginUsuario() {
     }
 
     function makeEditable(cell) {
-        // Campo objetivo
         const field = cell.dataset.field;
 
-        // Permisos:
-        // - superadmin: puede editar todo
-        // - cualquier otro rol: SOLO puede editar "observaciones"
+        // ✅ Regla solicitada:
+        // - TODOS los usuarios pueden editar SOLO OBSERVACIONES (máx. 150 caracteres)
+        // - Cualquier otro campo: SOLO superadmin
         const puedeEditar =
-            (userRole === 'superadmin') ||
-            (field === 'observaciones');
+            (field === 'observaciones') ||
+            (userRole === 'superadmin');
 
         if (!puedeEditar) {
             alert('⚠️ Solo se puede editar la columna OBSERVACIONES.');
             return;
         }
 
-        // Respetar bloqueo global de edición (control DCEVE)
-        if (edicionBloqueada) {
+        // 🔓 Para OBSERVACIONES: permitir edición incluso si el control global está bloqueado
+        if (field !== 'observaciones' && edicionBloqueada) {
             alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
             return;
         }
@@ -3432,7 +3442,6 @@ async function loginUsuario() {
         }
 
         const currentValue = cell.textContent.trim().replace('✏️', '').trim();
-
         cell.classList.add('editing');
 
         let editControl;
@@ -3449,47 +3458,56 @@ async function loginUsuario() {
                 <option value="DOCTORADO">DOCTORADO</option>
             `;
             editControl.value = currentValue;
-        } else if (field === 'institucion_educativa') {
+        }
+        else if (field === 'institucion_educativa') {
             editControl = document.createElement('select');
             editControl.innerHTML = `
-                <option value="UAG">UNIVERSIDAD AUTÓNOMA DE GUADALAJARA (UAG)</option>
-                <option value="UNAM">UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO (UNAM)</option>
-                <option value="IPN">INSTITUTO POLITÉCNICO NACIONAL (IPN)</option>
-                <option value="UAM">UNIVERSIDAD AUTÓNOMA METROPOLITANA (UAM)</option>
-                <option value="UdeG">UNIVERSIDAD DE GUADALAJARA (UdeG)</option>
-                <option value="ITESM">TEC DE MONTERREY (ITESM)</option>
-                <option value="UP">UNIVERSIDAD PANAMERICANA (UP)</option>
-                <option value="UNIR">UNIR</option>
                 <option value="INEA">INEA</option>
                 <option value="COLBACH">COLBACH</option>
                 <option value="UNADM">UNADM</option>
                 <option value="UNRC">UNRC</option>
                 <option value="TECNM">TECNM</option>
+                <option value="UNIR">UNIR</option>
                 <option value="SEP">SEP</option>
             `;
             editControl.value = currentValue;
-        } else if (field === 'modalidad') {
+        }
+        else if (field === 'modalidad') {
             editControl = document.createElement('select');
             editControl.innerHTML = `
+                <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
+                <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
+                <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
+                <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
+                <option value="A DISTANCIA">A DISTANCIA</option>
                 <option value="PRESENCIAL">PRESENCIAL</option>
-                <option value="EN_LÍNEA">EN LÍNEA</option>
-                <option value="MIXTA">MIXTA</option>
+                <option value="ESCOLARIZADA">ESCOLARIZADA</option>
+                <option value="MIXTO">MIXTO</option>
             `;
             editControl.value = currentValue;
-        } else if (field === 'estado_avance') {
+        }
+        else if (field === 'estado_avance') {
             editControl = document.createElement('select');
             editControl.innerHTML = `
+                <option value="CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</option>
+                <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
+                <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
                 <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
-                <option value="PERSONA CONCLUYÓ NIVEL EDUCATIVO">PERSONA CONCLUYÓ NIVEL EDUCATIVO</option>
-                <option value="PERSONA TITULADA">PERSONA TITULADA</option>
+                <option value="PERSONA QUE CONCLUYÓ SUS ESTUDIOS">PERSONA QUE CONCLUYÓ SUS ESTUDIOS</option>
+                <option value="PERSONA EN PROCESO DE TITULACIÓN">PERSONA EN PROCESO DE TITULACIÓN</option>
+                <option value="PERSONA QUE DESERTÓ">PERSONA QUE DESERTÓ</option>
+                <option value="PERSONA SUSPENDIDA">PERSONA SUSPENDIDA</option>
+                <option value="OTRA">OTRA</option>
             `;
             editControl.value = currentValue;
-        } else if (field === 'observaciones') {
+        }
+        else if (field === 'observaciones') {
             editControl = document.createElement('textarea');
+            editControl.className = 'edit-control';
             editControl.maxLength = 150;
             editControl.value = currentValue;
 
-            // Guardado amigable: Enter guarda; Shift+Enter salto de línea
+            // Guardar con Enter (Shift+Enter = salto de línea)
             editControl.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -3501,13 +3519,18 @@ async function loginUsuario() {
             editControl.addEventListener('input', function () {
                 if (this.value.length > 150) this.value = this.value.slice(0, 150);
             });
-        } else {
+        }
+        else {
             editControl = document.createElement('input');
             editControl.type = 'text';
             editControl.value = currentValue;
+            editControl.className = 'edit-control';
         }
 
-        editControl.className = 'edit-control';
+        // Para selects/inputs que no sean textarea, asignar clase si no la tienen
+        if (!editControl.classList.contains('edit-control')) {
+            editControl.classList.add('edit-control');
+        }
 
         cell.innerHTML = '';
         cell.appendChild(editControl);
@@ -3522,6 +3545,11 @@ async function loginUsuario() {
                 }
             });
 
+            editControl.addEventListener('blur', function() {
+                saveEdit(cell, field, this.value.trim(), currentValue);
+            });
+        } else {
+            // Observaciones: también guardar al perder foco
             editControl.addEventListener('blur', function() {
                 saveEdit(cell, field, this.value.trim(), currentValue);
             });
