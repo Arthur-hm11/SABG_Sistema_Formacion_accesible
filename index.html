@@ -1790,17 +1790,6 @@
 
 
 
-
-        /* ✅ EXCEPCIÓN: permitir edición SOLO en OBSERVACIONES para TODOS los roles */
-        body:not(.role-superadmin) td.editable-cell[data-field="observaciones"]{
-            pointer-events: auto !important;
-            cursor: pointer !important;
-            opacity: 1 !important;
-        }
-        body:not(.role-superadmin) td.editable-cell[data-field="observaciones"]:hover{
-            background: #fef3c7 !important;
-            box-shadow: inset 0 0 0 2px var(--warning);
-        }
 /* === Dependencia / Institución: Autocomplete (mostrar texto completo) === */
 .dep-autocomplete{position:relative;width:100%;}
 .autocomplete-menu{
@@ -3418,6 +3407,8 @@ async function loginUsuario() {
 
     function makeEditable(cell) {
         // Campo objetivo
+        const field = cell.dataset.field;
+
         // Permisos:
         // - superadmin: puede editar todo
         // - cualquier otro rol: SOLO puede editar "observaciones"
@@ -3429,22 +3420,23 @@ async function loginUsuario() {
             alert('⚠️ Solo se puede editar la columna OBSERVACIONES.');
             return;
         }
-if (edicionBloqueada) {
+
+        // Respetar bloqueo global de edición (control DCEVE)
+        if (edicionBloqueada) {
             alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
             return;
         }
-        
+
         if (cell.classList.contains('editing')) {
             return;
         }
-        
-        const field = cell.dataset.field;
+
         const currentValue = cell.textContent.trim().replace('✏️', '').trim();
-        
+
         cell.classList.add('editing');
-        
+
         let editControl;
-        
+
         if (field === 'nivel_educativo') {
             editControl = document.createElement('select');
             editControl.innerHTML = `
@@ -3460,89 +3452,80 @@ if (edicionBloqueada) {
         } else if (field === 'institucion_educativa') {
             editControl = document.createElement('select');
             editControl.innerHTML = `
+                <option value="UAG">UNIVERSIDAD AUTÓNOMA DE GUADALAJARA (UAG)</option>
+                <option value="UNAM">UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO (UNAM)</option>
+                <option value="IPN">INSTITUTO POLITÉCNICO NACIONAL (IPN)</option>
+                <option value="UAM">UNIVERSIDAD AUTÓNOMA METROPOLITANA (UAM)</option>
+                <option value="UdeG">UNIVERSIDAD DE GUADALAJARA (UdeG)</option>
+                <option value="ITESM">TEC DE MONTERREY (ITESM)</option>
+                <option value="UP">UNIVERSIDAD PANAMERICANA (UP)</option>
+                <option value="UNIR">UNIR</option>
                 <option value="INEA">INEA</option>
                 <option value="COLBACH">COLBACH</option>
                 <option value="UNADM">UNADM</option>
                 <option value="UNRC">UNRC</option>
                 <option value="TECNM">TECNM</option>
-                <option value="UNIR">UNIR</option>
                 <option value="SEP">SEP</option>
             `;
             editControl.value = currentValue;
         } else if (field === 'modalidad') {
             editControl = document.createElement('select');
             editControl.innerHTML = `
-                <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
-                <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
-                <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
-                <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
-                <option value="A DISTANCIA">A DISTANCIA</option>
                 <option value="PRESENCIAL">PRESENCIAL</option>
-                <option value="ESCOLARIZADA">ESCOLARIZADA</option>
-                <option value="MIXTO">MIXTO</option>
+                <option value="EN_LÍNEA">EN LÍNEA</option>
+                <option value="MIXTA">MIXTA</option>
             `;
             editControl.value = currentValue;
         } else if (field === 'estado_avance') {
             editControl = document.createElement('select');
             editControl.innerHTML = `
-                <option value="CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</option>
-                <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
-                <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
                 <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
-                <option value="PERSONA QUE CONCLUYÓ SUS ESTUDIOS">PERSONA QUE CONCLUYÓ SUS ESTUDIOS</option>
-                <option value="PERSONA EN PROCESO DE TITULACIÓN">PERSONA EN PROCESO DE TITULACIÓN</option>
-                <option value="PERSONA QUE DESERTÓ">PERSONA QUE DESERTÓ</option>
-                <option value="PERSONA SUSPENDIDA">PERSONA SUSPENDIDA</option>
-                <option value="OTRA">OTRA</option>
+                <option value="PERSONA CONCLUYÓ NIVEL EDUCATIVO">PERSONA CONCLUYÓ NIVEL EDUCATIVO</option>
+                <option value="PERSONA TITULADA">PERSONA TITULADA</option>
             `;
             editControl.value = currentValue;
         } else if (field === 'observaciones') {
             editControl = document.createElement('textarea');
             editControl.maxLength = 150;
-            
+            editControl.value = currentValue;
+
+            // Guardado amigable: Enter guarda; Shift+Enter salto de línea
+            editControl.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    saveEdit(cell, field, this.value.trim(), currentValue);
+                }
+            });
+
+            // Enforce duro al pegar / input
             editControl.addEventListener('input', function () {
                 if (this.value.length > 150) this.value = this.value.slice(0, 150);
             });
-editControl.value = currentValue;
-            editControl.rows = 3;
+        } else {
+            editControl = document.createElement('input');
+            editControl.type = 'text';
+            editControl.value = currentValue;
         }
-        
+
+        editControl.className = 'edit-control';
+
         cell.innerHTML = '';
         cell.appendChild(editControl);
         editControl.focus();
-        
-        const saveEdit = () => {
-            const newValue = editControl.value;
-            cell.classList.remove('editing');
-            
-            if (field === 'institucion_educativa') {
-                cell.innerHTML = `${newValue}<span class="edit-icon">✏️</span>`;
-            } else {
-                cell.innerHTML = `${newValue}<span class="edit-icon">✏️</span>`;
-            }
-            
-            if (field === 'estado_avance') {
-                const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
-                if (estadosRojos.includes(newValue)) {
-                    cell.classList.add('estado-rojo');
-                } else {
-                    cell.classList.remove('estado-rojo');
+
+        // Guardado (no observaciones): Enter guarda y blur guarda
+        if (field !== 'observaciones') {
+            editControl.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveEdit(cell, field, this.value.trim(), currentValue);
                 }
-            }
-            
-            alert(`✅ Campo actualizado correctamente!\n\nNuevo valor: ${newValue}`);
-        };
-        
-        editControl.addEventListener('blur', saveEdit);
-        editControl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && field !== 'observaciones') {
-                e.preventDefault();
-                saveEdit();
-            } else if (e.key === 'Escape') {
-                cell.classList.remove('editing');
-                cell.innerHTML = `${currentValue}<span class="edit-icon">✏️</span>`;
-            }
-        });
+            });
+
+            editControl.addEventListener('blur', function() {
+                saveEdit(cell, field, this.value.trim(), currentValue);
+            });
+        }
     }
 
     // ========================================
