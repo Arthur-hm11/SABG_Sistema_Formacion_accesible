@@ -4130,12 +4130,27 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
 
     async function cargarRegistrosTrimestral() {
-    try {
-        const url = userRole === 'superadmin' 
-            ? '/api/trimestral/list'
-            : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
+    // Evita llamadas repetidas/paralelas (especialmente cuando el endpoint falla)
+    if (window.__rt_list_inflight) return;
+    const now = Date.now();
+    if (window.__rt_list_last_fail && (now - window.__rt_list_last_fail) < 15000) {
+        // backoff 15s después de un fallo
+        return;
+    }
+    window.__rt_list_inflight = true;
 
-        const response = await fetch(url);
+    try {
+        const __role = (typeof userRole !== 'undefined' && userRole) ? userRole : (localStorage.getItem('SABG_ROL') || '');
+        const __dep = (typeof userDependencia !== 'undefined' && userDependencia) ? userDependencia : (localStorage.getItem('SABG_DEPENDENCIA') || '');
+        const url = (__role === 'superadmin' || __role === 'admin')
+            ? '/api/trimestral/list'
+            : `/api/trimestral/list?dependencia=${encodeURIComponent(__dep)}`;
+
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) {
+            const t = await response.text().catch(() => '');
+            throw new Error(`HTTP ${response.status} al listar registros: ${t || response.statusText}`);
+        }
         const result = await response.json();
 
         if (result.success) {
@@ -4194,6 +4209,18 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
         }
     } catch (error) {
+        window.__rt_list_last_fail = Date.now();
+        console.error('❌ Error en /api/trimestral/list:', error);
+        try { if (window.__rtTrimestralInterval) clearInterval(window.__rtTrimestralInterval); } catch(e) {}
+        // Si el backend está caído, evita spam y avisa una sola vez
+        if (!window.__rt_list_alerted) {
+            window.__rt_list_alerted = true;
+            alert('❌ No se pudo cargar la lista (/api/trimestral/list).\nRevisa Vercel Logs / Base de datos.\nDetalle: ' + (error?.message || error));
+            // desbloquea el aviso después de 60s para no spamear
+            setTimeout(() => { window.__rt_list_alerted = false; }, 60000);
+        }
+    } finally {
+        window.__rt_list_inflight = false;
     }
 }
 async function guardarRegistroTrimestral() {
