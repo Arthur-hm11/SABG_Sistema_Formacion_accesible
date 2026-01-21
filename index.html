@@ -1976,13 +1976,6 @@
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-                
-        <!-- ================== CARGA DE EXCEL ================== -->
-        <div class="excel-upload-box">
-            <input type="file" id="excelFile" accept=".xlsx,.xls" />
-            <button onclick="uploadExcel()">📥 Cargar Excel</button>
-        </div>
-        <!-- ===================================================== -->
 <div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
@@ -2374,11 +2367,17 @@
                     </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
                    <div id="exportButtonsTrimestral" class="hidden" style="margin-bottom: 1rem;">
-                    <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a JSON (Excel compatible)</button>
+                    <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
                     <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
-                    <button class="btn btn-secondary" onclick="exportData('sql')" disabled style="opacity: 0.5; cursor: not-allowed;">📥 Exportar a SQL (Próximamente)</button>
+
+                    <!-- Solo administradores: carga masiva vía Excel -->
+                    <div id="excelUploadBox" class="excel-upload-box hidden" style="margin: 14px auto 0; justify-content: center;">
+                        <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" />
+                        <button class="btn btn-secondary" type="button" onclick="document.getElementById('excelFile').click()">📎 Seleccionar</button>
+                        <button class="btn btn-success" type="button" onclick="uploadExcel()">📥 Cargar Excel</button>
+                    </div>
                 </div>
-                    <div id="estadoEdicion" class="hidden" style="padding: 1rem; background: var(--gradient1); color: white; border-radius: 10px; margin-bottom: 1rem; text-align: center; font-weight: bold;">
+<div id="estadoEdicion" class="hidden" style="padding: 1rem; background: var(--gradient1); color: white; border-radius: 10px; margin-bottom: 1rem; text-align: center; font-weight: bold;">
                         🔒 Edición BLOQUEADA
                     </div>
 
@@ -2779,6 +2778,24 @@ function requireSuperAdmin(actionLabel) {
     return false;
 }
 
+
+// ========================================
+// VISIBILIDAD POR ROL (sin exponer roles)
+// - "Cargar Excel" solo para administradores
+// ========================================
+function isAdminUser() {
+    const role = String(userRole || localStorage.getItem('SABG_ROL') || '').toLowerCase().trim();
+    return role === 'admin' || role === 'superadmin' || role.includes('admin');
+}
+
+function applyRoleVisibility() {
+    const excelBox = document.getElementById('excelUploadBox');
+    if (excelBox) {
+        if (isAdminUser()) excelBox.classList.remove('hidden');
+        else excelBox.classList.add('hidden');
+    }
+}
+
 function auditLog(action, status, details = {}) {
     try {
         const entry = {
@@ -3016,6 +3033,9 @@ async function loginUsuario() {
         localStorage.setItem('SABG_NOMBRE', data.nombre || '');
         localStorage.setItem('SABG_ROL', data.rol || '');
         localStorage.setItem('SABG_DEPENDENCIA', data.dependencia || '');
+
+        // Aplicar permisos visuales por rol
+        applyRoleVisibility();
 
         // Auditoría
         try { auditLog('LOGIN', 'OK', { usuario: (data.usuario || usuario) }); } catch(e) {}
@@ -4106,7 +4126,12 @@ function initDependenciaAutocomplete() {
         });
     }
 
-document.addEventListener('DOMContentLoaded', () => { initDependenciaAutocomplete(); });
+document.addEventListener('DOMContentLoaded', () => {
+    // Restaurar rol si existe
+    try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
+    initDependenciaAutocomplete();
+    applyRoleVisibility();
+});
 </script>
 </body>
 </html>
