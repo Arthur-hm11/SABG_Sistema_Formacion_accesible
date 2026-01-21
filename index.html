@@ -1860,6 +1860,21 @@
         .excel-upload-box button:hover {
             opacity: 0.9;
         }
+
+        /* Barra de acciones (Exportar + Cargar Excel) en una sola línea */
+        .actions-bar{
+            display:flex;
+            align-items:center;
+            gap:14px;
+            flex-wrap:wrap;
+        }
+        /* Integrar el cargador sin caja punteada cuando está en la barra */
+        .actions-bar .excel-upload-box{
+            margin:0;
+            padding:0;
+            border:none;
+            background:transparent;
+        }
         /* ========================================================= */
 
 </style>
@@ -2367,20 +2382,18 @@
                     </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
                    <div id="exportButtonsTrimestral" class="hidden" style="margin-bottom: 1rem;">
-                    <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
-                    <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
+                    <div class="actions-bar">
+                        <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
+                        <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
 
-                    <!-- Solo administradores: carga masiva vía Excel -->
-                    <div id="excelUploadBox" class="excel-upload-box hidden" style="margin: 14px auto 0; justify-content: center;">
-                        <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" />
-                        <button class="btn btn-secondary" type="button" onclick="document.getElementById('excelFile').click()">📎 Seleccionar</button>
-                        <button class="btn btn-success" type="button" onclick="uploadExcel()">📥 Cargar Excel</button>
+                        <!-- Solo administradores: carga masiva vía Excel -->
+                        <div id="excelUploadBox" class="excel-upload-box hidden">
+                            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display:none" />
+                            <button class="btn btn-secondary" type="button" onclick="document.getElementById('excelFile').click()">📎 Seleccionar</button>
+                            <button class="btn btn-success" type="button" onclick="uploadExcel()">📥 Cargar Excel</button>
+                        </div>
                     </div>
                 </div>
-<div id="estadoEdicion" class="hidden" style="padding: 1rem; background: var(--gradient1); color: white; border-radius: 10px; margin-bottom: 1rem; text-align: center; font-weight: bold;">
-                        🔒 Edición BLOQUEADA
-                    </div>
-
                     <div class="table-container">
                         <table id="registrosTable">
                             <thead>
@@ -2794,6 +2807,197 @@ function applyRoleVisibility() {
         if (isAdminUser()) excelBox.classList.remove('hidden');
         else excelBox.classList.add('hidden');
     }
+
+// ========================================
+// Carga masiva (Admin): CSV exportado desde Excel
+// Nota: Para evitar dependencias extra en el frontend, el cargador soporta CSV.
+// Si necesitas XLSX directo, se implementa del lado del servidor o con SheetJS.
+// ========================================
+function normalizeHeaderKey(h) {
+    return String(h || '')
+        .toLowerCase()
+        .trim()
+        .replace(/\u00e1/g,'a').replace(/\u00e9/g,'e').replace(/\u00ed/g,'i').replace(/\u00f3/g,'o').replace(/\u00fa/g,'u').replace(/\u00f1/g,'n')
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function parseCSV(text) {
+    // Parser CSV simple con soporte de comillas dobles
+    const rows = [];
+    let row = [];
+    let cur = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i + 1];
+
+        if (c === '"') {
+            if (inQuotes && next === '"') { // escape ""
+                cur += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+            continue;
+        }
+
+        if (!inQuotes && (c === ',' || c === ';')) {
+            row.push(cur);
+            cur = '';
+            continue;
+        }
+
+        if (!inQuotes && (c === '\n' || c === '\r')) {
+            if (c === '\r' && next === '\n') i++; // Windows CRLF
+            row.push(cur);
+            rows.push(row);
+            row = [];
+            cur = '';
+            continue;
+        }
+
+        cur += c;
+    }
+
+    // última celda
+    if (cur.length || row.length) {
+        row.push(cur);
+        rows.push(row);
+    }
+
+    // limpiar filas vacías
+    return rows.filter(r => r.some(cell => String(cell || '').trim() !== ''));
+}
+
+async function uploadExcel() {
+    try {
+        if (!isAdminUser()) {
+            alert('⛔ Solo administradores pueden cargar archivos.');
+            return;
+        }
+
+        const input = document.getElementById('excelFile');
+        const file = input && input.files ? input.files[0] : null;
+
+        if (!file) {
+            alert('📎 Primero selecciona un archivo.');
+            return;
+        }
+
+        const filename = String(file.name || '').toLowerCase();
+
+        // Overlay
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.add('active');
+        const loadingText = document.querySelector('.loading-text');
+        if (loadingText) loadingText.textContent = '📥 Procesando archivo...';
+
+        if (filename.endsWith('.csv')) {
+            const text = await file.text();
+            const rows = parseCSV(text);
+
+            if (!rows || rows.length < 2) {
+                alert('⚠️ El CSV no tiene registros (o está vacío).');
+                return;
+            }
+
+            const headerRow = rows[0].map(h => normalizeHeaderKey(h));
+            const bodyRows = rows.slice(1);
+
+            // Mapeos comunes (por si los encabezados vienen en español)
+            const alias = {
+                trimestre: ['trimestre', 'trim', 'periodo'],
+                id_rusp: ['id_rusp', 'rusp', 'idrusp'],
+                primer_apellido: ['primer_apellido', 'apellido_paterno', 'ap_paterno', 'paterno'],
+                segundo_apellido: ['segundo_apellido', 'apellido_materno', 'ap_materno', 'materno'],
+                nombre: ['nombre', 'nombres', 'nombre_s'],
+                curp: ['curp'],
+                correo_institucional: ['correo_institucional', 'correo', 'email', 'e_mail'],
+                telefono_institucional: ['telefono_institucional', 'telefono', 'tel', 'telefono_oficina'],
+                nivel_educativo: ['nivel_educativo', 'nivel_de_estudios', 'nivel_estudios'],
+                institucion_educativa: ['institucion_educativa', 'institucion', 'escuela'],
+                modalidad: ['modalidad'],
+                estado_avance: ['estado_avance', 'avance', 'estatus'],
+                observaciones: ['observaciones', 'obs', 'comentarios']
+            };
+
+            function findIndexForKey(key) {
+                const candidates = alias[key] || [key];
+                for (const cand of candidates) {
+                    const idx = headerRow.indexOf(normalizeHeaderKey(cand));
+                    if (idx !== -1) return idx;
+                }
+                return -1;
+            }
+
+            // Resolver índices
+            const idxMap = {};
+            Object.keys(alias).forEach(k => { idxMap[k] = findIndexForKey(k); });
+
+            let ok = 0;
+            let fail = 0;
+            const errors = [];
+
+            for (let r = 0; r < bodyRows.length; r++) {
+                const row = bodyRows[r];
+
+                // construir payload
+                const payload = {};
+                Object.keys(idxMap).forEach(k => {
+                    const idx = idxMap[k];
+                    payload[k] = idx >= 0 ? String(row[idx] || '').trim() : '';
+                });
+
+                // valores por defecto
+                payload.usuario_registro = userName || '';
+
+                // omitir filas vacías
+                const hasData = Object.keys(payload).some(k => k !== 'usuario_registro' && String(payload[k] || '').trim() !== '');
+                if (!hasData) continue;
+
+                try {
+                    const resp = await fetch('/api/trimestral/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await resp.json().catch(() => ({}));
+                    if (resp.ok && result && result.success) {
+                        ok++;
+                    } else {
+                        fail++;
+                        errors.push(`Fila ${r + 2}: ${(result && result.message) ? result.message : 'No se pudo guardar'}`);
+                    }
+                } catch (e) {
+                    fail++;
+                    errors.push(`Fila ${r + 2}: ${e && e.message ? e.message : String(e)}`);
+                }
+            }
+
+            // refrescar tabla
+            if (typeof cargarRegistrosTrimestral === 'function') {
+                await cargarRegistrosTrimestral();
+            }
+
+            if (fail === 0) {
+                alert(`✅ Carga completada: ${ok} registro(s) guardado(s).`);
+            } else {
+                console.warn('Errores de carga masiva:', errors);
+                alert(`⚠️ Carga parcial: ${ok} OK / ${fail} con error. Revisa la consola para detalles.`);
+            }
+
+        } else {
+            alert('ℹ️ Por ahora, la carga masiva soporta CSV (exportado desde Excel).\n\n1) En Excel: Archivo → Guardar como → CSV\n2) Súbelo aquí y se registrará fila por fila.');
+        }
+    } finally {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.remove('active');
+        const input = document.getElementById('excelFile');
+        if (input) input.value = ''; // limpiar para permitir volver a seleccionar
+    }
+}
 }
 
 function auditLog(action, status, details = {}) {
