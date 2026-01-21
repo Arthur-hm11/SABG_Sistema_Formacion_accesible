@@ -2796,9 +2796,14 @@ function requireSuperAdmin(actionLabel) {
 // - "Cargar Excel" solo para administradores
 // ========================================
 function isAdminUser() {
-    const role = String(userRole || localStorage.getItem('SABG_ROL') || '').toLowerCase().trim();
+    // Evita ReferenceError si 'userRole' no existe en el scope global
+    const roleRaw =
+        (typeof userRole !== 'undefined' && userRole) ? userRole :
+        (localStorage.getItem('SABG_ROL') || '');
+    const role = String(roleRaw).toLowerCase().trim();
     return role === 'admin' || role === 'superadmin' || role.includes('admin');
 }
+
 
 function applyRoleVisibility() {
     const excelBox = document.getElementById('excelUploadBox');
