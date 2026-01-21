@@ -2389,8 +2389,7 @@
                         <!-- Solo administradores: carga masiva vía Excel -->
                         <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display:none" />
                         <div id="excelUploadBox" class="hidden" style="display:inline-flex; gap:14px; align-items:center;">
-                            <button class="btn btn-success" type="button" onclick="document.getElementById('excelFile').click()">📎 Seleccionar</button>
-                            <button class="btn btn-success" type="button" onclick="uploadExcel()">📥 Cargar Excel</button>
+                            <button class="btn btn-success" type="button" onclick="triggerExcelUpload()">📎 Seleccionar carga de Excel</button>
                         </div>
                     </div>
                 </div>
@@ -2869,6 +2868,27 @@ function parseCSV(text) {
 
     // limpiar filas vacías
     return rows.filter(r => r.some(cell => String(cell || '').trim() !== ''));
+}
+
+
+function triggerExcelUpload() {
+    try {
+        if (!isAdminUser()) {
+            alert('⛔ Solo administradores pueden cargar archivos.');
+            return;
+        }
+        const input = document.getElementById('excelFile');
+        if (!input) {
+            alert('No se encontró el selector de archivo.');
+            return;
+        }
+        // Reset para permitir seleccionar el mismo archivo otra vez
+        input.value = '';
+        input.click();
+    } catch (e) {
+        console.error(e);
+        alert('Error al abrir el selector de archivo.');
+    }
 }
 
 async function uploadExcel() {
@@ -3868,64 +3888,134 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         document.getElementById('monthModal').classList.remove('active');
     }
 
-    async function exportData(format) {
-    if (!requireSuperAdmin('EXPORT_' + String(format).toUpperCase())) return;
+        async function exportData(format) {
+        if (!requireSuperAdmin('EXPORT_' + String(format).toUpperCase())) return;
 
-    try {
-        document.getElementById('loadingOverlay').classList.add('active');
-        document.querySelector('.loading-text').textContent = `📥 Exportando a ${format.toUpperCase()}...`;
+        const overlay = document.getElementById('loadingOverlay');
+        const loadingText = document.querySelector('.loading-text');
 
-        let url = '';
-        let filename = '';
-        let contentType = '';
+        // Helpers
+        const getTableData = () => {
+            const table = document.getElementById('registrosTable');
+            if (!table) throw new Error('No se encontró la tabla de registros');
 
-        if (format === 'excel' || format === 'json') {
-            url = '/api/export/excel?format=json';
-            filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.json`;
-            contentType = 'application/json';
-        } else if (format === 'csv') {
-            url = '/api/export/excel?format=csv';
-            filename = `registros_sabg_${new Date().toISOString().split('T')[0]}.csv`;
-            contentType = 'text/csv';
-        } else if (format === 'sql') {
-            // Para SQL, generamos un dump simple
-            alert('⚠️ Exportación SQL disponible próximamente.\n\nPor ahora usa JSON o CSV y luego importa a tu base de datos.');
-            document.getElementById('loadingOverlay').classList.remove('active');
-            return;
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(th => (th.innerText || th.textContent || '').trim())
+                .filter(h => h.length > 0);
+
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const dataRows = rows.map(tr => {
+                const cells = Array.from(tr.querySelectorAll('td')).map(td => {
+                    // Evitar iconos/elementos y quedarnos con el texto visible
+                    const txt = (td.innerText || td.textContent || '').replace(/\s+/g, ' ').trim();
+                    return txt;
+                });
+
+                const obj = {};
+                headers.forEach((h, i) => { obj[h] = cells[i] ?? ''; });
+                // Si hay más celdas que headers, las agregamos como columnas extra
+                for (let i = headers.length; i < cells.length; i++) {
+                    obj[`Columna_${i+1}`] = cells[i] ?? '';
+                }
+                return { cells, obj };
+            });
+
+            return { headers, dataRows };
+        };
+
+        const downloadBlob = (blob, filename) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        };
+
+        const toCsv = (headers, rowsCells) => {
+            const esc = (v) => {
+                const s = String(v ?? '');
+                if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+                return s;
+            };
+            const lines = [];
+            lines.push(headers.map(esc).join(','));
+            rowsCells.forEach(cells => lines.push(cells.map(esc).join(',')));
+            return lines.join('\n');
+        };
+
+        const toXlsHtml = (headers, rowsCells) => {
+            const escHtml = (s) => String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+
+            const thead = `<tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr>`;
+            const tbody = rowsCells.map(cells => `<tr>${cells.map(c => `<td>${escHtml(c)}</td>`).join('')}</tr>`).join('');
+            return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+</head>
+<body>
+<table border="1">
+<thead>${thead}</thead>
+<tbody>${tbody}</tbody>
+</table>
+</body>
+</html>`;
+        };
+
+        try {
+            if (overlay) overlay.classList.add('active');
+            if (loadingText) loadingText.textContent = `📥 Exportando a ${String(format).toUpperCase()}...`;
+
+            const { headers, dataRows } = getTableData();
+            const rowsCells = dataRows.map(r => r.cells);
+            const today = new Date().toISOString().split('T')[0];
+
+            if (!rowsCells.length) {
+                throw new Error('No hay registros para exportar');
+            }
+
+            if (format === 'csv') {
+                const csv = toCsv(headers, rowsCells);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const filename = `registros_sabg_${today}.csv`;
+                downloadBlob(blob, filename);
+                auditLog('EXPORT_CSV', 'OK', { total: rowsCells.length });
+                alert(`✅ Datos exportados exitosamente!\n\nFormato: CSV\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
+            } else if (format === 'excel' || format === 'xls') {
+                // Exportación "Excel" sin librerías: HTML .xls (Excel lo abre perfecto)
+                const html = toXlsHtml(headers, rowsCells);
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+                const filename = `registros_sabg_${today}.xls`;
+                downloadBlob(blob, filename);
+                auditLog('EXPORT_EXCEL', 'OK', { total: rowsCells.length });
+                alert(`✅ Datos exportados exitosamente!\n\nFormato: EXCEL\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
+            } else if (format === 'json') {
+                const json = JSON.stringify(dataRows.map(r => r.obj), null, 2);
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                const filename = `registros_sabg_${today}.json`;
+                downloadBlob(blob, filename);
+                auditLog('EXPORT_JSON', 'OK', { total: rowsCells.length });
+                alert(`✅ Datos exportados exitosamente!\n\nFormato: JSON\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
+            } else {
+                throw new Error('Formato de exportación no soportado');
+            }
+
+        } catch (error) {
+            console.error(error);
+            auditLog('EXPORT_' + String(format).toUpperCase(), 'ERROR', { message: String(error?.message || error) });
+            alert('❌ Error al exportar datos: ' + (error?.message || error));
+        } finally {
+            if (overlay) overlay.classList.remove('active');
+            if (loadingText) loadingText.textContent = '🚀 Iniciando sesión...';
         }
-
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error('Error al exportar datos');
-        }
-
-        const blob = await response.blob();
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        document.body.removeChild(a);
-
-        document.getElementById('loadingOverlay').classList.remove('active');
-        document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
-
-        auditLog('EXPORT_' + String(format).toUpperCase(), 'OK', { format });
-
-        alert(`✅ Datos exportados exitosamente!\n\nFormato: ${format.toUpperCase()}\nArchivo: ${filename}\n\nTotal de registros: ${format === 'csv' ? 'Ver archivo' : 'Ver archivo'}`);
-
-    } catch (error) {
-        auditLog('EXPORT_' + String(format).toUpperCase(), 'ERROR', { format, message: String(error && error.message ? error.message : error) });
-        document.getElementById('loadingOverlay').classList.remove('active');
-        document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
-
-        auditLog('EXPORT_' + String(format).toUpperCase(), 'OK', { format });
-        alert('❌ Error al exportar datos: ' + error.message);
     }
-}
 
     // ========================================
     // BÚSQUEDA EN TABLA
@@ -4335,6 +4425,19 @@ document.addEventListener('DOMContentLoaded', () => {
     try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
     initDependenciaAutocomplete();
     applyRoleVisibility();
+
+    // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
+    const excelInput = document.getElementById('excelFile');
+    if (excelInput) {
+        excelInput.addEventListener('change', () => {
+            try {
+                if (excelInput.files && excelInput.files.length) uploadExcel();
+            } catch (e) {
+                console.error(e);
+                alert('Error al cargar el archivo. Revisa la consola.');
+            }
+        });
+    }
 });
 </script>
 </body>
