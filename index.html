@@ -2766,6 +2766,24 @@
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
         <script>
+// ===================== FIX: Evitar ReferenceError si falta updateStatsFromRegistros =====================
+if (typeof window.updateStatsFromRegistros !== 'function') {
+  window.updateStatsFromRegistros = function(registros) {
+    try {
+      if (!Array.isArray(registros)) return;
+
+      // Actualiza un contador genérico si existe (no rompe si no existe)
+      const totalRegistrosEl = document.getElementById('totalRegistros');
+      if (totalRegistrosEl) {
+        totalRegistrosEl.textContent = registros.length.toLocaleString('es-MX');
+      }
+    } catch (e) {
+      console.warn('updateStatsFromRegistros fallback:', e);
+    }
+  };
+}
+// =======================================================================================================
+
     // ========================================
     // SISTEMA DE ROLES Y VARIABLES GLOBALES
     // ========================================
@@ -3046,16 +3064,12 @@ function auditLog(action, status, details = {}) {
         if (arr.length > 500) arr.splice(0, arr.length - 500);
         localStorage.setItem(key, JSON.stringify(arr));
 
-        // Envío opcional al backend (si existe). Por defecto DESACTIVADO para evitar 404 en Vercel.
-// Para activarlo: localStorage.setItem('SABG_AUDIT_REMOTE','1')
-const __auditRemote = (localStorage.getItem('SABG_AUDIT_REMOTE') === '1');
-if (__auditRemote) {
-    fetch('/api/audit/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry)
-    }).then(() => {}).catch(() => {});
-}
+        // Envío opcional al backend (si existe). No rompe si no hay endpoint.
+        fetch('/api/audit/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entry)
+        }).catch(() => {});
     } catch (e) {
         // Silencioso: no romper la app
     }
@@ -4133,61 +4147,13 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     });
 
 
-    
-// ========================================
-// AVISO NO BLOQUEANTE (evita alertas)
-// ========================================
-function setInlineWarning(message) {
+    async function cargarRegistrosTrimestral() {
     try {
-        let box = document.getElementById('rt-inline-warning');
-        if (!box) {
-            box = document.createElement('div');
-            box.id = 'rt-inline-warning';
-            box.style.position = 'fixed';
-            box.style.right = '16px';
-            box.style.bottom = '16px';
-            box.style.zIndex = '99999';
-            box.style.maxWidth = '420px';
-            box.style.background = 'rgba(15, 23, 42, 0.95)';
-            box.style.color = '#fff';
-            box.style.padding = '12px 14px';
-            box.style.borderRadius = '12px';
-            box.style.boxShadow = '0 10px 30px rgba(0,0,0,.35)';
-            box.style.fontSize = '14px';
-            box.style.lineHeight = '1.35';
-            box.style.display = 'none';
-            box.innerHTML = '<div id="rt-inline-warning-msg"></div><div style="margin-top:8px;text-align:right;"><button id="rt-inline-warning-close" style="background:rgba(255,255,255,.15);border:0;color:#fff;padding:6px 10px;border-radius:10px;cursor:pointer;">Cerrar</button></div>';
-            document.body.appendChild(box);
-            box.querySelector('#rt-inline-warning-close').addEventListener('click', () => { box.style.display = 'none'; });
-        }
-        const msg = box.querySelector('#rt-inline-warning-msg');
-        msg.textContent = message;
-        box.style.display = 'block';
-    } catch (e) {}
-}
-
-async function cargarRegistrosTrimestral() {
-    // Evita llamadas repetidas/paralelas (especialmente cuando el endpoint falla)
-    if (window.__rt_list_inflight) return;
-    const now = Date.now();
-    if (window.__rt_list_last_fail && (now - window.__rt_list_last_fail) < 15000) {
-        // backoff 15s después de un fallo
-        return;
-    }
-    window.__rt_list_inflight = true;
-
-    try {
-        const __role = (typeof userRole !== 'undefined' && userRole) ? userRole : (localStorage.getItem('SABG_ROL') || '');
-        const __dep = (typeof userDependencia !== 'undefined' && userDependencia) ? userDependencia : (localStorage.getItem('SABG_DEPENDENCIA') || '');
-        const url = (__role === 'superadmin' || __role === 'admin')
+        const url = userRole === 'superadmin' 
             ? '/api/trimestral/list'
-            : `/api/trimestral/list?dependencia=${encodeURIComponent(__dep)}`;
+            : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
 
-        const response = await fetch(url, { cache: 'no-store' });
-        if (!response.ok) {
-            const t = await response.text().catch(() => '');
-            throw new Error(`HTTP ${response.status} al listar registros: ${t || response.statusText}`);
-        }
+        const response = await fetch(url);
         const result = await response.json();
 
         if (result.success) {
@@ -4246,18 +4212,6 @@ async function cargarRegistrosTrimestral() {
 
         }
     } catch (error) {
-        window.__rt_list_last_fail = Date.now();
-        console.error('❌ Error en /api/trimestral/list:', error);
-        try { if (window.__rtTrimestralInterval) clearInterval(window.__rtTrimestralInterval); } catch(e) {}
-        // Si el backend está caído, evita spam y avisa una sola vez
-        if (!window.__rt_list_alerted) {
-            window.__rt_list_alerted = true;
-            setInlineWarning('No se pudo cargar la lista (/api/trimestral/list). Backend falló (HTTP 500). Revisa Vercel Logs / Base de datos. Detalle: ' + (error?.message || error));
-            // desbloquea el aviso después de 60s para no spamear
-            setTimeout(() => { window.__rt_list_alerted = false; }, 60000);
-        }
-    } finally {
-        window.__rt_list_inflight = false;
     }
 }
 async function guardarRegistroTrimestral() {
