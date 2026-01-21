@@ -2387,7 +2387,7 @@
                         <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
 
                         <!-- Solo administradores: carga masiva vía Excel -->
-                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display:none" />
+                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" />
                         <div id="excelUploadBox" class="hidden" style="display:inline-flex; gap:14px; align-items:center;">
                             <button class="btn btn-success" type="button" onclick="triggerExcelUpload()">📎 Seleccionar carga de Excel</button>
                         </div>
