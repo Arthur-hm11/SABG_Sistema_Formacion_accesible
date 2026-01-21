@@ -2387,9 +2387,9 @@
                         <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
 
                         <!-- Solo administradores: carga masiva vía Excel -->
-                        <div id="excelUploadBox" class="excel-upload-box hidden">
-                            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display:none" />
-                            <button class="btn btn-secondary" type="button" onclick="document.getElementById('excelFile').click()">📎 Seleccionar</button>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display:none" />
+                        <div id="excelUploadBox" class="hidden" style="display:inline-flex; gap:14px; align-items:center;">
+                            <button class="btn btn-success" type="button" onclick="document.getElementById('excelFile').click()">📎 Seleccionar</button>
                             <button class="btn btn-success" type="button" onclick="uploadExcel()">📥 Cargar Excel</button>
                         </div>
                     </div>
