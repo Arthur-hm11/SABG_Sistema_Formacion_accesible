@@ -23,19 +23,14 @@ module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, message: "Método no permitido" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ success: false, message: "Método no permitido" });
 
   try {
     const body = req.body || {};
     const rows = Array.isArray(body) ? body : (Array.isArray(body.rows) ? body.rows : []);
+    if (!rows.length) return res.status(400).json({ success: false, message: "No se recibieron registros (rows vacíos)" });
 
-    if (!rows.length) {
-      return res.status(400).json({ success: false, message: "No se recibieron registros (rows vacíos)" });
-    }
-
-    // ✅ TABLA REAL (según tu captura)
+    // ✅ TABLA REAL (plural)
     const tableName = "registros_trimestral";
 
     // ✅ COLUMNAS REALES (según tu captura)
@@ -65,7 +60,6 @@ module.exports = async (req, res) => {
       "usuario_registro",
     ];
 
-    // Normaliza vacíos -> NULL (no revienta por null)
     const cleanRows = rows.map((r) => ({
       enlace_nombre: norm(r.enlace_nombre),
       enlace_primer_apellido: norm(r.enlace_primer_apellido),
@@ -89,6 +83,7 @@ module.exports = async (req, res) => {
       telefono_institucional: norm(r.telefono_institucional),
       nivel_educativo: norm(r.nivel_educativo),
       institucion_educativa: norm(r.institucion_educativa),
+
       modalidad: norm(r.modalidad),
       estado_avance: norm(r.estado_avance),
       observaciones: norm(r.observaciones),
@@ -96,21 +91,10 @@ module.exports = async (req, res) => {
       usuario_registro: norm(r.usuario_registro),
     }));
 
-    // Elimina filas 100% vacías (para no insertar basura)
-    const filtered = cleanRows.filter((r) => {
-      return cols.some((c) => c !== "usuario_registro" && r[c] !== null);
-    });
-
+    // filtra filas totalmente vacías
+    const filtered = cleanRows.filter((r) => cols.some((c) => c !== "usuario_registro" && r[c] !== null));
     if (!filtered.length) {
-      return res.status(200).json({
-        success: true,
-        inserted: 0,
-        skipped: rows.length,
-        received: rows.length,
-        processed: 0,
-        errors: [],
-        errors_count: 0,
-      });
+      return res.status(200).json({ success: true, inserted: 0, skipped: rows.length, received: rows.length, processed: 0, errors: [], errors_count: 0 });
     }
 
     const BATCH = 200;
@@ -141,7 +125,7 @@ module.exports = async (req, res) => {
         inserted += ins;
         skipped += (batch.length - ins);
       } catch (e) {
-        // Si truena un lote, no rompe todo: aislamos fila por fila
+        // si truena lote, aislar por fila
         for (const r of batch) {
           try {
             const singleSql = `
@@ -171,7 +155,9 @@ module.exports = async (req, res) => {
       errors: errors.slice(0, 30),
       errors_count: errors.length,
     });
+
   } catch (err) {
+    console.error("bulkCreate fatal:", err);
     return res.status(500).json({ success: false, message: "Error del servidor", error: err.message });
   }
 };
