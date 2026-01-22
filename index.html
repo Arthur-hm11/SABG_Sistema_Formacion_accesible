@@ -3041,6 +3041,9 @@ async function uploadExcel() {
         if (input) input.value = ''; // limpiar para permitir volver a seleccionar
     }
 }
+// Exponer para handlers inline
+window.uploadExcel = uploadExcel;
+
 }
 
 function auditLog(action, status, details = {}) {
