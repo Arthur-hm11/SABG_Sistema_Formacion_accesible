@@ -6,7 +6,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// "" => NULL; limpia strings
 function norm(v) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
@@ -36,16 +35,26 @@ module.exports = async (req, res) => {
       return res.status(400).json({ success: false, message: "No se recibieron registros (rows vacíos)" });
     }
 
-    const tableName = "registro_trimestral";
+    // ✅ TABLA REAL (según tu captura)
+    const tableName = "registros_trimestral";
 
-    // Ajustadas a lo que tu frontend ya manda/usa
+    // ✅ COLUMNAS REALES (según tu captura)
     const cols = [
+      "enlace_nombre",
+      "enlace_primer_apellido",
+      "enlace_segundo_apellido",
+      "enlace_correo",
+      "enlace_telefono",
       "trimestre",
       "id_rusp",
       "primer_apellido",
       "segundo_apellido",
       "nombre",
       "curp",
+      "nivel_puesto",
+      "nivel_tabular",
+      "ramo_ur",
+      "dependencia",
       "correo_institucional",
       "telefono_institucional",
       "nivel_educativo",
@@ -56,14 +65,26 @@ module.exports = async (req, res) => {
       "usuario_registro",
     ];
 
-    // Normaliza y convierte vacíos a NULL (NO falla por null)
+    // Normaliza vacíos -> NULL (no revienta por null)
     const cleanRows = rows.map((r) => ({
+      enlace_nombre: norm(r.enlace_nombre),
+      enlace_primer_apellido: norm(r.enlace_primer_apellido),
+      enlace_segundo_apellido: norm(r.enlace_segundo_apellido),
+      enlace_correo: norm(r.enlace_correo),
+      enlace_telefono: norm(r.enlace_telefono),
+
       trimestre: norm(r.trimestre),
       id_rusp: norm(r.id_rusp),
       primer_apellido: norm(r.primer_apellido),
       segundo_apellido: norm(r.segundo_apellido),
       nombre: norm(r.nombre),
       curp: upperOrNull(r.curp),
+
+      nivel_puesto: norm(r.nivel_puesto),
+      nivel_tabular: norm(r.nivel_tabular),
+      ramo_ur: norm(r.ramo_ur),
+      dependencia: norm(r.dependencia),
+
       correo_institucional: norm(r.correo_institucional),
       telefono_institucional: norm(r.telefono_institucional),
       nivel_educativo: norm(r.nivel_educativo),
@@ -71,10 +92,11 @@ module.exports = async (req, res) => {
       modalidad: norm(r.modalidad),
       estado_avance: norm(r.estado_avance),
       observaciones: norm(r.observaciones),
+
       usuario_registro: norm(r.usuario_registro),
     }));
 
-    // Quita filas 100% vacías para evitar "basura"
+    // Elimina filas 100% vacías (para no insertar basura)
     const filtered = cleanRows.filter((r) => {
       return cols.some((c) => c !== "usuario_registro" && r[c] !== null);
     });
@@ -91,7 +113,6 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Batches seguros
     const BATCH = 200;
     let inserted = 0;
     let skipped = 0;
@@ -120,7 +141,7 @@ module.exports = async (req, res) => {
         inserted += ins;
         skipped += (batch.length - ins);
       } catch (e) {
-        // Si un batch falla, aislamos: fila por fila (para no romper todo)
+        // Si truena un lote, no rompe todo: aislamos fila por fila
         for (const r of batch) {
           try {
             const singleSql = `
@@ -150,7 +171,6 @@ module.exports = async (req, res) => {
       errors: errors.slice(0, 30),
       errors_count: errors.length,
     });
-
   } catch (err) {
     return res.status(500).json({ success: false, message: "Error del servidor", error: err.message });
   }
