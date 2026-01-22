@@ -16,14 +16,14 @@ function upperOrNull(v) {
   return s ? s.toUpperCase() : null;
 }
 
-// Recorta strings para evitar errores por longitud (sin romper nada)
+// recorta a max (evita “value too long”)
 function clip(v, max) {
   const s = norm(v);
   if (!s) return null;
   return s.length > max ? s.slice(0, max) : s;
 }
 
-// Normaliza CURP a algo seguro (varchar 18). Si no cuadra, se va a NULL.
+// CURP seguro (varchar 18)
 function normalizeCurpForDb(curpVal) {
   const s = upperOrNull(curpVal);
   if (!s) return null;
@@ -47,18 +47,14 @@ function normalizeCurpForDb(curpVal) {
   return compact;
 }
 
-// ✅ Ajuste clave: SOLO descarta si ABSOLUTAMENTE TODO viene vacío.
-// Esto evita perder filas que traen solo enlace_* u otros campos.
+// SOLO descarta si TODA la fila está vacía
 function isTrulyEmptyRow(r) {
   const keys = [
-    // enlace
     "enlace_nombre",
     "enlace_primer_apellido",
     "enlace_segundo_apellido",
     "enlace_correo",
     "enlace_telefono",
-
-    // registro
     "trimestre",
     "id_rusp",
     "primer_apellido",
@@ -91,9 +87,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, message: "Método no permitido" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ success: false, message: "Método no permitido" });
 
   const report = {
     received: 0,
@@ -115,35 +109,39 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: "No se recibieron registros (rows vacíos)", report });
     }
 
-    const tableName = "registros_trimestral";
-
+    // columnas EXACTAS de tu tabla (captura)
     const cols = [
-      "enlace_nombre",
-      "enlace_primer_apellido",
-      "enlace_segundo_apellido",
-      "enlace_correo",
-      "enlace_telefono",
-      "trimestre",
-      "id_rusp",
-      "primer_apellido",
-      "segundo_apellido",
-      "nombre",
-      "curp",
-      "nivel_puesto",
-      "nivel_tabular",
-      "ramo_ur",
-      "dependencia",
-      "correo_institucional",
-      "telefono_institucional",
-      "nivel_educativo",
-      "institucion_educativa",
-      "modalidad",
-      "estado_avance",
-      "observaciones",
-      "usuario_registro",
+      "enlace_nombre",            // varchar(200)
+      "enlace_primer_apellido",   // varchar(100)
+      "enlace_segundo_apellido",  // varchar(100)
+      "enlace_correo",            // varchar(200)
+      "enlace_telefono",          // varchar(50)
+
+      "trimestre",                // varchar(50)
+      "id_rusp",                  // varchar(100)
+      "primer_apellido",          // varchar(100)
+      "segundo_apellido",         // varchar(100)
+      "nombre",                   // varchar(200)
+      "curp",                     // varchar(18)
+
+      "nivel_puesto",             // varchar(200)
+      "nivel_tabular",            // varchar(50)
+      "ramo_ur",                  // varchar(50)
+
+      "dependencia",              // text (sin límite)
+      "correo_institucional",     // varchar(200)
+      "telefono_institucional",   // varchar(50)  (tu tabla lo maneja así normalmente)
+      "nivel_educativo",          // varchar(100)
+
+      "institucion_educativa",    // text
+      "modalidad",                // text
+      "estado_avance",            // text
+      "observaciones",            // text
+
+      "usuario_registro",         // varchar(100)
     ];
 
-    // Limpieza + recortes (evita 3 errores típicos)
+    const tableName = "registros_trimestral";
     const cleaned = [];
 
     for (const raw of rows) {
@@ -154,53 +152,42 @@ export default async function handler(req, res) {
 
       const curpRaw = raw?.curp;
       const curpClean = normalizeCurpForDb(curpRaw);
-
-      if (norm(curpRaw) !== null && curpClean === null) {
-        report.curp_invalid_to_null += 1;
-      }
+      if (norm(curpRaw) !== null && curpClean === null) report.curp_invalid_to_null += 1;
 
       cleaned.push({
-        enlace_nombre: clip(raw.enlace_nombre, 120),
-        enlace_primer_apellido: clip(raw.enlace_primer_apellido, 120),
-        enlace_segundo_apellido: clip(raw.enlace_segundo_apellido, 120),
+        enlace_nombre: clip(raw.enlace_nombre, 200),
+        enlace_primer_apellido: clip(raw.enlace_primer_apellido, 100),
+        enlace_segundo_apellido: clip(raw.enlace_segundo_apellido, 100),
         enlace_correo: clip(raw.enlace_correo, 200),
         enlace_telefono: clip(raw.enlace_telefono, 50),
 
-        trimestre: clip(raw.trimestre, 60),
-        id_rusp: clip(raw.id_rusp, 60),
+        trimestre: clip(raw.trimestre, 50),
+        id_rusp: clip(raw.id_rusp, 100),
+        primer_apellido: clip(raw.primer_apellido, 100),
+        segundo_apellido: clip(raw.segundo_apellido, 100),
+        nombre: clip(raw.nombre, 200),
 
-        primer_apellido: clip(raw.primer_apellido, 120),
-        segundo_apellido: clip(raw.segundo_apellido, 120),
-        nombre: clip(raw.nombre, 160),
+        curp: curpClean,
 
-        curp: curpClean, // seguro 18 o NULL
+        nivel_puesto: clip(raw.nivel_puesto, 200),
+        nivel_tabular: clip(raw.nivel_tabular, 50),
+        ramo_ur: clip(raw.ramo_ur, 50),
 
-        nivel_puesto: clip(raw.nivel_puesto, 80),
-        nivel_tabular: clip(raw.nivel_tabular, 80),
-        ramo_ur: clip(raw.ramo_ur, 140),
-        dependencia: clip(raw.dependencia, 220),
-
+        dependencia: norm(raw.dependencia), // text
         correo_institucional: clip(raw.correo_institucional, 200),
         telefono_institucional: clip(raw.telefono_institucional, 50),
+        nivel_educativo: clip(raw.nivel_educativo, 100),
 
-        nivel_educativo: clip(raw.nivel_educativo, 120),
-        institucion_educativa: clip(raw.institucion_educativa, 220),
+        institucion_educativa: norm(raw.institucion_educativa), // text
+        modalidad: norm(raw.modalidad), // text
+        estado_avance: norm(raw.estado_avance), // text
+        observaciones: norm(raw.observaciones), // text
 
-        modalidad: clip(raw.modalidad, 120),
-        estado_avance: clip(raw.estado_avance, 120),
-
-        // Observaciones puede venir gigantesco: recorte alto para evitar falla
-        observaciones: clip(raw.observaciones, 1500),
-
-        usuario_registro: clip(raw.usuario_registro, 80),
+        usuario_registro: clip(raw.usuario_registro, 100),
       });
     }
 
     report.processed = cleaned.length;
-
-    if (!cleaned.length) {
-      return res.status(200).json({ success: true, message: "Nada que insertar (todas vacías)", report });
-    }
 
     const BATCH = 200;
 
@@ -223,11 +210,10 @@ export default async function handler(req, res) {
       try {
         const result = await pool.query(sql, values);
         const ins = result.rowCount || 0;
-
         report.inserted += ins;
         report.duplicates_omitted += (batch.length - ins);
       } catch (e) {
-        // fallback por fila (para NO perder nada)
+        // fallback 1x1 (para no perder lote completo)
         for (const r of batch) {
           try {
             const singleSql = `
@@ -250,8 +236,6 @@ export default async function handler(req, res) {
                 curp: r.curp ?? null,
                 id_rusp: r.id_rusp ?? null,
                 nombre: r.nombre ?? null,
-                primer_apellido: r.primer_apellido ?? null,
-                segundo_apellido: r.segundo_apellido ?? null,
               });
             }
           }
@@ -263,8 +247,7 @@ export default async function handler(req, res) {
       success: true,
       message: "Carga masiva completada",
       report,
-      note:
-        "Se recortan strings para evitar fallas por longitud. Filas solo se descartan si están totalmente vacías.",
+      note: "Se recortan strings según límites reales del esquema para evitar 'value too long'.",
     });
   } catch (err) {
     console.error("bulkCreate fatal:", err);
