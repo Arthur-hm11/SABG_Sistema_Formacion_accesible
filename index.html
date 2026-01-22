@@ -2946,8 +2946,52 @@ async function uploadExcel() {
                 return;
             }
 
-            const headerRow = rows[0].map(h => normalizeHeaderKey(h));
-            const bodyRows = rows.slice(1);
+            
+            // Detectar fila de encabezados (algunos CSV traen filas extra antes del header)
+            const normRows = rows.map(r => (r || []).map(c => normalizeHeaderKey(c)));
+            const expectedCandidates = [
+                'trimestre','trim','periodo',
+                'id_rusp','rusp','idrusp',
+                'primer_apellido','apellido_paterno','ap_paterno','paterno',
+                'segundo_apellido','apellido_materno','ap_materno','materno',
+                'nombre','nombres','nombre_s',
+                'curp',
+                'correo_institucional','correo','email','e_mail',
+                'telefono_institucional','telefono','tel','telefono_oficina',
+                'nivel_educativo','nivel_de_estudios','nivel_estudios',
+                'institucion_educativa','institucion','escuela',
+                'modalidad',
+                'estado_avance','avance','estatus',
+                'observaciones','obs','comentarios'
+            ];
+
+            let headerIdx = 0;
+            let bestScore = -1;
+
+            // Busca en las primeras 25 filas la que parezca encabezado
+            const scanMax = Math.min(normRows.length, 25);
+            for (let i = 0; i < scanMax; i++) {
+                const row = normRows[i] || [];
+                let score = 0;
+                for (const c of expectedCandidates) {
+                    if (row.includes(normalizeHeaderKey(c))) score++;
+                }
+                if (score > bestScore) {
+                    bestScore = score;
+                    headerIdx = i;
+                }
+            }
+
+            if (bestScore < 2) {
+                // No encontramos encabezados válidos: evita "0 guardados" engañoso
+                const preview = (rows[0] || []).slice(0, 12).join(' | ');
+                alert('⚠️ No se detectaron encabezados válidos en el CSV.\n\n' + 'Asegúrate de exportar como CSV desde la pestaña correcta y que la primera fila contenga columnas como TRIMESTRE, ID_RUSP, CURP, etc.\n\n' + 'Vista previa de la primera fila:\n' + preview);
+                return;
+            }
+
+            const headerRow = normRows[headerIdx];
+            const bodyRows = rows.slice(headerIdx + 1);
+
 
             // Mapeos comunes (por si los encabezados vienen en español)
             const alias = {
@@ -3025,7 +3069,11 @@ async function uploadExcel() {
             }
 
             if (fail === 0) {
-                alert(`✅ Carga completada: ${ok} registro(s) guardado(s).`);
+                if (ok === 0) {
+                    alert('⚠️ Carga completada: 0 registros guardados.\n\n' + 'Esto normalmente pasa cuando el CSV no trae columnas reconocibles o las filas vienen vacías.\n\n' + 'Tip: exporta el archivo como CSV (no XLSX) y verifica que la primera fila del CSV tenga encabezados como TRIMESTRE, ID_RUSP, PRIMER_APELLIDO, NOMBRE, CURP, etc.');
+                } else {
+                    alert(`✅ Carga completada: ${ok} registro(s) guardado(s).`);
+                }
             } else {
                 console.warn('Errores de carga masiva:', errors);
                 alert(`⚠️ Carga parcial: ${ok} OK / ${fail} con error. Revisa la consola para detalles.`);
