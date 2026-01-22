@@ -1,8 +1,3 @@
-// /api/trimestral/bulkCreate.js  (ESM - compatible con tu proyecto)
-// Inserción masiva por lotes a: registros_trimestral
-// Dedupe profesional: ON CONFLICT DO NOTHING (requiere UNIQUE parcial en BD por (curp,trimestre) WHERE curp IS NOT NULL)
-// Reporta errores por fila sin romper la carga.
-
 import { Pool } from "pg";
 
 const pool = new Pool({
@@ -26,14 +21,42 @@ function normalizeCurpForDb(curpVal) {
   const s = upperOrNull(curpVal);
   if (!s) return null;
 
-  const bad = new Set(["SIN INFORMACION", "SIN INFORMACIÓN", "N/A", "NA", "NULL", "-", "0"]);
+  const bad = new Set(["SIN INFORMACION", "SIN INFORMACIÓN", "N/A", "NO APLICA", "NA", "NULL", "-", "0"]);
   if (bad.has(s)) return null;
 
-  // CURP debe ser 18 alfanuméricos
-  if (s.length !== 18) return null;
-  if (!/^[A-Z0-9]{18}$/.test(s)) return null;
+  const compact = s.replace(/[^A-Z0-9]/g, "");
 
-  return s;
+  // CURP debe ser 18 alfanuméricos
+  if (compact.length !== 18) return null;
+  if (!/^[A-Z0-9]{18}$/.test(compact)) return null;
+
+  return compact;
+}
+
+// Fila "vacía": todos los campos relevantes null/blank
+function isEffectivelyEmptyRow(r) {
+  // revisa solo campos que de verdad representan un "registro"
+  const keys = [
+    "trimestre",
+    "id_rusp",
+    "primer_apellido",
+    "segundo_apellido",
+    "nombre",
+    "curp",
+    "dependencia",
+    "correo_institucional",
+    "telefono_institucional",
+    "nivel_educativo",
+    "institucion_educativa",
+    "modalidad",
+    "estado_avance",
+    "observaciones",
+  ];
+
+  return !keys.some((k) => {
+    const v = r?.[k];
+    return v !== undefined && v !== null && String(v).trim() !== "";
+  });
 }
 
 export default async function handler(req, res) {
@@ -46,20 +69,32 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, message: "Método no permitido" });
   }
 
+  // ====== CONTADORES (trazabilidad) ======
+  const report = {
+    received: 0,                 // filas recibidas del frontend
+    empty_discarded: 0,          // filas descartadas por vacías
+    processed: 0,                // filas enviadas a inserción
+    curp_invalid_to_null: 0,     // cuántas CURP se fueron a NULL por inválidas
+    inserted: 0,                 // insertadas reales
+    duplicates_omitted: 0,       // omitidas por UNIQUE (estimado por rowCount)
+    errors_count: 0,
+    errors: [],                  // hasta 50
+  };
+
   try {
     const body = req.body || {};
     const rows = Array.isArray(body) ? body : Array.isArray(body.rows) ? body.rows : [];
 
+    report.received = rows.length;
+
     if (!rows.length) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No se recibieron registros (rows vacíos)" });
+      return res.status(400).json({ success: false, message: "No se recibieron registros (rows vacíos)", report });
     }
 
-    // ✅ TU TABLA REAL
+    // ✅ TABLA REAL
     const tableName = "registros_trimestral";
 
-    // ✅ TUS COLUMNAS REALES (según tu captura)
+    // ✅ COLUMNAS REALES
     const cols = [
       "enlace_nombre",
       "enlace_primer_apellido",
@@ -86,64 +121,67 @@ export default async function handler(req, res) {
       "usuario_registro",
     ];
 
-    // Mapea y normaliza: NULL si viene vacío, CURP limpia
-    const cleanRows = rows.map((r) => ({
-      enlace_nombre: norm(r.enlace_nombre),
-      enlace_primer_apellido: norm(r.enlace_primer_apellido),
-      enlace_segundo_apellido: norm(r.enlace_segundo_apellido),
-      enlace_correo: norm(r.enlace_correo),
-      enlace_telefono: norm(r.enlace_telefono),
+    // 1) Limpieza + contadores de vacías y curp inválida
+    const cleaned = [];
 
-      trimestre: norm(r.trimestre),
-      id_rusp: norm(r.id_rusp),
-      primer_apellido: norm(r.primer_apellido),
-      segundo_apellido: norm(r.segundo_apellido),
-      nombre: norm(r.nombre),
+    for (const raw of rows) {
+      if (isEffectivelyEmptyRow(raw)) {
+        report.empty_discarded += 1;
+        continue;
+      }
 
-      // ✅ clave: curp inválida -> NULL (no choca con unique parcial)
-      curp: normalizeCurpForDb(r.curp),
+      const curpRaw = raw?.curp;
+      const curpClean = normalizeCurpForDb(curpRaw);
 
-      nivel_puesto: norm(r.nivel_puesto),
-      nivel_tabular: norm(r.nivel_tabular),
-      ramo_ur: norm(r.ramo_ur),
-      dependencia: norm(r.dependencia),
+      // si venía algo pero se volvió null, cuenta como inválida
+      if (norm(curpRaw) !== null && curpClean === null) {
+        report.curp_invalid_to_null += 1;
+      }
 
-      correo_institucional: norm(r.correo_institucional),
-      telefono_institucional: norm(r.telefono_institucional),
-      nivel_educativo: norm(r.nivel_educativo),
-      institucion_educativa: norm(r.institucion_educativa),
+      cleaned.push({
+        enlace_nombre: norm(raw.enlace_nombre),
+        enlace_primer_apellido: norm(raw.enlace_primer_apellido),
+        enlace_segundo_apellido: norm(raw.enlace_segundo_apellido),
+        enlace_correo: norm(raw.enlace_correo),
+        enlace_telefono: norm(raw.enlace_telefono),
 
-      modalidad: norm(r.modalidad),
-      estado_avance: norm(r.estado_avance),
-      observaciones: norm(r.observaciones),
+        trimestre: norm(raw.trimestre),
+        id_rusp: norm(raw.id_rusp),
+        primer_apellido: norm(raw.primer_apellido),
+        segundo_apellido: norm(raw.segundo_apellido),
+        nombre: norm(raw.nombre),
 
-      usuario_registro: norm(r.usuario_registro),
-    }));
+        curp: curpClean,
 
-    // Filtra filas completamente vacías (evita insertar pura basura)
-    const filtered = cleanRows.filter((r) =>
-      cols.some((c) => c !== "usuario_registro" && r[c] !== null)
-    );
+        nivel_puesto: norm(raw.nivel_puesto),
+        nivel_tabular: norm(raw.nivel_tabular),
+        ramo_ur: norm(raw.ramo_ur),
+        dependencia: norm(raw.dependencia),
 
-    if (!filtered.length) {
-      return res.status(200).json({
-        success: true,
-        inserted: 0,
-        skipped: rows.length,
-        received: rows.length,
-        processed: 0,
-        errors: [],
-        errors_count: 0,
+        correo_institucional: norm(raw.correo_institucional),
+        telefono_institucional: norm(raw.telefono_institucional),
+        nivel_educativo: norm(raw.nivel_educativo),
+        institucion_educativa: norm(raw.institucion_educativa),
+
+        modalidad: norm(raw.modalidad),
+        estado_avance: norm(raw.estado_avance),
+        observaciones: norm(raw.observaciones),
+
+        usuario_registro: norm(raw.usuario_registro),
       });
     }
 
-    const BATCH = 200; // 100–300 recomendado
-    let inserted = 0;
-    let skipped = 0;
-    const errors = [];
+    report.processed = cleaned.length;
 
-    for (let i = 0; i < filtered.length; i += BATCH) {
-      const batch = filtered.slice(i, i + BATCH);
+    if (!cleaned.length) {
+      return res.status(200).json({ success: true, message: "Nada que insertar (todas vacías)", report });
+    }
+
+    // 2) Inserción por lotes
+    const BATCH = 200;
+
+    for (let i = 0; i < cleaned.length; i += BATCH) {
+      const batch = cleaned.slice(i, i + BATCH);
 
       const values = [];
       const placeholders = batch.map((r, rowIdx) => {
@@ -161,10 +199,11 @@ export default async function handler(req, res) {
       try {
         const result = await pool.query(sql, values);
         const ins = result.rowCount || 0;
-        inserted += ins;
-        skipped += batch.length - ins;
+
+        report.inserted += ins;
+        report.duplicates_omitted += (batch.length - ins);
       } catch (e) {
-        // Si truena un lote, intentamos fila por fila para rescatar lo posible y capturar errores
+        // fallback por fila
         for (const r of batch) {
           try {
             const singleSql = `
@@ -175,19 +214,23 @@ export default async function handler(req, res) {
             const singleVals = cols.map((c) => r[c] ?? null);
             const singleRes = await pool.query(singleSql, singleVals);
             const ins1 = singleRes.rowCount || 0;
-            inserted += ins1;
-            skipped += 1 - ins1;
+
+            report.inserted += ins1;
+            report.duplicates_omitted += (1 - ins1);
           } catch (e2) {
-            skipped += 1;
-            errors.push({
-              message: e2?.message || String(e2),
-              curp: r.curp ?? null,
-              trimestre: r.trimestre ?? null,
-              id_rusp: r.id_rusp ?? null,
-              nombre: r.nombre ?? null,
-              primer_apellido: r.primer_apellido ?? null,
-              segundo_apellido: r.segundo_apellido ?? null,
-            });
+            report.errors_count += 1;
+
+            if (report.errors.length < 50) {
+              report.errors.push({
+                message: e2?.message || String(e2),
+                trimestre: r.trimestre ?? null,
+                curp: r.curp ?? null,
+                id_rusp: r.id_rusp ?? null,
+                nombre: r.nombre ?? null,
+                primer_apellido: r.primer_apellido ?? null,
+                segundo_apellido: r.segundo_apellido ?? null,
+              });
+            }
           }
         }
       }
@@ -195,14 +238,10 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      inserted,
-      skipped,
-      received: rows.length,
-      processed: filtered.length,
-      errors: errors.slice(0, 50), // muestra hasta 50
-      errors_count: errors.length,
+      message: "Carga masiva completada",
+      report,
       note:
-        "Para dedupe real, crea UNIQUE parcial: (curp,trimestre) WHERE curp IS NOT NULL. CURP inválida se guarda como NULL.",
+        "duplicates_omitted depende de tener UNIQUE parcial: (curp,trimestre) WHERE curp IS NOT NULL. CURP inválida se guarda como NULL.",
     });
   } catch (err) {
     console.error("bulkCreate fatal:", err);
@@ -210,6 +249,7 @@ export default async function handler(req, res) {
       success: false,
       message: "Error del servidor",
       error: err?.message || String(err),
+      report,
     });
   }
 }
