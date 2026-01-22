@@ -3087,11 +3087,21 @@ async function uploadExcel() {
                     body: JSON.stringify({ rows: batch })
                 });
 
-                const result = await resp.json().catch(() => ({}));
+                // Leer respuesta (a veces Vercel regresa HTML/texto en errores 500)
+                let result = {};
+                let rawText = '';
+                try {
+                    rawText = await resp.text();
+                    try { result = JSON.parse(rawText); } catch (_) { result = {}; }
+                } catch (_) {
+                    rawText = '';
+                    result = {};
+                }
 
                 if (!resp.ok || !result || result.success !== true) {
-                    const detail = (result && (result.message || result.error)) ? (result.message || result.error) : 'Sin detalle';
-                    errors.push(`Lote ${Math.floor(i / BATCH) + 1}: HTTP ${resp.status} - ${detail}`);
+                    const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
+                    errors.push(`Lote ${Math.floor(i / BATCH) + 1}: HTTP ${resp.status} - ${String(detail).slice(0, 1200)}`);
+                    console.error('bulkCreate error', resp.status, detail);
                     fail += batch.length;
                     // Detener para no seguir rompiendo el backend
                     break;
