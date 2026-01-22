@@ -2793,7 +2793,7 @@ if (typeof window.updateStatsFromRegistros !== 'function') {
    SEGURIDAD (doble validación) + AUDITORÍA SILENCIOSA
    - No muestra roles en UI
    - Bloquea acciones críticas si no es superadmin
-   - Registra acciones en localStorage y (opcional) envía a /api/auth/log
+   - Registra acciones en localStorage y (opcional) envía a /api/audit/log
 ========================================================= */
 function isSuperAdmin() {
     return (userRole === 'superadmin');
@@ -3065,11 +3065,11 @@ function auditLog(action, status, details = {}) {
         localStorage.setItem(key, JSON.stringify(arr));
 
         // Envío opcional al backend (si existe). No rompe si no hay endpoint.
-        fetch('/api/auth/log', {
+        fetch('/api/audit/log', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(entry)
-        }).catch(() => {});
+        }).catch(() => {}).catch(() => {});
     } catch (e) {
         // Silencioso: no romper la app
     }
@@ -3321,6 +3321,15 @@ async function loginUsuario() {
         }
 
         await cargarRegistrosTrimestral();
+
+        // Refresco cada 60s
+        try {
+            if (window.__rtTrimestralInterval) clearInterval(window.__rtTrimestralInterval);
+            window.__rtTrimestralInterval = setInterval(() => {
+                const u = localStorage.getItem('SABG_USUARIO');
+                if (u) cargarRegistrosTrimestral();
+            }, 60000);
+        } catch (e) {}
 
         alert(`✅ ¡Bienvenido ${data.nombre}!`);
 
@@ -3621,18 +3630,7 @@ async function loginUsuario() {
                 btn.classList.add('active');
             }
         });
-    
-        // ✅ Control de auto-refresco para evitar llamadas constantes a /api/trimestral/list
-        try{
-            window.__currentMainSection = sectionId;
-            if (sectionId !== 'trimestral') {
-                stopTrimestralAutoRefresh();
-            } else {
-                // Solo inicia si la pestaña "tabla" está activa
-                if (window.__currentTrimestralTab === 'tabla') startTrimestralAutoRefresh();
-            }
-        }catch(e){}
-}
+    }
 
     function showTrimestralTab(tabId) {
         // ✅ Acceso a la tabla habilitado para todos los usuarios
@@ -3656,19 +3654,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         });
 
         document.getElementById(tabId).classList.add('active');
-    
-        // ✅ Control de auto-refresco: solo cuando la pestaña Tabla está activa
-        try{
-            window.__currentTrimestralTab = tabId;
-            if (tabId === 'tabla' && window.__currentMainSection === 'trimestral') {
-                // cargar una vez al entrar
-                try{ cargarRegistrosTrimestral(); }catch(e){}
-                startTrimestralAutoRefresh();
-            } else {
-                stopTrimestralAutoRefresh();
-            }
-        }catch(e){}
-}
+    }
 
     // ========================================
     // FUNCIONES DE ISTRACIÓN
@@ -4228,50 +4214,6 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     } catch (error) {
     }
 }
-
-// ========================================
-// AUTO-REFRESCO DE TABLA TRIMESTRAL (sin spam de /list)
-// Solo refresca cuando:
-// - Estás en la sección "trimestral"
-// - Está activa la pestaña "tabla"
-// - La pestaña del navegador está visible
-// ========================================
-function stopTrimestralAutoRefresh(){
-    try{
-        if (window.__rtTrimestralInterval) {
-            clearInterval(window.__rtTrimestralInterval);
-            window.__rtTrimestralInterval = null;
-        }
-    }catch(e){}
-}
-
-function startTrimestralAutoRefresh(){
-    try{
-        stopTrimestralAutoRefresh();
-        window.__rtTrimestralInterval = setInterval(() => {
-            const logged = localStorage.getItem('SABG_USUARIO');
-            const okSection = (window.__currentMainSection === 'trimestral');
-            const okTab = (window.__currentTrimestralTab === 'tabla');
-            const visible = (document.visibilityState === 'visible');
-            if (logged && okSection && okTab && visible) {
-                cargarRegistrosTrimestral();
-            }
-        }, 60000); // 60s
-    }catch(e){}
-}
-
-// Pausar/refrescar según visibilidad del navegador
-document.addEventListener('visibilitychange', () => {
-    try{
-        if (document.visibilityState !== 'visible') return;
-        const logged = localStorage.getItem('SABG_USUARIO');
-        if (logged && window.__currentMainSection === 'trimestral' && window.__currentTrimestralTab === 'tabla') {
-            cargarRegistrosTrimestral();
-        }
-    }catch(e){}
-});
-
-
 async function guardarRegistroTrimestral() {
     const form = document.getElementById('trimestralForm');
     const formData = new FormData(form);
