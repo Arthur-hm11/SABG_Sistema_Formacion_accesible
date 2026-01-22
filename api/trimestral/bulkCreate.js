@@ -1,320 +1,177 @@
-import { Pool } from "pg";
+// /api/bulkCreate.js
+const { Pool } = require("pg");
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
-// -------------------- Utilidades --------------------
 function norm(v) {
-  if (v === undefined || v === null) return null;
-  const s = String(v).trim();
-  return s === "" ? null : s;
+  if (v === undefined || v === null) return "";
+  return String(v).trim();
 }
 
-function normalizeNullables(v) {
-  const s0 = norm(v);
-  if (!s0) return null;
-  const s = s0.toUpperCase();
-
-  const bad = new Set([
-    "SIN INFORMACION",
-    "SIN INFORMACIÓN",
-    "N/A",
-    "NA",
-    "NO APLICA",
-    "NULL",
-    "-",
-    "0",
-  ]);
-
-  if (bad.has(s)) return null;
-  return s0; // conserva caso original si no quieres forzar mayúsculas en todo
+function isValidCURP(curp) {
+  const c = norm(curp).toUpperCase();
+  // patrón común CURP (suficiente para clasificar válida vs pendiente)
+  return /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(c);
 }
 
-function normalizeTextKey(v) {
-  // Para llaves por nombre/apellidos/trimestre: MAYÚSCULAS + colapsa espacios
-  const s0 = norm(v);
-  if (!s0) return null;
-  return s0.trim().replace(/\s+/g, " ").toUpperCase();
+async function getTableColumns(client, tableName) {
+  const q = `
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema='public' AND table_name=$1
+  `;
+  const r = await client.query(q, [tableName]);
+  return new Set(r.rows.map((x) => x.column_name));
 }
 
-function clip(v, max) {
-  const s = norm(v);
-  if (!s) return null;
-  return s.length > max ? s.slice(0, max) : s;
-}
-
-function normalizeCurpForDb(curpVal) {
-  const s0 = normalizeNullables(curpVal);
-  if (!s0) return null;
-
-  const s = s0.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (s.length !== 18) return null;
-  if (!/^[A-Z0-9]{18}$/.test(s)) return null;
-
-  return s;
-}
-
-function normalizeRuspForDb(ruspVal) {
-  const s0 = normalizeNullables(ruspVal);
-  if (!s0) return null;
-
-  // No forzamos formato exacto, solo limpiamos espacios y dejamos alfanumérico + guiones
-  const s = s0.trim();
-  return s === "" ? null : s;
-}
-
-function isTrulyEmptyRow(r) {
-  // Solo descarta si TODO viene vacío
-  const keys = [
-    "enlace_nombre",
-    "enlace_primer_apellido",
-    "enlace_segundo_apellido",
-    "enlace_correo",
-    "enlace_telefono",
-
-    "trimestre",
-    "id_rusp",
-    "primer_apellido",
-    "segundo_apellido",
-    "nombre",
-    "curp",
-
-    "nivel_puesto",
-    "nivel_tabular",
-    "ramo_ur",
-    "dependencia",
-    "correo_institucional",
-    "telefono_institucional",
-    "nivel_educativo",
-    "institucion_educativa",
-    "modalidad",
-    "estado_avance",
-    "observaciones",
-    "usuario_registro",
-  ];
-
-  return !keys.some((k) => {
-    const v = r?.[k];
-    return v !== undefined && v !== null && String(v).trim() !== "";
-  });
-}
-
-// -------------------- Endpoint --------------------
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, message: "Método no permitido" });
-  }
-
-  const report = {
-    received: 0,
-    empty_discarded: 0,
-    processed: 0,
-    curp_invalid_to_null: 0,
-    rusp_invalid_to_null: 0,
-    inserted: 0,
-    duplicates_omitted: 0,
-    errors_count: 0,
-    errors: [],
-  };
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Método no permitido" });
 
   try {
     const body = req.body || {};
-    const rows = Array.isArray(body) ? body : Array.isArray(body.rows) ? body.rows : [];
+    // Soportar ambas formas: { rows: [...] } o directamente [...]
+    const rows = Array.isArray(body) ? body : body.rows;
 
-    report.received = rows.length;
-
-    if (!rows.length) {
-      return res.status(400).json({
-        success: false,
-        message: "No se recibieron registros (rows vacío).",
-        report,
-      });
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: "No se recibieron filas (rows)" });
     }
 
-    const tableName = "registros_trimestral";
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    // Columnas EXACTAS que insertamos
-    // (OJO: ajusta aquí si tu tabla tiene nombres diferentes)
-    const cols = [
-      "enlace_nombre",
-      "enlace_primer_apellido",
-      "enlace_segundo_apellido",
-      "enlace_correo",
-      "enlace_telefono",
+      // Cambia aquí si tu tabla se llama diferente:
+      const TABLE = "registros_formacion";
 
-      "trimestre",
-      "id_rusp",
-      "primer_apellido",
-      "segundo_apellido",
-      "nombre",
-      "curp",
+      const cols = await getTableColumns(client, TABLE);
 
-      "nivel_puesto",
-      "nivel_tabular",
-      "ramo_ur",
-      "dependencia",
-      "correo_institucional",
-      "telefono_institucional",
-      "nivel_educativo",
-      "institucion_educativa",
-      "modalidad",
-      "estado_avance",
-      "observaciones",
-      "usuario_registro",
-    ];
+      // Asegurar columna estatus_curp (si no existe, no se usará)
+      const hasEstatusCurp = cols.has("estatus_curp");
+      const hasCurp = cols.has("curp");
+      const hasTrimestre = cols.has("trimestre");
 
-    // 🔒 Límites seguros para NO caer en "value too long"
-    // (Si un campo en tu DB es TEXT, puedes dejarlo sin clip usando norm())
-    const cleaned = [];
-
-    for (const raw of rows) {
-      if (isTrulyEmptyRow(raw)) {
-        report.empty_discarded += 1;
-        continue;
+      if (!hasCurp) {
+        throw new Error(
+          "La tabla no tiene columna 'curp'. Ajusta TABLE o tu esquema."
+        );
+      }
+      if (!hasTrimestre) {
+        throw new Error(
+          "La tabla no tiene columna 'trimestre'. Ajusta TABLE o el nombre de columna."
+        );
       }
 
-      // Normalizaciones CLAVE
-      const curpRaw = raw?.curp;
-      const curpClean = normalizeCurpForDb(curpRaw);
-      if (norm(curpRaw) !== null && curpClean === null) report.curp_invalid_to_null += 1;
+      // Métricas
+      const recibidos = rows.length;
+      let insertados = 0;
+      let duplicados = 0;
+      let curpInvalidaONull = 0;
+      let filasVacias = 0;
+      let errores = 0;
 
-      const ruspRaw = raw?.id_rusp;
-      const ruspClean = normalizeRuspForDb(ruspRaw);
-      if (norm(ruspRaw) !== null && ruspClean === null) report.rusp_invalid_to_null += 1;
+      // Helper: decide si una fila está vacía (solo espacios)
+      function rowHasAnyValue(obj) {
+        if (!obj || typeof obj !== "object") return false;
+        return Object.values(obj).some((v) => norm(v) !== "");
+      }
 
-      // Nombre/apellidos/trimestre como “keys” normalizadas para tu índice parcial por nombres
-      const primerApellidoKey = normalizeTextKey(raw?.primer_apellido);
-      const segundoApellidoKey = normalizeTextKey(raw?.segundo_apellido);
-      const nombreKey = normalizeTextKey(raw?.nombre);
-      const trimestreKey = normalizeTextKey(raw?.trimestre);
-
-      cleaned.push({
-        // Enlace
-        enlace_nombre: clip(raw.enlace_nombre, 200),
-        enlace_primer_apellido: clip(raw.enlace_primer_apellido, 100),
-        enlace_segundo_apellido: clip(raw.enlace_segundo_apellido, 100),
-        enlace_correo: clip(raw.enlace_correo, 200),
-        enlace_telefono: clip(raw.enlace_telefono, 50),
-
-        // Identificación / persona
-        trimestre: clip(trimestreKey ?? raw.trimestre, 50),
-        id_rusp: clip(ruspClean, 100),
-
-        primer_apellido: clip(primerApellidoKey ?? raw.primer_apellido, 100),
-        segundo_apellido: clip(segundoApellidoKey ?? raw.segundo_apellido, 100),
-        nombre: clip(nombreKey ?? raw.nombre, 200),
-
-        curp: curpClean, // 18 o NULL
-
-        // Datos extra
-        nivel_puesto: clip(raw.nivel_puesto, 200),
-        nivel_tabular: clip(raw.nivel_tabular, 50),
-        ramo_ur: clip(raw.ramo_ur, 50),
-
-        // Dependencia / textos largos
-        dependencia: norm(raw.dependencia), // si tu columna es TEXT, no limites
-        correo_institucional: clip(raw.correo_institucional, 200),
-        telefono_institucional: clip(raw.telefono_institucional, 50),
-        nivel_educativo: clip(raw.nivel_educativo, 100),
-
-        institucion_educativa: norm(raw.institucion_educativa), // TEXT
-        modalidad: norm(raw.modalidad), // TEXT
-        estado_avance: norm(raw.estado_avance), // TEXT
-        observaciones: norm(raw.observaciones), // TEXT
-
-        usuario_registro: clip(raw.usuario_registro, 100),
-      });
-    }
-
-    report.processed = cleaned.length;
-
-    if (!cleaned.length) {
-      return res.status(200).json({
-        success: true,
-        message: "No hay filas para insertar (todas vacías).",
-        report,
-      });
-    }
-
-    const BATCH = 200;
-
-    for (let i = 0; i < cleaned.length; i += BATCH) {
-      const batch = cleaned.slice(i, i + BATCH);
-
-      const values = [];
-      const placeholders = batch.map((r, rowIdx) => {
-        const base = rowIdx * cols.length;
-        for (const c of cols) values.push(r[c] ?? null);
-        return `(${cols.map((_, colIdx) => `$${base + colIdx + 1}`).join(",")})`;
-      });
-
-      const sql = `
-        INSERT INTO ${tableName} (${cols.join(",")})
-        VALUES ${placeholders.join(",")}
-        ON CONFLICT DO NOTHING
-      `;
-
-      try {
-        const result = await pool.query(sql, values);
-        const ins = result.rowCount || 0;
-
-        report.inserted += ins;
-        report.duplicates_omitted += (batch.length - ins);
-      } catch (e) {
-        // Fallback por fila para NO perder el lote completo
-        for (const r of batch) {
-          try {
-            const singleSql = `
-              INSERT INTO ${tableName} (${cols.join(",")})
-              VALUES (${cols.map((_, idx) => `$${idx + 1}`).join(",")})
-              ON CONFLICT DO NOTHING
-            `;
-            const singleVals = cols.map((c) => r[c] ?? null);
-            const singleRes = await pool.query(singleSql, singleVals);
-            const ins1 = singleRes.rowCount || 0;
-
-            report.inserted += ins1;
-            report.duplicates_omitted += (1 - ins1);
-          } catch (e2) {
-            report.errors_count += 1;
-            if (report.errors.length < 50) {
-              report.errors.push({
-                message: e2?.message || String(e2),
-                trimestre: r.trimestre ?? null,
-                curp: r.curp ?? null,
-                id_rusp: r.id_rusp ?? null,
-                nombre: r.nombre ?? null,
-                primer_apellido: r.primer_apellido ?? null,
-                segundo_apellido: r.segundo_apellido ?? null,
-              });
-            }
-          }
+      for (const r of rows) {
+        if (!rowHasAnyValue(r)) {
+          filasVacias++;
+          continue;
         }
-      }
-    }
 
-    return res.status(200).json({
-      success: true,
-      message: "Carga masiva completada",
-      report,
-      note:
-        "Normaliza CURP/ID_RUSP (SIN INFORMACION => NULL) y nombres/trimestre (MAYÚSCULAS + trim). ON CONFLICT DO NOTHING evita que truene con índices únicos parciales.",
-    });
+        // CURP: válida => guarda; inválida/vacía => NULL y PENDIENTE
+        const curpRaw = norm(r.curp).toUpperCase();
+        const curpOk = isValidCURP(curpRaw);
+        const curpFinal = curpOk ? curpRaw : null;
+
+        if (!curpOk) curpInvalidaONull++;
+
+        // Construir objeto "a insertar" con intersección de columnas existentes
+        // Copia todas las keys del row que existan como columnas.
+        // Normaliza: strings -> trim, vacíos -> null
+        const insertObj = {};
+        for (const [k, v] of Object.entries(r)) {
+          const key = String(k).trim();
+          if (!cols.has(key)) continue;
+
+          // curp la controlamos nosotros:
+          if (key === "curp") continue;
+
+          const value = norm(v);
+          insertObj[key] = value === "" ? null : value;
+        }
+
+        // Fuerza trimestre y curp
+        insertObj.trimestre = norm(r.trimestre) === "" ? null : norm(r.trimestre);
+        insertObj.curp = curpFinal;
+
+        // estatus_curp si existe la columna
+        if (hasEstatusCurp) {
+          insertObj.estatus_curp = curpOk ? "VALIDA" : "PENDIENTE";
+        }
+
+        // Si por alguna razón no viene trimestre, no intentes insertar
+        if (!insertObj.trimestre) {
+          // se considera fila vacía/descartada por regla
+          filasVacias++;
+          continue;
+        }
+
+        // Armar INSERT dinámico
+        const keys = Object.keys(insertObj);
+        const placeholders = keys.map((_, i) => `$${i + 1}`);
+        const values = keys.map((k) => insertObj[k]);
+
+        // ON CONFLICT: depende de tu índice único parcial (curp,trimestre) WHERE curp IS NOT NULL
+        // Si tu índice está bien, DO NOTHING omitirá duplicados cuando curp NO NULL
+        const q = `
+          INSERT INTO ${TABLE} (${keys.join(", ")})
+          VALUES (${placeholders.join(", ")})
+          ON CONFLICT (curp, trimestre) DO NOTHING
+          RETURNING 1
+        `;
+
+        const ins = await client.query(q, values);
+
+        if (ins.rowCount === 1) insertados++;
+        else duplicados++;
+      }
+
+      await client.query("COMMIT");
+
+      return res.status(200).json({
+        ok: true,
+        recibidos,
+        procesados: recibidos - filasVacias,
+        insertados,
+        duplicados_omitidos: duplicados,
+        curp_invalida_o_null: curpInvalidaONull,
+        filas_vacias_descartadas: filasVacias,
+        errores,
+      });
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
   } catch (err) {
-    console.error("bulkCreate fatal:", err);
     return res.status(500).json({
-      success: false,
-      message: "Error del servidor",
-      error: err?.message || String(err),
-      report,
+      ok: false,
+      error: "Error en carga masiva",
+      detail: err.message,
     });
   }
-}
+};
