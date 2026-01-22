@@ -2962,7 +2962,9 @@ async function uploadExcel() {
                 'institucion_educativa','institucion','escuela',
                 'modalidad',
                 'estado_avance','avance','estatus',
-                'observaciones','obs','comentarios'
+                'observaciones','obs','comentarios',
+                'enlace_nombre','enlace_primer_apellido','enlace_segundo_apellido','enlace_correo','enlace_telefono',
+                'nivel_puesto','nivel_tabular','ramo_ur','dependencia'
             ];
 
             let headerIdx = 0;
@@ -3008,6 +3010,17 @@ async function uploadExcel() {
                 modalidad: ['modalidad'],
                 estado_avance: ['estado_avance', 'avance', 'estatus'],
                 observaciones: ['observaciones', 'obs', 'comentarios']
+            ,
+                enlace_nombre: ['enlace_nombre', 'enlace nombre', 'nombre_enlace', 'enlace'],
+                enlace_primer_apellido: ['enlace_primer_apellido', 'enlace primer apellido', 'primer_apellido_enlace', 'apellido_paterno_enlace'],
+                enlace_segundo_apellido: ['enlace_segundo_apellido', 'enlace segundo apellido', 'segundo_apellido_enlace', 'apellido_materno_enlace'],
+                enlace_correo: ['enlace_correo', 'correo_enlace', 'email_enlace', 'correo del enlace'],
+                enlace_telefono: ['enlace_telefono', 'telefono_enlace', 'tel_enlace', 'telefono del enlace'],
+                nivel_puesto: ['nivel_puesto', 'nivel de puesto', 'puesto', 'nivel puesto'],
+                nivel_tabular: ['nivel_tabular', 'nivel tabular', 'tabular', 'nivel tab'],
+                ramo_ur: ['ramo_ur', 'ramo-ur', 'ramo ur', 'ur', 'ramo'],
+                dependencia: ['dependencia', 'institucion', 'dependencia/entidad', 'entidad']
+
             };
 
             function findIndexForKey(key) {
@@ -3027,6 +3040,9 @@ async function uploadExcel() {
             let fail = 0;
             const errors = [];
 
+            // Construir todos los payloads primero (sin spamear el backend)
+            const allPayloads = [];
+
             for (let r = 0; r < bodyRows.length; r++) {
                 const row = bodyRows[r];
 
@@ -3044,26 +3060,56 @@ async function uploadExcel() {
                 const hasData = Object.keys(payload).some(k => k !== 'usuario_registro' && String(payload[k] || '').trim() !== '');
                 if (!hasData) continue;
 
-                try {
-                    const resp = await fetch('/api/trimestral/create', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await resp.json().catch(() => ({}));
-                    if (resp.ok && result && result.success) {
-                        ok++;
-                    } else {
-                        fail++;
-                        errors.push(`Fila ${r + 2}: ${(result && result.message) ? result.message : 'No se pudo guardar'}`);
-                    }
-                } catch (e) {
-                    fail++;
-                    errors.push(`Fila ${r + 2}: ${e && e.message ? e.message : String(e)}`);
-                }
+                allPayloads.push(payload);
             }
 
-            // refrescar tabla
+            if (allPayloads.length === 0) {
+                alert('⚠️ No se detectaron filas con datos para cargar.');
+                return;
+            }
+
+            // Enviar por lotes (evita miles de POST /create y reduce errores 500)
+            const BATCH = 200;
+            let insertedTotal = 0;
+            let skippedTotal = 0;
+            let backendErrorsTotal = 0;
+
+            for (let i = 0; i < allPayloads.length; i += BATCH) {
+                const batch = allPayloads.slice(i, i + BATCH);
+
+                if (loadingText) {
+                    loadingText.textContent = `📥 Cargando... ${Math.min(i + BATCH, allPayloads.length)}/${allPayloads.length} (insertados: ${insertedTotal}, omitidos: ${skippedTotal})`;
+                }
+
+                const resp = await fetch('/api/trimestral/bulkCreate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rows: batch })
+                });
+
+                const result = await resp.json().catch(() => ({}));
+
+                if (!resp.ok || !result || result.success !== true) {
+                    const detail = (result && (result.message || result.error)) ? (result.message || result.error) : 'Sin detalle';
+                    errors.push(`Lote ${Math.floor(i / BATCH) + 1}: HTTP ${resp.status} - ${detail}`);
+                    fail += batch.length;
+                    // Detener para no seguir rompiendo el backend
+                    break;
+                }
+
+                const ins = Number(result.inserted || 0);
+                const skp = Number(result.skipped || 0);
+                const errc = Number(result.errors_count || 0);
+
+                insertedTotal += ins;
+                skippedTotal += skp;
+                backendErrorsTotal += errc;
+            }
+
+            ok = insertedTotal;
+            // Consideramos como "fail" los errores de backend reportados (si los hay) + lotes fallidos (ya sumados arriba)
+            fail += backendErrorsTotal;
+// refrescar tabla
             if (typeof cargarRegistrosTrimestral === 'function') {
                 await cargarRegistrosTrimestral();
             }
