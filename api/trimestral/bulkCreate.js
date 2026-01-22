@@ -15,7 +15,7 @@ function norm(v) {
 function normalizeNullables(v) {
   const s0 = norm(v);
   if (!s0) return null;
-  const s = s0.toUpperCase();
+  const s = s0.toUpperCase().trim();
 
   const bad = new Set([
     "SIN INFORMACION",
@@ -29,11 +29,11 @@ function normalizeNullables(v) {
   ]);
 
   if (bad.has(s)) return null;
-  return s0; // conserva caso original si no quieres forzar mayúsculas en todo
+  return s0;
 }
 
 function normalizeTextKey(v) {
-  // Para llaves por nombre/apellidos/trimestre: MAYÚSCULAS + colapsa espacios
+  // Para llaves: MAYÚSCULAS + colapsa espacios
   const s0 = norm(v);
   if (!s0) return null;
   return s0.trim().replace(/\s+/g, " ").toUpperCase();
@@ -45,28 +45,26 @@ function clip(v, max) {
   return s.length > max ? s.slice(0, max) : s;
 }
 
-function normalizeCurpForDb(curpVal) {
+function normalizeCurp(curpVal) {
+  // ✅ IMPORTANTE: si no hay CURP real, regresamos '' (cadena vacía) para dedupe por nombres
   const s0 = normalizeNullables(curpVal);
-  if (!s0) return null;
+  if (!s0) return ""; // <- antes regresabas null
 
   const s = s0.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (s.length !== 18) return null;
-  if (!/^[A-Z0-9]{18}$/.test(s)) return null;
+  if (s.length !== 18) return "";
+  if (!/^[A-Z0-9]{18}$/.test(s)) return "";
 
-  return s;
+  return s; // CURP válida
 }
 
-function normalizeRuspForDb(ruspVal) {
+function normalizeRusp(ruspVal) {
   const s0 = normalizeNullables(ruspVal);
   if (!s0) return null;
-
-  // No forzamos formato exacto, solo limpiamos espacios y dejamos alfanumérico + guiones
   const s = s0.trim();
   return s === "" ? null : s;
 }
 
 function isTrulyEmptyRow(r) {
-  // Solo descarta si TODO viene vacío
   const keys = [
     "enlace_nombre",
     "enlace_primer_apellido",
@@ -103,10 +101,16 @@ function isTrulyEmptyRow(r) {
 
 // -------------------- Endpoint --------------------
 export default async function handler(req, res) {
-  // CORS
+  // CORS + NO CACHE (para que no te “recicle” respuestas)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
+
+  // ✅ Anti-cache fuerte (Vercel / navegador)
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") {
@@ -117,10 +121,13 @@ export default async function handler(req, res) {
     received: 0,
     empty_discarded: 0,
     processed: 0,
-    curp_invalid_to_null: 0,
+
+    curp_invalid_to_empty: 0,
     rusp_invalid_to_null: 0,
+
     inserted: 0,
     duplicates_omitted: 0,
+
     errors_count: 0,
     errors: [],
   };
@@ -141,8 +148,7 @@ export default async function handler(req, res) {
 
     const tableName = "registros_trimestral";
 
-    // Columnas EXACTAS que insertamos
-    // (OJO: ajusta aquí si tu tabla tiene nombres diferentes)
+    // Columnas EXACTAS a insertar
     const cols = [
       "enlace_nombre",
       "enlace_primer_apellido",
@@ -171,8 +177,7 @@ export default async function handler(req, res) {
       "usuario_registro",
     ];
 
-    // 🔒 Límites seguros para NO caer en "value too long"
-    // (Si un campo en tu DB es TEXT, puedes dejarlo sin clip usando norm())
+    // ✅ Limpieza y normalización
     const cleaned = [];
 
     for (const raw of rows) {
@@ -181,20 +186,21 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // Normalizaciones CLAVE
-      const curpRaw = raw?.curp;
-      const curpClean = normalizeCurpForDb(curpRaw);
-      if (norm(curpRaw) !== null && curpClean === null) report.curp_invalid_to_null += 1;
-
-      const ruspRaw = raw?.id_rusp;
-      const ruspClean = normalizeRuspForDb(ruspRaw);
-      if (norm(ruspRaw) !== null && ruspClean === null) report.rusp_invalid_to_null += 1;
-
-      // Nombre/apellidos/trimestre como “keys” normalizadas para tu índice parcial por nombres
+      // Keys (para dedupe)
+      const trimestreKey = normalizeTextKey(raw?.trimestre);
       const primerApellidoKey = normalizeTextKey(raw?.primer_apellido);
       const segundoApellidoKey = normalizeTextKey(raw?.segundo_apellido);
       const nombreKey = normalizeTextKey(raw?.nombre);
-      const trimestreKey = normalizeTextKey(raw?.trimestre);
+
+      // CURP
+      const curpRaw = raw?.curp;
+      const curpClean = normalizeCurp(curpRaw);
+      if (norm(curpRaw) !== null && curpClean === "") report.curp_invalid_to_empty += 1;
+
+      // RUSP (opcional)
+      const ruspRaw = raw?.id_rusp;
+      const ruspClean = normalizeRusp(ruspRaw);
+      if (norm(ruspRaw) !== null && ruspClean === null) report.rusp_invalid_to_null += 1;
 
       cleaned.push({
         // Enlace
@@ -204,7 +210,7 @@ export default async function handler(req, res) {
         enlace_correo: clip(raw.enlace_correo, 200),
         enlace_telefono: clip(raw.enlace_telefono, 50),
 
-        // Identificación / persona
+        // Identificación
         trimestre: clip(trimestreKey ?? raw.trimestre, 50),
         id_rusp: clip(ruspClean, 100),
 
@@ -212,23 +218,23 @@ export default async function handler(req, res) {
         segundo_apellido: clip(segundoApellidoKey ?? raw.segundo_apellido, 100),
         nombre: clip(nombreKey ?? raw.nombre, 200),
 
-        curp: curpClean, // 18 o NULL
+        // ✅ CURP siempre string (válida o '')
+        curp: curpClean,
 
         // Datos extra
         nivel_puesto: clip(raw.nivel_puesto, 200),
         nivel_tabular: clip(raw.nivel_tabular, 50),
         ramo_ur: clip(raw.ramo_ur, 50),
 
-        // Dependencia / textos largos
-        dependencia: norm(raw.dependencia), // si tu columna es TEXT, no limites
+        dependencia: norm(raw.dependencia),
         correo_institucional: clip(raw.correo_institucional, 200),
         telefono_institucional: clip(raw.telefono_institucional, 50),
         nivel_educativo: clip(raw.nivel_educativo, 100),
 
-        institucion_educativa: norm(raw.institucion_educativa), // TEXT
-        modalidad: norm(raw.modalidad), // TEXT
-        estado_avance: norm(raw.estado_avance), // TEXT
-        observaciones: norm(raw.observaciones), // TEXT
+        institucion_educativa: norm(raw.institucion_educativa),
+        modalidad: norm(raw.modalidad),
+        estado_avance: norm(raw.estado_avance),
+        observaciones: norm(raw.observaciones),
 
         usuario_registro: clip(raw.usuario_registro, 100),
       });
@@ -256,10 +262,14 @@ export default async function handler(req, res) {
         return `(${cols.map((_, colIdx) => `$${base + colIdx + 1}`).join(",")})`;
       });
 
+      // ✅ DEDUPE EXACTO por tus reglas:
+      // - si CURP válida: la usa
+      // - si CURP vacía: dedupe por (trimestre + apellidos + nombre) porque curp = ''
       const sql = `
         INSERT INTO ${tableName} (${cols.join(",")})
         VALUES ${placeholders.join(",")}
-        ON CONFLICT DO NOTHING
+        ON CONFLICT (trimestre, curp, primer_apellido, segundo_apellido, nombre)
+        DO NOTHING
       `;
 
       try {
@@ -269,13 +279,14 @@ export default async function handler(req, res) {
         report.inserted += ins;
         report.duplicates_omitted += (batch.length - ins);
       } catch (e) {
-        // Fallback por fila para NO perder el lote completo
+        // Fallback por fila para no perder el lote
         for (const r of batch) {
           try {
             const singleSql = `
               INSERT INTO ${tableName} (${cols.join(",")})
               VALUES (${cols.map((_, idx) => `$${idx + 1}`).join(",")})
-              ON CONFLICT DO NOTHING
+              ON CONFLICT (trimestre, curp, primer_apellido, segundo_apellido, nombre)
+              DO NOTHING
             `;
             const singleVals = cols.map((c) => r[c] ?? null);
             const singleRes = await pool.query(singleSql, singleVals);
@@ -285,7 +296,7 @@ export default async function handler(req, res) {
             report.duplicates_omitted += (1 - ins1);
           } catch (e2) {
             report.errors_count += 1;
-            if (report.errors.length < 50) {
+            if (report.errors.length < 65) {
               report.errors.push({
                 message: e2?.message || String(e2),
                 trimestre: r.trimestre ?? null,
@@ -306,7 +317,7 @@ export default async function handler(req, res) {
       message: "Carga masiva completada",
       report,
       note:
-        "Normaliza CURP/ID_RUSP (SIN INFORMACION => NULL) y nombres/trimestre (MAYÚSCULAS + trim). ON CONFLICT DO NOTHING evita que truene con índices únicos parciales.",
+        "CURP inválida/SIN INFORMACION se guarda como '' (cadena vacía) para deduplicar con: trimestre+curp+primer_apellido+segundo_apellido+nombre.",
     });
   } catch (err) {
     console.error("bulkCreate fatal:", err);
