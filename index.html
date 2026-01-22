@@ -2914,7 +2914,38 @@ function triggerExcelUpload() {
     }
 }
 
+// ===== Anti doble carga (global, sin romper nada) =====
+window.__uploadInProgress = false;
+window.__lastUploadSig = null;
+
+function fileSignature(file) {
+  // firma simple: nombre + tamaño + lastModified
+  if (!file) return null;
+  return `${file.name}__${file.size}__${file.lastModified}`;
+}
+
+
+
 async function uploadExcel() {
+  // ==== BLOQUEO DE DOBLE CARGA ====
+  if (window.__uploadInProgress) {
+    alert('⚠️ Ya hay una carga en proceso. Espera a que termine para evitar duplicados.');
+    return;
+  }
+
+  // Detectar el input file (busca el primero type="file" si no hay id conocido)
+  const input = document.getElementById('excelFile') || document.querySelector('input[type="file"]');
+  const file = input?.files?.[0];
+  const sig = fileSignature(file);
+
+  if (sig && window.__lastUploadSig === sig) {
+    alert('⚠️ Este mismo archivo ya se intentó cargar. Si necesitas recargarlo, selecciona el archivo nuevamente (o refresca la página) y vuelve a intentar.');
+    return;
+  }
+
+  window.__uploadInProgress = true;
+  window.__lastUploadSig = sig;
+
     try {
         if (!isAdminUser()) {
             alert('⛔ Solo administradores pueden cargar archivos.');
@@ -3139,7 +3170,9 @@ async function uploadExcel() {
             alert('ℹ️ Por ahora, la carga masiva soporta CSV (exportado desde Excel).\n\n1) En Excel: Archivo → Guardar como → CSV\n2) Súbelo aquí y se registrará fila por fila.');
         }
     } finally {
-        const overlay = document.getElementById('loadingOverlay');
+        
+    window.__uploadInProgress = false;
+const overlay = document.getElementById('loadingOverlay');
         if (overlay) overlay.classList.remove('active');
         const input = document.getElementById('excelFile');
         if (input) input.value = ''; // limpiar para permitir volver a seleccionar
