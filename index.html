@@ -3310,7 +3310,7 @@ async function uploadExcel() {
             }
 
             // Enviar por lotes (evita miles de POST /create y reduce errores 500)
-            const BATCH = 200;
+            const BATCH = 80;
             let insertedTotal = 0;
             let skippedTotal = 0; // (compat) ya no se usa como principal
             let backendErrorsTotal = 0;
@@ -3332,48 +3332,66 @@ for (let i = 0; i < allPayloads.length; i += BATCH) {
 
                 if (loadingText) {
                     loadingText.textContent = `📥 Cargando... ${Math.min(i + BATCH, allPayloads.length)}/${allPayloads.length} (insertados: ${insertedTotal}, omitidos: ${skippedTotal})`;
-                }
+                }// === Carga estable con reintentos (evita FUNCTION_INVOCATION_FAILED en Vercel) ===
+let resp;
+let result = {};
+let rawText = '';
 
-                const resp = await fetch('/api/trimestral/bulkCreate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ rows: batch })
-                });
+const maxRetries = 3;
+let okBatch = false;
 
-                // Leer respuesta (a veces Vercel regresa HTML/texto en errores 500)
-                let result = {};
-                let rawText = '';
-                try {
-                    rawText = await resp.text();
-                    try { result = JSON.parse(rawText); } catch (_) { result = {}; }
-                } catch (_) {
-                    rawText = '';
-                    result = {};
-                }
+for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+        resp = await fetch('/api/trimestral/bulkCreate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: batch })
+        });
 
-                                const isOk = resp.ok && result && (result.success === true || result.ok === true);
+        rawText = await resp.text();
+        try { result = JSON.parse(rawText); } catch (_) { result = {}; }
 
-                if (!isOk) {
-                    const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
-                    errors.push(`Lote ${Math.floor(i / BATCH) + 1}: HTTP ${resp.status} - ${String(detail).slice(0, 1200)}`);
-                    console.error('bulkCreate error', resp.status, detail);
-                    fail += batch.length;
-                    // Detener para no seguir rompiendo el backend
-                    break;
-                }
+        const success = (result && (result.success === true || result.ok === true));
+        if (resp.ok && success) {
+            okBatch = true;
+            break;
+        }
 
-                // Compatibilidad: backends viejos {success:true, report:{...}} y backend nuevo {ok:true, recibidos, afectados, ...}
-                const rep = (result && result.report) ? result.report : ({
-                    received: Number(result.received || result.recibidos || (batch ? batch.length : 0) || 0),
-                    processed: Number(result.processed || result.procesados || (batch ? batch.length : 0) || 0),
-                    empty_discarded: Number(result.empty_discarded || result.filas_vacias_descartadas || 0),
-                    curp_invalid_to_null: Number(result.curp_invalid_to_null || result.curp_invalida_a_null || 0),
-                    // Nota: "afectados" = insertados + actualizados (UPSERT). Si tu backend reporta "insertados" úsalo.
-                    inserted: Number(result.inserted || result.insertados || result.afectados || result.affected || result.rowCount || 0),
-                    duplicates_omitted: Number(result.duplicates_omitted || result.duplicados_omitidos || 0),
-                    errors_count: Number(result.errors_count || result.errores || 0),
-                    errors: Array.isArray(result.errors) ? result.errors : []
-                });
+        const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
+        console.warn(`bulkCreate intento ${attempt}/${maxRetries} falló: HTTP ${resp.status}`, detail);
+
+    } catch (err) {
+        console.warn(`bulkCreate intento ${attempt}/${maxRetries} error:`, err);
+        result = {};
+        rawText = String(err?.message || err || 'Error');
+    }
+
+    // Backoff corto antes de reintentar
+    await new Promise(r => setTimeout(r, 350 * attempt));
+}
+
+if (!okBatch) {
+    const status = resp ? resp.status : 'NO_RESP';
+    const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
+    errors.push(`Lote ${Math.floor(i / BATCH) + 1}: HTTP ${status} - ${String(detail).slice(0, 1200)}`);
+    console.error('bulkCreate error FINAL', status, detail);
+    fail += batch.length;
+    // NO detenemos todo: seguimos con el siguiente lote para que la carga sea resiliente
+    continue;
+}
+
+// Unificar formatos de respuesta (legacy: success/report) vs nuevo: ok/recibidos/afectados
+if (result && result.ok === true && result.afectados != null && !result.report) {
+    result.report = {
+        received: batch.length,
+        processed: batch.length,
+        inserted: Number(result.afectados) || 0,
+        duplicates_omitted: 0,
+        errors_count: Number(result.errores) || 0,
+        errors: []
+    };
+    result.success = true;
+}                const rep = (result && result.report) ? result.report : (result || {});
 
                 // Agregados trazables (sumados por lote)
                 agg.received += Number(rep.received || batch.length || 0);
