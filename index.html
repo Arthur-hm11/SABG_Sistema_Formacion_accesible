@@ -3351,7 +3351,9 @@ for (let i = 0; i < allPayloads.length; i += BATCH) {
                     result = {};
                 }
 
-                if (!resp.ok || !result || result.success !== true) {
+                                const isOk = resp.ok && result && (result.success === true || result.ok === true);
+
+                if (!isOk) {
                     const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
                     errors.push(`Lote ${Math.floor(i / BATCH) + 1}: HTTP ${resp.status} - ${String(detail).slice(0, 1200)}`);
                     console.error('bulkCreate error', resp.status, detail);
@@ -3360,8 +3362,18 @@ for (let i = 0; i < allPayloads.length; i += BATCH) {
                     break;
                 }
 
-                
-                const rep = (result && result.report) ? result.report : (result || {});
+                // Compatibilidad: backends viejos {success:true, report:{...}} y backend nuevo {ok:true, recibidos, afectados, ...}
+                const rep = (result && result.report) ? result.report : ({
+                    received: Number(result.received || result.recibidos || (batch ? batch.length : 0) || 0),
+                    processed: Number(result.processed || result.procesados || (batch ? batch.length : 0) || 0),
+                    empty_discarded: Number(result.empty_discarded || result.filas_vacias_descartadas || 0),
+                    curp_invalid_to_null: Number(result.curp_invalid_to_null || result.curp_invalida_a_null || 0),
+                    // Nota: "afectados" = insertados + actualizados (UPSERT). Si tu backend reporta "insertados" úsalo.
+                    inserted: Number(result.inserted || result.insertados || result.afectados || result.affected || result.rowCount || 0),
+                    duplicates_omitted: Number(result.duplicates_omitted || result.duplicados_omitidos || 0),
+                    errors_count: Number(result.errors_count || result.errores || 0),
+                    errors: Array.isArray(result.errors) ? result.errors : []
+                });
 
                 // Agregados trazables (sumados por lote)
                 agg.received += Number(rep.received || batch.length || 0);
