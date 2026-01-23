@@ -5,11 +5,9 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-const TABLE_SCHEMA = "public";
-const TABLE_NAME = "registros_trimestral";
-const TABLE = `${TABLE_SCHEMA}.${TABLE_NAME}`;
+const TABLE = "public.registros_trimestral";
 
-function setCors(res) {
+function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -19,144 +17,133 @@ function norm(v) {
   if (v === undefined || v === null) return null;
   if (typeof v === "string") {
     const s = v.trim();
-    if (s === "" || s.toUpperCase() === "NULL") return null;
+    if (!s || s.toUpperCase() === "NULL") return null;
     return s;
   }
   return v;
 }
 
-function readJsonBody(req) {
+function readJson(req) {
   return new Promise((resolve, reject) => {
     let data = "";
-    req.on("data", (chunk) => { data += chunk; });
+    req.on("data", (c) => (data += c));
     req.on("end", () => {
       if (!data) return resolve({});
-      try { resolve(JSON.parse(data)); }
-      catch (e) { reject(new Error("Body JSON inválido")); }
+      try { resolve(JSON.parse(data)); } catch { reject(new Error("JSON inválido")); }
     });
     req.on("error", reject);
   });
 }
 
 let cachedCols = null;
-async function getTableColumns() {
+async function getCols() {
   if (cachedCols) return cachedCols;
-
-  const q = `
+  const r = await pool.query(`
     SELECT column_name
     FROM information_schema.columns
-    WHERE table_schema = $1 AND table_name = $2
-    ORDER BY ordinal_position;
-  `;
-  const r = await pool.query(q, [TABLE_SCHEMA, TABLE_NAME]);
+    WHERE table_schema='public' AND table_name='registros_trimestral'
+    ORDER BY ordinal_position
+  `);
   cachedCols = r.rows.map(x => x.column_name);
   return cachedCols;
 }
 
-let indexEnsured = false;
-async function ensureUniqueIndex() {
-  if (indexEnsured) return;
-
-  const sql = `
+let ensured = false;
+async function ensureIndex() {
+  if (ensured) return;
+  await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS registros_trimestral_curp_trimestre_uq
     ON public.registros_trimestral (curp, trimestre)
     WHERE curp IS NOT NULL;
-  `;
-  await pool.query(sql);
-  indexEnsured = true;
+  `);
+  ensured = true;
 }
 
-function calcBatchSize(colCount) {
-  const MAX_PARAMS = 60000;
-  const safe = Math.max(1, Math.floor(MAX_PARAMS / Math.max(colCount, 1)));
-  return Math.max(50, Math.min(400, safe));
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
 }
 
 module.exports = async (req, res) => {
-  setCors(res);
-
+  cors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Método no permitido" });
 
   try {
-    // 1) Body robusto
-    const body = (req.body && typeof req.body === "object") ? req.body : await readJsonBody(req);
-
-    // 2) Acepta {registros:[...]} o {rows:[...]} o [...]
+    const body = (req.body && typeof req.body === "object") ? req.body : await readJson(req);
     const rows = Array.isArray(body) ? body : (body.registros || body.rows || []);
     if (!Array.isArray(rows) || rows.length === 0) {
       return res.status(400).json({ ok: false, error: "No se recibieron registros" });
     }
 
-    // 3) Índice ON CONFLICT
-    await ensureUniqueIndex();
+    await ensureIndex();
 
-    // 4) Columnas reales
-    const tableCols = await getTableColumns();
+    const tableCols = await getCols();
     const tableSet = new Set(tableCols);
 
-    // 5) Detecta columnas del payload y filtra a las que existan
-    const incomingKeys = new Set();
-    for (const r of rows) if (r && typeof r === "object") Object.keys(r).forEach(k => incomingKeys.add(k));
+    // Detecta columnas del payload y filtra a las que existan
+    const incoming = new Set();
+    for (const r of rows) if (r && typeof r === "object") Object.keys(r).forEach(k => incoming.add(k));
 
-    if (!incomingKeys.has("curp") || !incomingKeys.has("trimestre")) {
-      return res.status(400).json({ ok: false, error: "Faltan columnas obligatorias: curp y/o trimestre" });
+    if (!incoming.has("curp") || !incoming.has("trimestre")) {
+      return res.status(400).json({ ok: false, error: "Faltan columnas obligatorias: curp y trimestre" });
     }
     if (!tableSet.has("curp") || !tableSet.has("trimestre")) {
-      return res.status(500).json({ ok: false, error: "La tabla no tiene curp/trimestre (estructura distinta)" });
+      return res.status(500).json({ ok: false, error: "La tabla no tiene curp/trimestre" });
     }
 
-    const cols = Array.from(incomingKeys).filter(c => tableSet.has(c));
-    // Forzar orden estable
-    const rest = cols.filter(c => c !== "curp" && c !== "trimestre").sort();
-    const finalCols = ["curp", "trimestre", ...rest];
+    const usable = Array.from(incoming).filter(c => tableSet.has(c));
+    const rest = usable.filter(c => c !== "curp" && c !== "trimestre").sort();
+    const cols = ["curp", "trimestre", ...rest];
 
-    const updatable = finalCols.filter(c => c !== "curp" && c !== "trimestre");
-    const setClause = updatable.map(c => `"${c}" = EXCLUDED."${c}"`).join(", ");
+    const updatable = cols.filter(c => c !== "curp" && c !== "trimestre");
+    const setClause = updatable.map(c => `"${c}"=EXCLUDED."${c}"`).join(", ");
     const conflictAction = setClause ? `DO UPDATE SET ${setClause}` : "DO NOTHING";
 
-    // 6) Insert por lotes
-    const batchSize = calcBatchSize(finalCols.length);
-    let totalAfectados = 0;
+    // 👇 Lotes pequeños = estabilidad en Vercel
+    const batches = chunk(rows, 80);
 
-    for (let start = 0; start < rows.length; start += batchSize) {
-      const batch = rows.slice(start, start + batchSize);
+    let afectados = 0;
+    let errores = 0;
 
+    for (const b of batches) {
       const values = [];
-      const placeholders = batch.map((r) => {
-        const p = finalCols.map((c) => {
-          values.push(norm(r ? r[c] : null));
+      const placeholders = b.map(r => {
+        const p = cols.map(c => {
+          values.push(norm(r?.[c]));
           return `$${values.length}`;
         });
         return `(${p.join(",")})`;
       });
 
       const sql = `
-        INSERT INTO ${TABLE} (${finalCols.map(c => `"${c}"`).join(",")})
+        INSERT INTO ${TABLE} (${cols.map(c => `"${c}"`).join(",")})
         VALUES ${placeholders.join(",")}
         ON CONFLICT (curp, trimestre) WHERE curp IS NOT NULL
         ${conflictAction};
       `;
 
-      const result = await pool.query(sql, values);
-      totalAfectados += result.rowCount;
+      try {
+        const r = await pool.query(sql, values);
+        afectados += r.rowCount;
+      } catch (e) {
+        // si un lote falla, no tumbes todo: cuenta error y sigue
+        console.error("batch failed:", e.message);
+        errores += b.length;
+      }
     }
 
     return res.status(200).json({
       ok: true,
-      tabla: TABLE,
       recibidos: rows.length,
-      afectados: totalAfectados,
-      columnas_usadas: finalCols
+      afectados,
+      errores,
+      columnas_usadas: cols
     });
 
   } catch (e) {
-    // OJO: siempre JSON para que NO aparezca el HTML genérico de Vercel
     console.error("bulkCreate fatal:", e);
-    return res.status(500).json({
-      ok: false,
-      error: (e && e.message) ? e.message : "Error interno",
-      where: "bulkCreate.js"
-    });
+    return res.status(500).json({ ok: false, error: e.message || "Error interno" });
   }
 };
