@@ -3309,113 +3309,157 @@ async function uploadExcel() {
                 return;
             }
 
-            // Enviar por lotes (evita miles de POST /create y reduce errores 500)
-            const BATCH = 80;
-            let insertedTotal = 0;
-            let skippedTotal = 0; // (compat) ya no se usa como principal
-            let backendErrorsTotal = 0;
-            let duplicatesOmittedTotal = 0;
+            
+// Enviar por lotes ESTABLE para archivos grandes (30k+)
+// - Lotes pequeños
+// - Concurrencia controlada (2)
+// - Reintentos por lote
+// - Reanudación automática si se recarga (localStorage)
+const BATCH = 120;          // recomendado para 30k (ajustable)
+const CONCURRENCY = 2;      // estable en Vercel
+const MAX_RETRIES = 3;
+const RESUME_KEY = 'SABG_TRIM_BULK_CURSOR_V1';
 
-            // Reporte agregado (sumado por lotes)
-            const agg = {
-                received: 0,
-                empty_discarded: 0,
-                processed: 0,
-                curp_invalid_to_null: 0,
-                inserted: 0,
-                duplicates_omitted: 0,
-                errors_count: 0,
-                errors: []
-            };
+// Construir lotes
+const batches = [];
 for (let i = 0; i < allPayloads.length; i += BATCH) {
-                const batch = allPayloads.slice(i, i + BATCH);
+    batches.push(allPayloads.slice(i, i + BATCH));
+}
 
-                if (loadingText) {
-                    loadingText.textContent = `📥 Cargando... ${Math.min(i + BATCH, allPayloads.length)}/${allPayloads.length} (insertados: ${insertedTotal}, omitidos: ${skippedTotal})`;
-                }// === Carga estable con reintentos (evita FUNCTION_INVOCATION_FAILED en Vercel) ===
-let resp;
-let result = {};
-let rawText = '';
+// Cursor (reanudación)
+let cursor = 0;
+try { cursor = Number(localStorage.getItem(RESUME_KEY) || '0') || 0; } catch (_) { cursor = 0; }
+if (cursor < 0) cursor = 0;
+if (cursor >= batches.length) cursor = 0;
 
-const maxRetries = 3;
-let okBatch = false;
+// Totales
+let insertedTotal = 0;
+let skippedTotal = 0; // compat (si backend reporta omitidos)
+let backendErrorsTotal = 0;
+let duplicatesOmittedTotal = 0;
 
-for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-        resp = await fetch('/api/trimestral/bulkCreate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rows: batch })
-        });
+// Reporte agregado (sumado por lotes)
+const agg = {
+    received: 0,
+    empty_discarded: 0,
+    processed: 0,
+    curp_invalid_to_null: 0,
+    inserted: 0,
+    duplicates_omitted: 0,
+    errors_count: 0,
+    errors: []
+};
 
-        rawText = await resp.text();
-        try { result = JSON.parse(rawText); } catch (_) { result = {}; }
+// Helper: POST robusto
+async function postBulk(batch) {
+    let resp, rawText;
+    let result = {};
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            resp = await fetch('/api/trimestral/bulkCreate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rows: batch })
+            });
 
-        const success = (result && (result.success === true || result.ok === true));
-        if (resp.ok && success) {
-            okBatch = true;
-            break;
+            rawText = await resp.text();
+            try { result = JSON.parse(rawText); } catch (_) { result = {}; }
+
+            const success = (result && (result.success === true || result.ok === true));
+            if (resp.ok && success) {
+                // Normalizar formato nuevo a legacy
+                if (result.ok === true && result.afectados != null && !result.report) {
+                    result.report = {
+                        received: batch.length,
+                        processed: batch.length,
+                        inserted: Number(result.afectados) || 0,
+                        duplicates_omitted: 0,
+                        errors_count: Number(result.errores) || 0,
+                        errors: []
+                    };
+                    result.success = true;
+                }
+                return { ok: true, result };
+            }
+
+            const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
+            console.warn(`bulkCreate intento ${attempt}/${MAX_RETRIES} falló: HTTP ${resp.status}`, detail);
+
+        } catch (err) {
+            console.warn(`bulkCreate intento ${attempt}/${MAX_RETRIES} error:`, err);
+            rawText = String(err?.message || err || 'Error');
+            result = {};
         }
 
-        const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
-        console.warn(`bulkCreate intento ${attempt}/${maxRetries} falló: HTTP ${resp.status}`, detail);
-
-    } catch (err) {
-        console.warn(`bulkCreate intento ${attempt}/${maxRetries} error:`, err);
-        result = {};
-        rawText = String(err?.message || err || 'Error');
+        await new Promise(r => setTimeout(r, 350 * attempt));
     }
-
-    // Backoff corto antes de reintentar
-    await new Promise(r => setTimeout(r, 350 * attempt));
-}
-
-if (!okBatch) {
     const status = resp ? resp.status : 'NO_RESP';
     const detail = (result && (result.message || result.error)) ? (result.message || result.error) : (rawText || 'Sin detalle');
-    errors.push(`Lote ${Math.floor(i / BATCH) + 1}: HTTP ${status} - ${String(detail).slice(0, 1200)}`);
-    console.error('bulkCreate error FINAL', status, detail);
-    fail += batch.length;
-    // NO detenemos todo: seguimos con el siguiente lote para que la carga sea resiliente
-    continue;
+    return { ok: false, status, detail };
 }
 
-// Unificar formatos de respuesta (legacy: success/report) vs nuevo: ok/recibidos/afectados
-if (result && result.ok === true && result.afectados != null && !result.report) {
-    result.report = {
-        received: batch.length,
-        processed: batch.length,
-        inserted: Number(result.afectados) || 0,
-        duplicates_omitted: 0,
-        errors_count: Number(result.errores) || 0,
-        errors: []
-    };
-    result.success = true;
-}                const rep = (result && result.report) ? result.report : (result || {});
+// Cola concurrente
+let nextIndex = cursor;
+async function worker() {
+    while (nextIndex < batches.length) {
+        const myIndex = nextIndex++;
+        const batch = batches[myIndex];
 
-                // Agregados trazables (sumados por lote)
-                agg.received += Number(rep.received || batch.length || 0);
-                agg.empty_discarded += Number(rep.empty_discarded || 0);
-                agg.processed += Number(rep.processed || batch.length || 0);
-                agg.curp_invalid_to_null += Number(rep.curp_invalid_to_null || 0);
+        // Progreso (aprox)
+        const processedSoFar = Math.min((myIndex * BATCH), allPayloads.length);
+        if (loadingText) {
+            loadingText.textContent = `📥 Cargando... ${processedSoFar}/${allPayloads.length} (insertados: ${insertedTotal})`;
+        }
 
-                const ins = Number(rep.inserted || 0);
-                const dup = Number(rep.duplicates_omitted || 0);
-                const errc = Number(rep.errors_count || 0);
+        const resp = await postBulk(batch);
 
-                insertedTotal += ins;
-                duplicatesOmittedTotal += dup;
-                backendErrorsTotal += errc;
+        if (!resp.ok) {
+            errors.push(`Lote ${myIndex + 1}/${batches.length}: HTTP ${resp.status} - ${String(resp.detail).slice(0, 1200)}`);
+            console.error('bulkCreate error FINAL', resp.status, resp.detail);
+            fail += batch.length;
 
-                // Guardar detalle de errores (hasta 50 en total)
-                if (Array.isArray(rep.errors) && rep.errors.length) {
-                    for (const e of rep.errors) {
-                        if (agg.errors.length >= 50) break;
-                        agg.errors.push(e);
-                    }
-                }
+            // Guardar avance (reanudación)
+            try { localStorage.setItem(RESUME_KEY, String(myIndex + 1)); } catch (_) {}
+            continue;
+        }
 
+        const result = resp.result;
+        const rep = (result && result.report) ? result.report : (result || {});
+
+        // Agregados trazables (sumados por lote)
+        agg.received += Number(rep.received || batch.length || 0);
+        agg.empty_discarded += Number(rep.empty_discarded || 0);
+        agg.processed += Number(rep.processed || batch.length || 0);
+        agg.curp_invalid_to_null += Number(rep.curp_invalid_to_null || 0);
+
+        const ins = Number(rep.inserted || 0);
+        const dup = Number(rep.duplicates_omitted || 0);
+        const errc = Number(rep.errors_count || 0);
+
+        insertedTotal += ins;
+        duplicatesOmittedTotal += dup;
+        backendErrorsTotal += errc;
+
+        // Guardar detalle de errores (hasta 50 en total)
+        if (Array.isArray(rep.errors) && rep.errors.length) {
+            for (const e of rep.errors) {
+                if (agg.errors.length >= 50) break;
+                agg.errors.push(e);
             }
+        }
+
+        // Guardar avance (reanudación)
+        try { localStorage.setItem(RESUME_KEY, String(myIndex + 1)); } catch (_) {}
+    }
+}
+
+// Lanzar workers
+const workers = [];
+for (let w = 0; w < CONCURRENCY; w++) workers.push(worker());
+await Promise.all(workers);
+
+// Terminado: limpiar cursor
+try { localStorage.removeItem(RESUME_KEY); } catch (_) {}
 
             ok = insertedTotal;
 
