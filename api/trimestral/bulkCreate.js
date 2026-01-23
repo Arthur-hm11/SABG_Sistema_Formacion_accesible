@@ -1,12 +1,10 @@
 const { Pool } = require("pg");
 
-// ✅ Pool ultra-estable para Vercel (evita reventar por conexiones)
-const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-
+// Pool estable para Vercel (reduce crashes por conexiones)
 const pool = new Pool({
-  connectionString,
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  max: 1,                     // 🔥 CLAVE: 1 conexión por función (evita saturación Neon/Vercel)
+  max: 1,
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 8000,
 });
@@ -15,10 +13,26 @@ const TABLE_SCHEMA = "public";
 const TABLE_NAME = "registros_trimestral";
 const TABLE = `${TABLE_SCHEMA}.${TABLE_NAME}`;
 
-function cors(res) {
+function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => (data += chunk));
+    req.on("end", () => {
+      if (!data) return resolve({});
+      try {
+        resolve(JSON.parse(data));
+      } catch (e) {
+        reject(new Error("Body JSON inválido"));
+      }
+    });
+    req.on("error", reject);
+  });
 }
 
 function norm(v) {
@@ -31,40 +45,21 @@ function norm(v) {
   return v;
 }
 
-function readBodyRaw(req) {
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (c) => (data += c));
-    req.on("end", () => resolve(data));
-    req.on("error", reject);
-  });
-}
+let cachedTableCols = null;
+async function getTableCols() {
+  if (cachedTableCols) return cachedTableCols;
 
-let cachedCols = null;
-async function getTableColumns() {
-  if (cachedCols) return cachedCols;
   const r = await pool.query(
     `
     SELECT column_name
     FROM information_schema.columns
-    WHERE table_schema=$1 AND table_name=$2
-    ORDER BY ordinal_position
+    WHERE table_schema = $1 AND table_name = $2
+    ORDER BY ordinal_position;
     `,
     [TABLE_SCHEMA, TABLE_NAME]
   );
-  cachedCols = r.rows.map((x) => x.column_name);
-  return cachedCols;
-}
-
-let ensured = false;
-async function ensureUniqueIndex() {
-  if (ensured) return;
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS registros_trimestral_curp_trimestre_uq
-    ON public.registros_trimestral (curp, trimestre)
-    WHERE curp IS NOT NULL;
-  `);
-  ensured = true;
+  cachedTableCols = r.rows.map((x) => x.column_name);
+  return cachedTableCols;
 }
 
 function chunk(arr, size) {
@@ -74,70 +69,57 @@ function chunk(arr, size) {
 }
 
 module.exports = async (req, res) => {
-  cors(res);
+  setCors(res);
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Método no permitido" });
-
-  // ✅ Si no hay connectionString, NO dejes que explote la función
-  if (!connectionString) {
-    return res.status(500).json({
-      ok: false,
-      error: "Falta POSTGRES_URL o DATABASE_URL en Vercel (Environment Variables).",
-    });
-  }
+  if (req.method !== "POST")
+    return res.status(405).json({ ok: false, error: "Método no permitido" });
 
   try {
-    // ✅ Body robusto para Vercel
-    let body = req.body;
-    if (!body || typeof body === "string") {
-      const raw = typeof body === "string" ? body : await readBodyRaw(req);
-      body = raw ? JSON.parse(raw) : {};
-    }
+    // Body robusto (Vercel a veces no parsea req.body)
+    const body =
+      req.body && typeof req.body === "object"
+        ? req.body
+        : await readJsonBody(req);
 
-    const rows = Array.isArray(body) ? body : (body.registros || body.rows || []);
+    // Acepta: { rows:[...] } o { registros:[...] } o [...]
+    const rows = Array.isArray(body) ? body : body.rows || body.registros || [];
     if (!Array.isArray(rows) || rows.length === 0) {
-      return res.status(400).json({ ok: false, error: "No se recibieron registros" });
+      return res.status(400).json({ ok: false, error: "No se recibieron filas" });
     }
 
-    // ✅ Asegurar índice
-    await ensureUniqueIndex();
-
-    // ✅ Columnas reales
-    const tableCols = await getTableColumns();
+    // Columnas reales de la tabla (para NO fallar si el Excel trae extras)
+    const tableCols = await getTableCols();
     const tableSet = new Set(tableCols);
 
-    // ✅ Detectar columnas entrantes y filtrar a existentes
+    // Columnas que vienen en el Excel
     const incoming = new Set();
-    for (const r of rows) if (r && typeof r === "object") Object.keys(r).forEach((k) => incoming.add(k));
-
-    if (!incoming.has("curp") || !incoming.has("trimestre")) {
-      return res.status(400).json({ ok: false, error: "Faltan columnas obligatorias: curp y trimestre" });
-    }
-    if (!tableSet.has("curp") || !tableSet.has("trimestre")) {
-      return res.status(500).json({ ok: false, error: "La tabla no tiene curp/trimestre" });
+    for (const r of rows) {
+      if (r && typeof r === "object") Object.keys(r).forEach((k) => incoming.add(k));
     }
 
-    const usable = Array.from(incoming).filter((c) => tableSet.has(c));
-    const rest = usable.filter((c) => c !== "curp" && c !== "trimestre").sort();
-    const cols = ["curp", "trimestre", ...rest];
+    // Solo insertamos columnas que existan en la tabla
+    const cols = Array.from(incoming).filter((c) => tableSet.has(c));
 
-    const updatable = cols.filter((c) => c !== "curp" && c !== "trimestre");
-    const setClause = updatable.map((c) => `"${c}"=EXCLUDED."${c}"`).join(", ");
-    const conflictAction = setClause ? `DO UPDATE SET ${setClause}` : "DO NOTHING";
+    if (cols.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "El archivo no coincide con ninguna columna de la tabla registros_trimestral.",
+      });
+    }
 
-    // ✅ Lotes internos pequeños para no forzar runtime
-    const batches = chunk(rows, 80);
+    // Lotes internos pequeños = más estable
+    const BATCH = 80;
+    const batches = chunk(rows, BATCH);
 
-    let afectados = 0;
-    let errores = 0;
+    let recibidos = rows.length;
+    let insertados = 0;
 
-    // ✅ Transacción por lote (más estable)
     for (const b of batches) {
       const values = [];
       const placeholders = b.map((r) => {
         const p = cols.map((c) => {
-          values.push(norm(r?.[c]));
+          values.push(norm(r?.[c])); // si falta dato => NULL
           return `$${values.length}`;
         });
         return `(${p.join(",")})`;
@@ -145,34 +127,28 @@ module.exports = async (req, res) => {
 
       const sql = `
         INSERT INTO ${TABLE} (${cols.map((c) => `"${c}"`).join(",")})
-        VALUES ${placeholders.join(",")}
-        ON CONFLICT (curp, trimestre) WHERE curp IS NOT NULL
-        ${conflictAction};
+        VALUES ${placeholders.join(",")};
       `;
 
-      try {
-        const r = await pool.query(sql, values);
-        afectados += r.rowCount;
-      } catch (e) {
-        console.error("Batch error:", e.message);
-        errores += b.length;
-      }
+      const result = await pool.query(sql, values);
+      insertados += result.rowCount;
     }
 
     return res.status(200).json({
       ok: true,
-      recibidos: rows.length,
-      afectados,
-      errores,
+      recibidos,
+      insertados,
+      // Nota: insertados == recibidos si no hay errores de BD
       columnas_usadas: cols,
     });
 
   } catch (e) {
     console.error("bulkCreate fatal:", e);
-    // ✅ SIEMPRE JSON (evita HTML genérico de Vercel)
+    // Siempre JSON
     return res.status(500).json({
       ok: false,
       error: e?.message || "Error interno",
+      tip: "Revisa que exista public.registros_trimestral y que el Excel traiga columnas compatibles.",
     });
   }
 };
