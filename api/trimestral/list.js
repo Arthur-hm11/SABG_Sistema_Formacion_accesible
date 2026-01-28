@@ -51,12 +51,9 @@ export default async function handler(req, res) {
       const TABLE = 'public.registros_trimestral';
       const r = await pool.query(
         `DELETE FROM ${TABLE}
-         WHERE id = $1
-           AND trimestre = 'TEST_TERMINAL'
-           AND primer_apellido = 'PRUEBA'
-           AND nombre = 'TERMINAL'
-           AND usuario_registro = 'Terminal'
-         RETURNING id;`,
+       WHERE id = $1
+         AND trimestre LIKE 'TEST_%'
+       RETURNING id;`,
         [id]
       );
 
