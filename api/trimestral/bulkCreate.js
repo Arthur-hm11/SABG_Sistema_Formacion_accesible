@@ -13,13 +13,37 @@ const TABLE_SCHEMA = "public";
 const TABLE_NAME = "registros_trimestral";
 const TABLE = `${TABLE_SCHEMA}.${TABLE_NAME}`;
 
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+const MAXLEN = {
+  curp: 18,
+  enlace_telefono: 50,
+  nivel_tabular: 50,
+  ramo_ur: 50,
+  telefono_institucional: 50,
+  trimestre: 50,
+  enlace_primer_apellido: 100,
+  enlace_segundo_apellido: 100,
+  id_rusp: 100,
+  nivel_educativo: 100,
+  primer_apellido: 100,
+  segundo_apellido: 100,
+  usuario_registro: 100,
+  correo_institucional: 200,
+  enlace_correo: 200,
+  enlace_nombre: 200,
+  nivel_puesto: 200,
+  nombre: 200
+};
+
+function truncIfNeeded(col, val) {
+  if (val === undefined || val === null) return null;
+  const s = String(val).trim();
+  if (!s) return null;
+  const max = MAXLEN[col];
+  if (!max) return s;
+  return s.length > max ? s.slice(0, max) : s;
 }
 
-function readJsonBody(req) {
+
   return new Promise((resolve, reject) => {
     let data = "";
     req.on("data", (chunk) => (data += chunk));
@@ -125,7 +149,7 @@ export default async function handler(req, res) {
       const values = [];
       const placeholders = b.map((r) => {
         const p = cols.map((c) => {
-          values.push(norm(r?.[c])); // si falta dato => NULL
+          values.push(truncIfNeeded(c, norm(r?.[c]))); // si falta dato => NULL
           return `$${values.length}`;
         });
         return `(${p.join(",")})`;
