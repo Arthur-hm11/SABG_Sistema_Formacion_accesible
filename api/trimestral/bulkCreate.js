@@ -167,6 +167,7 @@ export default async function handler(req, res) {
       const sql = `
         INSERT INTO ${TABLE} (${cols.map((c) => `"${c}"`).join(",")})
         VALUES ${placeholders.join(",")}
+        RETURNING 1
       `;
 
       const result = await pool.query(sql, values);
@@ -175,8 +176,12 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
+      success: true,
       recibidos,
       insertados,
+      received: recibidos,
+      inserted: insertados,
+      count: insertados,
       // Nota: insertados == recibidos si no hay errores de BD
       columnas_usadas: cols,
     });
