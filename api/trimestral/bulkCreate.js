@@ -44,6 +44,8 @@ function truncIfNeeded(col, val) {
 }
 
 
+function readJsonBody(req) {
+
   return new Promise((resolve, reject) => {
     let data = "";
     req.on("data", (chunk) => (data += chunk));
