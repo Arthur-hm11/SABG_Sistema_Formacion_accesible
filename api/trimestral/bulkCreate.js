@@ -1,4 +1,4 @@
-const { Pool } = require("pg");
+import { Pool } from "pg";
 
 // Pool estable para Vercel (reduce crashes por conexiones)
 const pool = new Pool({
