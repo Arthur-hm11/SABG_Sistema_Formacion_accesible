@@ -49,10 +49,15 @@ export default async function handler(req, res) {
       });
 
       const TABLE = 'public.registros_trimestral';
-      const r = await pool.query(
+      // DEBUG: verificar que el endpoint ve el registro por id
+    const chk = await pool.query(
+      `SELECT id, trimestre FROM ${TABLE} WHERE id = $1`,
+      [id]
+    );
+    const r = await pool.query(
         `DELETE FROM ${TABLE}
        WHERE id = $1
-         AND trimestre LIKE 'TEST_%'
+         AND TRIM(COALESCE(trimestre,'')) LIKE 'TEST_%'
        RETURNING id;`,
         [id]
       );
