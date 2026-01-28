@@ -19,6 +19,60 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
+  // ===== POST (deleteTest) - solo para limpiar el registro de prueba =====
+  if (req.method === 'POST') {
+    try {
+      let data = '';
+      await new Promise((resolve, reject) => {
+        req.on('data', (c) => (data += c));
+        req.on('end', resolve);
+        req.on('error', reject);
+      });
+      const body = data ? JSON.parse(data) : {};
+      const id = Number(body?.id);
+      const deleteTest = body?.deleteTest === true;
+
+      if (!deleteTest) {
+        return res.status(400).json({ success:false, error:'POST no soportado (falta deleteTest:true)' });
+      }
+      if (!id) {
+        return res.status(400).json({ success:false, error:'Falta id numérico' });
+      }
+
+      const { Pool } = await import('pg');
+      const pool = new Pool({
+        connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        max: 1,
+        idleTimeoutMillis: 10000,
+        connectionTimeoutMillis: 8000,
+      });
+
+      const TABLE = 'public.registros_trimestral';
+      const r = await pool.query(
+        `DELETE FROM ${TABLE}
+         WHERE id = $1
+           AND trimestre = 'TEST_TERMINAL'
+           AND primer_apellido = 'PRUEBA'
+           AND nombre = 'TERMINAL'
+           AND usuario_registro = 'Terminal'
+         RETURNING id;`,
+        [id]
+      );
+
+      try { await pool.end(); } catch (_) {}
+
+      return res.status(200).json({
+        success:true,
+        ok:true,
+        deleted: r.rowCount,
+        id: (r.rows?.[0]?.id ?? null),
+      });
+    } catch (e) {
+      return res.status(500).json({ success:false, ok:false, error: String(e?.message || e || 'Error') });
+    }
+  }
+
   if (req.method !== "GET") {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
