@@ -68,8 +68,14 @@ function chunk(arr, size) {
   return out;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   setCors(res);
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "Método no permitido" });
+  }
+
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST")
@@ -127,7 +133,7 @@ module.exports = async (req, res) => {
 
       const sql = `
         INSERT INTO ${TABLE} (${cols.map((c) => `"${c}"`).join(",")})
-        VALUES ${placeholders.join(",")};
+        VALUES ${placeholders.join(",")}
       `;
 
       const result = await pool.query(sql, values);
@@ -151,4 +157,4 @@ module.exports = async (req, res) => {
       tip: "Revisa que exista public.registros_trimestral y que el Excel traiga columnas compatibles.",
     });
   }
-};
+}
