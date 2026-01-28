@@ -1,3 +1,4 @@
+// redeploy bump
 import { Pool } from "pg";
 
 // Pool estable para Vercel (reduce crashes por conexiones)
@@ -92,6 +93,12 @@ function chunk(arr, size) {
   const out = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
 export default async function handler(req, res) {
