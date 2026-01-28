@@ -3015,7 +3015,8 @@ function showBulkReportModal(aggregateReport, extra={}){
     if (prev) prev.remove();
 
     const rep = aggregateReport || {};
-    const ok = Number(rep.inserted || 0);
+    const inserted = Number(rep.inserted || rep.insertados || rep.count || 0);
+    const ok = Number(inserted || 0);
     const dup = Number(rep.duplicates_omitted || 0);
     const empty = Number(rep.empty_discarded || 0);
     const invCurp = Number(rep.curp_invalid_to_null || 0);
@@ -3039,7 +3040,7 @@ function showBulkReportModal(aggregateReport, extra={}){
       <div>
         <h3>📦 Reporte de carga masiva <span class="bulk-report-badge ${statusClass}">${statusText}</span></h3>
         <div class="bulk-report-sub">
-          Recibidos: <b>${received}</b> · Procesados: <b>${processed}</b> · Insertados: <b>${ok}</b>
+          Recibidos: <b>${received}</b> · Procesados: <b>${processed}</b> · Insertados: <b>${inserted}</b>
           ${dup ? ` · Duplicados omitidos: <b>${dup}</b>` : ''}
           ${empty ? ` · Filas vacías descartadas: <b>${empty}</b>` : ''}
         </div>
@@ -3051,7 +3052,7 @@ function showBulkReportModal(aggregateReport, extra={}){
     const kpis = document.createElement('div');
     kpis.className = 'bulk-kpis';
     kpis.innerHTML = `
-      <div class="bulk-kpi"><div class="label">Insertados</div><div class="value">${ok}</div><div class="hint">Registros guardados en la tabla</div></div>
+      <div class="bulk-kpi"><div class="label">Insertados</div><div class="value">${inserted}</div><div class="hint">Registros guardados en la tabla</div></div>
       <div class="bulk-kpi"><div class="label">Duplicados omitidos</div><div class="value">${dup}</div><div class="hint">Requiere UNIQUE (curp, trimestre) WHERE curp IS NOT NULL</div></div>
       <div class="bulk-kpi"><div class="label">CURP inválida → NULL</div><div class="value">${invCurp}</div><div class="hint">CURP vacía o inválida se guarda como NULL</div></div>
       <div class="bulk-kpi"><div class="label">Filas vacías descartadas</div><div class="value">${empty}</div><div class="hint">Filas sin datos (solo espacios / títulos)</div></div>
@@ -3111,7 +3112,7 @@ function showBulkReportModal(aggregateReport, extra={}){
 
     section.innerHTML = `
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <span class="bulk-report-badge ${statusClass}">Insertados: ${ok}</span>
+        <span class="bulk-report-badge ${statusClass}">Insertados: ${inserted}</span>
         ${dup ? `<span class="bulk-report-badge">Omitidos por duplicado: ${dup}</span>` : ''}
         ${invCurp ? `<span class="bulk-report-badge">CURP inválida→NULL: ${invCurp}</span>` : ''}
         ${empty ? `<span class="bulk-report-badge">Filas vacías: ${empty}</span>` : ''}
