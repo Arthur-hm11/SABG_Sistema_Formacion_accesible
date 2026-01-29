@@ -22,7 +22,11 @@ module.exports = async (req, res) => {
     const passwordClean = password?.trim();
 
     if (!curpClean || !nombreClean || !primerApellidoClean || !segundoApellidoClean || !correoClean || !dependenciaClean || !usuarioClean || !passwordClean) {
-      return res.status(400).json({ success: false, error: 'Todos los campos son requeridos' });
+      const missing=[];
+    for (const [k,v] of Object.entries({usuario,password,role,nombre,curp,primer_apellido,segundo_apellido,correo})) {
+      if (v===undefined || v===null || String(v).trim()==="") missing.push(k);
+    }
+    return res.status(400).json({ success:false, error:"Todos los campos son requeridos", missing });
     }
 
     if (curpClean.length !== 18) {
@@ -64,7 +68,7 @@ module.exports = async (req, res) => {
     await pool.query(
       `INSERT INTO usuarios (
         usuario, password_hash, nombre, primer_apellido, segundo_apellido, 
-        correo, curp, dependencia, rol
+        correo, curp, dependencia, role
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [usuarioClean, passwordHash, nombreClean, primerApellidoClean, segundoApellidoClean, correoClean, curpClean, dependenciaClean, 'enlace']
     );
