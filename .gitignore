@@ -1,0 +1,11 @@
+.vercel
+.env*.local
+
+# --- SABG ignore ---
+.env*
+!.env.example
+node_modules/
+.DS_Store
+api/**/*.bak_*
+api/**/*.bak_fix_*
+api/**/*.bak_paginacion_*
