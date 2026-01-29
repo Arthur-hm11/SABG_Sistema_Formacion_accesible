@@ -1,6 +1,7 @@
 const { Pool } = require("pg");
 const crypto = require("crypto");
 const cookie = require("cookie");
+const bcrypt = require("bcrypt");
 
 const conn =
   process.env.DATABASE_URL ||
@@ -26,18 +27,23 @@ module.exports = async (req, res) => {
     const { usuario, password } = req.body || {};
     if (!usuario || !password) return res.status(400).json({ error: "Faltan credenciales" });
 
-    // password texto plano (si usas crypt() lo cambiamos)
+    // Traer hash real
     const q = `
-      SELECT id, usuario, nombre, rol, dependencia
+      SELECT id, usuario, nombre, rol, dependencia, password_hash
       FROM usuarios
-      WHERE usuario = $1 AND password = $2
+      WHERE usuario = $1
       LIMIT 1
     `;
-    const r = await pool.query(q, [usuario, password]);
+    const r = await pool.query(q, [usuario]);
 
     if (r.rows.length === 0) return res.status(401).json({ error: "Credenciales inválidas" });
 
     const user = r.rows[0];
+
+    // Comparar contra hash
+    const ok = await bcrypt.compare(String(password), String(user.password_hash || ""));
+    if (!ok) return res.status(401).json({ error: "Credenciales inválidas" });
+
     const sessionToken = crypto.randomBytes(48).toString("hex");
 
     await pool.query(
