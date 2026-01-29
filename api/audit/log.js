@@ -1,3 +1,4 @@
+const { requireAuth } = require("../_lib/auth");
 import pool from "../_lib/db.js";
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -6,7 +7,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') {
+  
+
+    const user = await requireAuth(req, res, pool);
+    if (!user) return;
+
+if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Método no permitido' });
   }
 

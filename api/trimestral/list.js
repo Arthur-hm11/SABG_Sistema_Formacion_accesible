@@ -1,3 +1,4 @@
+const { requireAuth } = require("../_lib/auth");
 import pg from "pg";
 const { Pool } = pg;
 
@@ -19,7 +20,12 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  // ===== POST (deleteTest) - solo para limpiar el registro de prueba =====
+  
+
+    const user = await requireAuth(req, res, pool);
+    if (!user) return;
+
+// ===== POST (deleteTest) - solo para limpiar el registro de prueba =====
   if (req.method === 'POST') {
     try {
       let data = '';

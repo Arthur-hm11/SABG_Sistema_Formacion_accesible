@@ -1,3 +1,4 @@
+const { requireAuth } = require("../_lib/auth");
 const pool = require('../_lib/db.cjs');
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');

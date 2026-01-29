@@ -1,3 +1,4 @@
+const { requireAuth } = require("../_lib/auth");
 const pool = require('../_lib/db.cjs');
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -5,7 +6,12 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
+  
+
+    const user = await requireAuth(req, res, pool);
+    if (!user) return;
+
+if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
 
   const { format } = req.query;
 

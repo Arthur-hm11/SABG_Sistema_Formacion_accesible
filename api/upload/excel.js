@@ -1,3 +1,4 @@
+const { requireAuth } = require("../_lib/auth");
 import formidable from 'formidable';
 import xlsx from 'xlsx';
 import pool from '../_lib/db.js';

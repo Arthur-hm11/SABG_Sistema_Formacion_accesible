@@ -1,3 +1,4 @@
+const { requireAuth } = require("../_lib/auth");
 import { Pool } from "pg";
 
 const pool = new Pool({
@@ -31,7 +32,12 @@ function readJsonBody(req) {
 export default async function handler(req, res) {
   setCors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Método no permitido" });
+  
+
+    const user = await requireAuth(req, res, pool);
+    if (!user) return;
+
+if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Método no permitido" });
 
   try {
     const body = (req.body && typeof req.body === "object") ? req.body : await readJsonBody(req);
