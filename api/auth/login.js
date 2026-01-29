@@ -1,6 +1,6 @@
-import { Pool } from "pg";
-import crypto from "crypto";
-import { serialize } from "cookie";
+const { Pool } = require("pg");
+const crypto = require("crypto");
+const cookie = require("cookie");
 
 const conn =
   process.env.DATABASE_URL ||
@@ -13,7 +13,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   try {
     // CORS
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     const { usuario, password } = req.body || {};
     if (!usuario || !password) return res.status(400).json({ error: "Faltan credenciales" });
 
-    // ✅ Asumimos password en texto plano (porque antes te autenticaba así)
+    // password texto plano (si usas crypt() lo cambiamos)
     const q = `
       SELECT id, usuario, nombre, rol, dependencia
       FROM usuarios
@@ -46,10 +46,9 @@ export default async function handler(req, res) {
       [user.id, sessionToken]
     );
 
-    // ✅ Cookie HttpOnly
     res.setHeader(
       "Set-Cookie",
-      serialize("session_token", sessionToken, {
+      cookie.serialize("session_token", sessionToken, {
         httpOnly: true,
         secure: true,
         sameSite: "lax",
@@ -66,9 +65,6 @@ export default async function handler(req, res) {
       dependencia: user.dependencia ?? null,
     });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: String(e?.message || e),
-    });
+    return res.status(500).json({ ok: false, error: String(e?.message || e) });
   }
-}
+};

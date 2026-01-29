@@ -1,7 +1,6 @@
 {
   "name": "sabg-sistema-formacion",
   "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cookie": "^1.1.1",
@@ -10,6 +9,6 @@
     "xlsx": "^0.18.5"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }

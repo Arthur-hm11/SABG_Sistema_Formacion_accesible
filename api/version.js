@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+module.exports = async (req, res) => {
   res.status(200).json({
     ok: true,
     now: new Date().toISOString(),
@@ -6,4 +6,4 @@ export default function handler(req, res) {
     ref: process.env.VERCEL_GIT_COMMIT_REF || null,
     env: process.env.VERCEL_ENV || null
   });
-}
+};
