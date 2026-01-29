@@ -1,9 +1,8 @@
 const cookie = require("cookie");
 
 /**
- * Valida sesión por cookie "session_token" contra tabla "sesiones".
- * - Requiere: tabla sesiones(token, usuario_id, expires_at)
- * - Devuelve: { id, usuario, rol, nombre, dependencia } o null (ya responde 401)
+ * requireAuth: valida cookie session_token contra tabla sesiones.
+ * Adjunta req.user = {id, usuario, rol, nombre, dependencia}
  */
 async function requireAuth(req, res, pool) {
   try {
@@ -16,7 +15,7 @@ async function requireAuth(req, res, pool) {
       return null;
     }
 
-    // Limpieza ligera de sesiones vencidas (no rompe)
+    // Limpieza ligera
     await pool.query(`DELETE FROM sesiones WHERE expires_at < NOW()`);
 
     const r = await pool.query(
@@ -35,7 +34,6 @@ async function requireAuth(req, res, pool) {
       return null;
     }
 
-    // Adjunta user por si lo ocupas en logs/roles
     req.user = r.rows[0];
     return req.user;
   } catch (e) {
@@ -44,4 +42,31 @@ async function requireAuth(req, res, pool) {
   }
 }
 
-module.exports = { requireAuth };
+function roleLower(user) {
+  return String(user?.rol || "").toLowerCase();
+}
+
+function isAdminOrSuper(user) {
+  const r = roleLower(user);
+  return r === "admin" || r === "superadmin";
+}
+
+function requireAdminOrSuper(req, res) {
+  if (!isAdminOrSuper(req.user)) {
+    res.status(403).json({ ok: false, error: "No autorizado" });
+    return false;
+  }
+  return true;
+}
+
+function requireRole(req, res, allowedRolesLower) {
+  const r = roleLower(req.user);
+  const allowed = new Set((allowedRolesLower || []).map(x => String(x).toLowerCase()));
+  if (!allowed.has(r)) {
+    res.status(403).json({ ok: false, error: "No autorizado" });
+    return false;
+  }
+  return true;
+}
+
+module.exports = { requireAuth, requireAdminOrSuper, requireRole, isAdminOrSuper };
