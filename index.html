@@ -2766,6 +2766,9 @@
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
         <script>
+const API_BASE = "";
+const LOGIN_URL = API_BASE + "/api/auth/login";
+
 // ===================== FIX: Evitar ReferenceError si falta updateStatsFromRegistros =====================
 if (typeof window.updateStatsFromRegistros !== 'function') {
   window.updateStatsFromRegistros = function(registros) {
