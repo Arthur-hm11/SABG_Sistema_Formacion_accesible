@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "pg": "^8.11.3",
     "bcrypt": "^5.1.1",
-    "xlsx": "^0.18.5",
-    "formidable": "^3.5.1"
+    "cookie": "^1.1.1",
+    "formidable": "^3.5.1",
+    "pg": "^8.11.3",
+    "xlsx": "^0.18.5"
   },
   "engines": {
     "node": ">=18.0.0"
