@@ -7,12 +7,36 @@ const conn =
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
   process.env.POSTGRES_PRISMA_URL;
 
 const pool = new Pool({
   connectionString: conn,
   ssl: { rejectUnauthorized: false },
 });
+
+// ---- Asegurar tabla sesiones (una sola vez por instancia) ----
+let _sesionesReady = false;
+
+async function ensureSesiones() {
+  if (_sesionesReady) return;
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sesiones (
+      id SERIAL PRIMARY KEY,
+      usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+      token TEXT NOT NULL UNIQUE,
+      expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+      created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_sesiones_usuario_id ON sesiones(usuario_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_sesiones_expires_at ON sesiones(expires_at);`);
+
+  _sesionesReady = true;
+}
 
 module.exports = async (req, res) => {
   try {
@@ -27,7 +51,7 @@ module.exports = async (req, res) => {
     const { usuario, password } = req.body || {};
     if (!usuario || !password) return res.status(400).json({ error: "Faltan credenciales" });
 
-    // Traer hash real
+    // 1) Traer hash real
     const q = `
       SELECT id, usuario, nombre, rol, dependencia, password_hash
       FROM usuarios
@@ -40,10 +64,14 @@ module.exports = async (req, res) => {
 
     const user = r.rows[0];
 
-    // Comparar contra hash
+    // 2) Comparar contra hash
     const ok = await bcrypt.compare(String(password), String(user.password_hash || ""));
     if (!ok) return res.status(401).json({ error: "Credenciales inválidas" });
 
+    // 3) Asegurar tabla sesiones en PROD
+    await ensureSesiones();
+
+    // 4) Crear sesión
     const sessionToken = crypto.randomBytes(48).toString("hex");
 
     await pool.query(
