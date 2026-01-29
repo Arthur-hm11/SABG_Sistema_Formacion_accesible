@@ -8,19 +8,23 @@ const pool = new Pool({
 });
 
 module.exports = async (req, res) => {
-  // CORS (tu sistema lo usa)
+  // CORS básico
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método no permitido" });
+  }
 
   const { usuario, password } = req.body || {};
-  if (!usuario || !password) return res.status(400).json({ error: "Faltan credenciales" });
+  if (!usuario || !password) {
+    return res.status(400).json({ error: "Faltan credenciales" });
+  }
 
-  // ✅ Compatibilidad: password en texto plano (porque hoy tu login ya funciona así)
-  // Si tú usas crypt(), aquí se cambia por: password = crypt($2, password)
+  // ⚠️ Asumimos password en TEXTO PLANO (porque tu login ya funciona así).
+  // Si usas crypt(), lo cambiamos después.
   const q = `
     SELECT id, usuario, nombre, rol, dependencia
     FROM usuarios
@@ -34,10 +38,9 @@ module.exports = async (req, res) => {
   }
 
   const user = r.rows[0];
-
   const sessionToken = crypto.randomBytes(48).toString("hex");
 
-  // Requiere tabla sesiones (si no existe, esto va a dar 500 y lo vemos en logs)
+  // Guarda sesión (tabla sesiones debe existir)
   await pool.query(
     `INSERT INTO sesiones (usuario_id, token, expires_at)
      VALUES ($1, $2, NOW() + INTERVAL '8 hours')`,
