@@ -1,100 +1,98 @@
-import pg from "pg";
-const { Pool } = pg;
+import pool from "../_lib/db.js";
 
-const connectionString =
-  process.env.POSTGRES_URL ||
-  process.env.DATABASE_URL;
+function toInt(v, def) {
+  const n = parseInt(String(v ?? ""), 10);
+  return Number.isFinite(n) ? n : def;
+}
 
-const pool = new Pool({
-  connectionString,
-  ssl: process.env.NODE_ENV === "production"
-    ? { rejectUnauthorized: false }
-    : false,
-});
+function cleanLike(v) {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  if (!s || s.toLowerCase() === "null") return null;
+  return s;
+}
 
 export default async function handler(req, res) {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  // ===== POST (deleteTest) - solo para limpiar el registro de prueba =====
-  if (req.method === 'POST') {
-    try {
-      let data = '';
-      await new Promise((resolve, reject) => {
-        req.on('data', (c) => (data += c));
-        req.on('end', resolve);
-        req.on('error', reject);
-      });
-      const body = data ? JSON.parse(data) : {};
-      const id = Number(body?.id);
-      const deleteTest = body?.deleteTest === true;
-
-      if (!deleteTest) {
-        return res.status(400).json({ success:false, error:'POST no soportado (falta deleteTest:true)' });
-      }
-      if (!id) {
-        return res.status(400).json({ success:false, error:'Falta id numérico' });
-      }
-
-      const { Pool } = await import('pg');
-      const pool = new Pool({
-        connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
-        max: 1,
-        idleTimeoutMillis: 10000,
-        connectionTimeoutMillis: 8000,
-      });
-
-      const TABLE = 'public.registros_trimestral';
-      // DEBUG: verificar que el endpoint ve el registro por id
-    const chk = await pool.query(
-      `SELECT id, trimestre FROM ${TABLE} WHERE id = $1`,
-      [id]
-    );
-    const r = await pool.query(
-        `DELETE FROM ${TABLE}
-       WHERE id = $1
-         AND TRIM(COALESCE(trimestre,'')) LIKE 'TEST_%'
-       RETURNING id;`,
-        [id]
-      );
-
-      try { await pool.end(); } catch (_) {}
-
-      return res.status(200).json({
-        success:true,
-        ok:true,
-        deleted: r.rowCount,
-        id: (r.rows?.[0]?.id ?? null),
-      });
-    } catch (e) {
-      return res.status(500).json({ success:false, ok:false, error: String(e?.message || e || 'Error') });
-    }
-  }
-
-  if (req.method !== "GET" && req.method !== "POST") {
+  if (req.method !== "GET") {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
 
   try {
-    const dependencia = req.query?.dependencia;
+    // Params
+    const page = Math.max(1, toInt(req.query?.page, 1));
+    const limitRaw = toInt(req.query?.limit, 200);     // default 200 (para que tu HTML no sufra)
+    const limit = Math.min(500, Math.max(1, limitRaw)); // tope 500 para no reventar Vercel
+    const offset = (page - 1) * limit;
 
-    let query = "SELECT * FROM registros_trimestral ORDER BY created_at DESC";
+    const dependencia = cleanLike(req.query?.dependencia);
+    const trimestre = cleanLike(req.query?.trimestre);
+    const q = cleanLike(req.query?.q);
+
+    // WHERE dinámico (parametrizado)
+    const where = [];
     const params = [];
 
-    if (dependencia && dependencia !== "null") {
-      query =
-        "SELECT * FROM registros_trimestral WHERE dependencia ILIKE $1 ORDER BY created_at DESC";
+    if (dependencia) {
       params.push(`%${dependencia}%`);
+      where.push(`dependencia ILIKE $${params.length}`);
+    }
+    if (trimestre) {
+      params.push(`%${trimestre}%`);
+      where.push(`trimestre ILIKE $${params.length}`);
     }
 
-    const result = await pool.query(query, params);
+    // búsqueda general opcional (nombre / apellidos / curp / rusp / correo)
+    if (q) {
+      params.push(`%${q}%`);
+      const p = `$${params.length}`;
+      where.push(`(
+        nombre ILIKE ${p}
+        OR primer_apellido ILIKE ${p}
+        OR segundo_apellido ILIKE ${p}
+        OR curp ILIKE ${p}
+        OR id_rusp ILIKE ${p}
+        OR correo_institucional ILIKE ${p}
+      )`);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    // total
+    const totalRes = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM registros_trimestral ${whereSql}`,
+      params
+    );
+    const total = totalRes.rows?.[0]?.total ?? 0;
+
+    // data paginada
+    params.push(limit);
+    params.push(offset);
+
+    const dataSql = `
+      SELECT *
+      FROM registros_trimestral
+      ${whereSql}
+      ORDER BY created_at DESC
+      LIMIT $${params.length - 1}
+      OFFSET $${params.length}
+    `;
+
+    const result = await pool.query(dataSql, params);
+
+    const pages = limit > 0 ? Math.ceil(total / limit) : 1;
 
     return res.status(200).json({
       success: true,
+      page,
+      limit,
+      pages,
+      total,
       count: result.rows.length,
       data: result.rows,
     });

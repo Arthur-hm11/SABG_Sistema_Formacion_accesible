@@ -1,11 +1,5 @@
-import { Pool } from 'pg';
+import pool from "../_lib/db.js";
 import bcrypt from 'bcrypt';
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

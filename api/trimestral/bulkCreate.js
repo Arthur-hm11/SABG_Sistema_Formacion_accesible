@@ -1,198 +1,255 @@
-// redeploy bump
-import { Pool } from "pg";
+import pool from "../_lib/db.js";
+function norm(v) {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
+}
 
-// Pool estable para Vercel (reduce crashes por conexiones)
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 1,
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 8000,
-});
+function upperOrNull(v) {
+  const s = norm(v);
+  return s ? s.toUpperCase() : null;
+}
 
-const TABLE_SCHEMA = "public";
-const TABLE_NAME = "registros_trimestral";
-const TABLE = `${TABLE_SCHEMA}.${TABLE_NAME}`;
-
-const MAXLEN = {
-  curp: 18,
-  enlace_telefono: 50,
-  nivel_tabular: 50,
-  ramo_ur: 50,
-  telefono_institucional: 50,
-  trimestre: 50,
-  enlace_primer_apellido: 100,
-  enlace_segundo_apellido: 100,
-  id_rusp: 100,
-  nivel_educativo: 100,
-  primer_apellido: 100,
-  segundo_apellido: 100,
-  usuario_registro: 100,
-  correo_institucional: 200,
-  enlace_correo: 200,
-  enlace_nombre: 200,
-  nivel_puesto: 200,
-  nombre: 200
-};
-
-function truncIfNeeded(col, val) {
-  if (val === undefined || val === null) return null;
-  const s = String(val).trim();
+// recorta a max (evita “value too long”)
+function clip(v, max) {
+  const s = norm(v);
   if (!s) return null;
-  const max = MAXLEN[col];
-  if (!max) return s;
   return s.length > max ? s.slice(0, max) : s;
 }
 
+// CURP seguro (varchar 18)
+function normalizeCurpForDb(curpVal) {
+  const s = upperOrNull(curpVal);
+  if (!s) return null;
 
-function readJsonBody(req) {
+  const bad = new Set([
+    "SIN INFORMACION",
+    "SIN INFORMACIÓN",
+    "N/A",
+    "NO APLICA",
+    "NA",
+    "NULL",
+    "-",
+    "0",
+  ]);
+  if (bad.has(s)) return null;
 
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk) => (data += chunk));
-    req.on("end", () => {
-      if (!data) return resolve({});
-      try {
-        resolve(JSON.parse(data));
-      } catch (e) {
-        reject(new Error("Body JSON inválido"));
-      }
-    });
-    req.on("error", reject);
+  const compact = s.replace(/[^A-Z0-9]/g, "");
+  if (compact.length !== 18) return null;
+  if (!/^[A-Z0-9]{18}$/.test(compact)) return null;
+
+  return compact;
+}
+
+// SOLO descarta si TODA la fila está vacía
+function isTrulyEmptyRow(r) {
+  const keys = [
+    "enlace_nombre",
+    "enlace_primer_apellido",
+    "enlace_segundo_apellido",
+    "enlace_correo",
+    "enlace_telefono",
+    "trimestre",
+    "id_rusp",
+    "primer_apellido",
+    "segundo_apellido",
+    "nombre",
+    "curp",
+    "nivel_puesto",
+    "nivel_tabular",
+    "ramo_ur",
+    "dependencia",
+    "correo_institucional",
+    "telefono_institucional",
+    "nivel_educativo",
+    "institucion_educativa",
+    "modalidad",
+    "estado_avance",
+    "observaciones",
+    "usuario_registro",
+  ];
+
+  return !keys.some((k) => {
+    const v = r?.[k];
+    return v !== undefined && v !== null && String(v).trim() !== "";
   });
 }
 
-function norm(v) {
-  if (v === undefined || v === null) return null;
-  if (typeof v === "string") {
-    const s = v.trim();
-    if (!s || s.toUpperCase() === "NULL") return null;
-    return s;
-  }
-  return v;
-}
-
-let cachedTableCols = null;
-async function getTableCols() {
-  if (cachedTableCols) return cachedTableCols;
-
-  const r = await pool.query(
-    `
-    SELECT column_name
-    FROM information_schema.columns
-    WHERE table_schema = $1 AND table_name = $2
-    ORDER BY ordinal_position;
-    `,
-    [TABLE_SCHEMA, TABLE_NAME]
-  );
-  cachedTableCols = r.rows.map((x) => x.column_name);
-  return cachedTableCols;
-}
-
-function chunk(arr, size) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
-function setCors(res) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-}
-
-export default async function handler(req, res) {
-  setCors(res);
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") {
-    return res.status(405).json({ ok: false, error: "Método no permitido" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ success: false, message: "Método no permitido" });
 
-
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST")
-    return res.status(405).json({ ok: false, error: "Método no permitido" });
+  const report = {
+    received: 0,
+    empty_discarded: 0,
+    processed: 0,
+    curp_invalid_to_null: 0,
+    inserted: 0,
+    duplicates_omitted: 0,
+    errors_count: 0,
+    errors: [],
+  };
 
   try {
-    // Body robusto (Vercel a veces no parsea req.body)
-    const body =
-      req.body && typeof req.body === "object"
-        ? req.body
-        : await readJsonBody(req);
+    const body = req.body || {};
+    const rows = Array.isArray(body) ? body : Array.isArray(body.rows) ? body.rows : [];
+    report.received = rows.length;
 
-    // Acepta: { rows:[...] } o { registros:[...] } o [...]
-    const rows = Array.isArray(body) ? body : body.rows || body.registros || [];
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return res.status(400).json({ ok: false, error: "No se recibieron filas" });
+    if (!rows.length) {
+      return res.status(400).json({ success: false, message: "No se recibieron registros (rows vacíos)", report });
     }
 
-    // Columnas reales de la tabla (para NO fallar si el Excel trae extras)
-    const tableCols = await getTableCols();
-    const tableSet = new Set(tableCols);
+    // columnas EXACTAS de tu tabla (captura)
+    const cols = [
+      "enlace_nombre",            // varchar(200)
+      "enlace_primer_apellido",   // varchar(100)
+      "enlace_segundo_apellido",  // varchar(100)
+      "enlace_correo",            // varchar(200)
+      "enlace_telefono",          // varchar(50)
 
-    // Columnas que vienen en el Excel
-    const incoming = new Set();
-    for (const r of rows) {
-      if (r && typeof r === "object") Object.keys(r).forEach((k) => incoming.add(k));
-    }
+      "trimestre",                // varchar(50)
+      "id_rusp",                  // varchar(100)
+      "primer_apellido",          // varchar(100)
+      "segundo_apellido",         // varchar(100)
+      "nombre",                   // varchar(200)
+      "curp",                     // varchar(18)
 
-    // Solo insertamos columnas que existan en la tabla
-    const cols = Array.from(incoming).filter((c) => tableSet.has(c));
+      "nivel_puesto",             // varchar(200)
+      "nivel_tabular",            // varchar(50)
+      "ramo_ur",                  // varchar(50)
 
-    if (cols.length === 0) {
-      return res.status(400).json({
-        ok: false,
-        error: "El archivo no coincide con ninguna columna de la tabla registros_trimestral.",
+      "dependencia",              // text (sin límite)
+      "correo_institucional",     // varchar(200)
+      "telefono_institucional",   // varchar(50)  (tu tabla lo maneja así normalmente)
+      "nivel_educativo",          // varchar(100)
+
+      "institucion_educativa",    // text
+      "modalidad",                // text
+      "estado_avance",            // text
+      "observaciones",            // text
+
+      "usuario_registro",         // varchar(100)
+    ];
+
+    const tableName = "registros_trimestral";
+    const cleaned = [];
+
+    for (const raw of rows) {
+      if (isTrulyEmptyRow(raw)) {
+        report.empty_discarded += 1;
+        continue;
+      }
+
+      const curpRaw = raw?.curp;
+      const curpClean = normalizeCurpForDb(curpRaw);
+      if (norm(curpRaw) !== null && curpClean === null) report.curp_invalid_to_null += 1;
+
+      cleaned.push({
+        enlace_nombre: clip(raw.enlace_nombre, 200),
+        enlace_primer_apellido: clip(raw.enlace_primer_apellido, 100),
+        enlace_segundo_apellido: clip(raw.enlace_segundo_apellido, 100),
+        enlace_correo: clip(raw.enlace_correo, 200),
+        enlace_telefono: clip(raw.enlace_telefono, 50),
+
+        trimestre: clip(raw.trimestre, 50),
+        id_rusp: clip(raw.id_rusp, 100),
+        primer_apellido: clip(raw.primer_apellido, 100),
+        segundo_apellido: clip(raw.segundo_apellido, 100),
+        nombre: clip(raw.nombre, 200),
+
+        curp: curpClean,
+
+        nivel_puesto: clip(raw.nivel_puesto, 200),
+        nivel_tabular: clip(raw.nivel_tabular, 50),
+        ramo_ur: clip(raw.ramo_ur, 50),
+
+        dependencia: norm(raw.dependencia), // text
+        correo_institucional: clip(raw.correo_institucional, 200),
+        telefono_institucional: clip(raw.telefono_institucional, 50),
+        nivel_educativo: clip(raw.nivel_educativo, 100),
+
+        institucion_educativa: norm(raw.institucion_educativa), // text
+        modalidad: norm(raw.modalidad), // text
+        estado_avance: norm(raw.estado_avance), // text
+        observaciones: norm(raw.observaciones), // text
+
+        usuario_registro: clip(raw.usuario_registro, 100),
       });
     }
 
-    // Lotes internos pequeños = más estable
-    const BATCH = 80;
-    const batches = chunk(rows, BATCH);
+    report.processed = cleaned.length;
 
-    let recibidos = rows.length;
-    let insertados = 0;
+    const BATCH = 200;
 
-    for (const b of batches) {
+    for (let i = 0; i < cleaned.length; i += BATCH) {
+      const batch = cleaned.slice(i, i + BATCH);
+
       const values = [];
-      const placeholders = b.map((r) => {
-        const p = cols.map((c) => {
-          values.push(truncIfNeeded(c, norm(r?.[c]))); // si falta dato => NULL
-          return `$${values.length}`;
-        });
-        return `(${p.join(",")})`;
+      const placeholders = batch.map((r, rowIdx) => {
+        const base = rowIdx * cols.length;
+        cols.forEach((c) => values.push(r[c] ?? null));
+        return `(${cols.map((_, colIdx) => `$${base + colIdx + 1}`).join(",")})`;
       });
 
       const sql = `
-        INSERT INTO ${TABLE} (${cols.map((c) => `"${c}"`).join(",")})
+        INSERT INTO ${tableName} (${cols.join(",")})
         VALUES ${placeholders.join(",")}
-        RETURNING 1
+        ON CONFLICT DO NOTHING
       `;
 
-      const result = await pool.query(sql, values);
-      insertados += result.rowCount;
+      try {
+        const result = await pool.query(sql, values);
+        const ins = result.rowCount || 0;
+        report.inserted += ins;
+        report.duplicates_omitted += (batch.length - ins);
+      } catch (e) {
+        // fallback 1x1 (para no perder lote completo)
+        for (const r of batch) {
+          try {
+            const singleSql = `
+              INSERT INTO ${tableName} (${cols.join(",")})
+              VALUES (${cols.map((_, idx) => `$${idx + 1}`).join(",")})
+              ON CONFLICT DO NOTHING
+            `;
+            const singleVals = cols.map((c) => r[c] ?? null);
+            const singleRes = await pool.query(singleSql, singleVals);
+            const ins1 = singleRes.rowCount || 0;
+
+            report.inserted += ins1;
+            report.duplicates_omitted += (1 - ins1);
+          } catch (e2) {
+            report.errors_count += 1;
+            if (report.errors.length < 50) {
+              report.errors.push({
+                message: e2?.message || String(e2),
+                trimestre: r.trimestre ?? null,
+                curp: r.curp ?? null,
+                id_rusp: r.id_rusp ?? null,
+                nombre: r.nombre ?? null,
+              });
+            }
+          }
+        }
+      }
     }
 
     return res.status(200).json({
-      ok: true,
       success: true,
-      recibidos,
-      insertados,
-      received: recibidos,
-      inserted: insertados,
-      count: insertados,
-      // Nota: insertados == recibidos si no hay errores de BD
-      columnas_usadas: cols,
+      message: "Carga masiva completada",
+      report,
+      note: "Se recortan strings según límites reales del esquema para evitar 'value too long'.",
     });
-
-  } catch (e) {
-    console.error("bulkCreate fatal:", e);
-    // Siempre JSON
+  } catch (err) {
+    console.error("bulkCreate fatal:", err);
     return res.status(500).json({
-      ok: false,
-      error: e?.message || "Error interno",
-      tip: "Revisa que exista public.registros_trimestral y que el Excel traiga columnas compatibles.",
+      success: false,
+      message: "Error del servidor",
+      error: err?.message || String(err),
+      report,
     });
   }
 }

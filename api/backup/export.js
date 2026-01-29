@@ -1,10 +1,4 @@
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
+const pool = require('../_lib/db.cjs');
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -16,7 +10,7 @@ module.exports = async (req, res) => {
   try {
     // Obtener todos los registros
     const result = await pool.query(`
-      SELECT * FROM trimestral_registros 
+      SELECT * FROM registros_trimestral 
       ORDER BY created_at DESC
     `);
 
