@@ -2593,6 +2593,52 @@
                             <h3>☀️ Junio</h3>
                             <p>2025</p>
                         </div>
+
+                        <div class="month-card" onclick="openMonthModal('Julio')" style="background: var(--gradient3);" role="button" tabindex="0">
+                            <h3>🎆 Julio</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Agosto')" style="background: var(--gradient4);" role="button" tabindex="0">
+                            <h3>🌧️ Agosto</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Septiembre')" style="background: var(--gradient1);" role="button" tabindex="0">
+                            <h3>🇲🇽 Septiembre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Octubre')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>🎃 Octubre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Noviembre')" style="background: var(--gradient3);" role="button" tabindex="0">
+                            <h3>🕯️ Noviembre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Diciembre')" style="background: var(--gradient4);" role="button" tabindex="0">
+                            <h3>🎄 Diciembre</h3>
+                            <p>2025</p>
+                        </div>
+                    </div>
+                    <div class="month-card" onclick="openMonthModal('Febrero')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>💝 Febrero</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Marzo')" style="background: var(--gradient3);" role="button" tabindex="0">
+                            <h3>🌸 Marzo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Abril')" style="background: var(--gradient4);" role="button" tabindex="0">
+                            <h3>🌼 Abril</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Mayo')" style="background: var(--gradient1);" role="button" tabindex="0">
+                            <h3>🌻 Mayo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Junio')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>☀️ Junio</h3>
+                            <p>2025</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -4944,14 +4990,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 /* =========================
-   SUBIR EVIDENCIAS (PDF)
-   ========================= */
+   SUBIR EVIDENCIAS (PDF) -> Google Drive (Apps Script)
+   =========================
+   - Evita preflight CORS usando Content-Type: text/plain
+   - Parse seguro (text -> JSON) para evitar: Unexpected end of JSON input
+*/
+
+const APPS_SCRIPT_EVIDENCIAS_URL = "https://script.google.com/macros/s/AKfycbwuLKeSJL5-YSrvppBpaXJ4inbBaY91_iYdv7xFeCoLL0-HsFWFbhJikjFglNhDFeNqsg/exec";
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result;
-      const base64 = result.split(',')[1];
+      const result = String(reader.result || "");
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
       resolve(base64);
     };
     reader.onerror = reject;
@@ -4961,27 +5013,43 @@ function fileToBase64(file) {
 
 async function uploadPdfToDrive(file) {
   if (!file) throw new Error("No se seleccionó archivo");
-  if (file.type !== "application/pdf") {
+  const mime = file.type || "application/pdf";
+  if (mime !== "application/pdf") {
     throw new Error("Solo se permiten archivos PDF");
   }
 
   const base64 = await fileToBase64(file);
 
-  const resp = await fetch("/api/evidencias/uploadToDrive", {
+  const payload = {
+    fileName: file.name,
+    filename: file.name,          // compatibilidad por si tu Apps Script usa 'filename'
+    mimeType: mime,
+    base64
+  };
+
+  const resp = await fetch(APPS_SCRIPT_EVIDENCIAS_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      filename: file.name,
-      mimeType: file.type || "application/pdf",
-      base64: base64
-    })
+    headers: {
+      // IMPORTANTE: text/plain para evitar preflight OPTIONS y errores CORS con Apps Script
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(payload)
   });
 
-  const json = await resp.json();
-  if (!json.success) {
-    throw new Error(json.error || "Falló la subida del PDF");
+  // Parse seguro: Apps Script a veces regresa texto vacío/HTML en error
+  const raw = await resp.text();
+  let json;
+  try {
+    json = JSON.parse(raw);
+  } catch (e) {
+    throw new Error("Respuesta no-JSON desde Apps Script. Inicio: " + raw.slice(0, 200));
   }
-  return json;
+
+  if (!resp.ok || !json.success) {
+    throw new Error(json.error || `Falló la subida del PDF (HTTP ${resp.status})`);
+  }
+
+  return json; // se espera: {success:true, fileId, fileUrl} (o equivalente)
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4998,18 +5066,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       btnEnviar.disabled = true;
+      const originalText = btnEnviar.textContent;
       btnEnviar.textContent = "Subiendo PDF...";
 
       const result = await uploadPdfToDrive(inputFile.files[0]);
-      alert("✅ Evidencia cargada correctamente");
-      console.log("PDF en Drive:", result.webViewLink);
+
+      const link = result.fileUrl || result.webViewLink || result.webContentLink || result.url || "";
+      console.log("PDF en Drive:", link || result);
+
+      alert("✅ Evidencia cargada correctamente" + (link ? "\n\nEnlace: " + link : ""));
       inputFile.value = "";
+      btnEnviar.textContent = originalText;
     } catch (err) {
       console.error(err);
-      alert("❌ Error al subir PDF: " + err.message);
+      alert("❌ Error al subir PDF: " + (err && err.message ? err.message : String(err)));
     } finally {
       btnEnviar.disabled = false;
-      btnEnviar.textContent = "Enviar Evidencia";
+      if (btnEnviar.textContent === "Subiendo PDF...") btnEnviar.textContent = "Enviar Evidencia";
     }
   });
 });
