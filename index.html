@@ -1897,7 +1897,7 @@
                 <p>Secretaría Anticorrupción y Buen Gobierno</p>
             </div>
 
-            <form class="login-form" onsubmit="event.preventDefault(); loginUsuario();">
+            <form class="login-form" onsubmit="submitEvidencia(event)">
                 <div class="form-group">
                     <label for="usuario">Usuario</label>
                     <div class="input-wrapper">
@@ -2195,7 +2195,7 @@
                 <div id="formulario" class="tab-content">
                     <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">👤 Datos del Enlace de Formación Académica</h3>
                     
-                    <form id="trimestralForm" onsubmit="event.preventDefault(); guardarRegistroTrimestral();">
+                    <form id="trimestralForm" onsubmit="submitEvidencia(event)">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="enlace_nombre">Nombre(s) <span class="required">*</span></label>
@@ -2528,24 +2528,7 @@
             <div id="registro" class="subsection active">
                 <div class="card">
                     <h2>📄 Reporte de Evidencias Mensuales</h2>
-<!-- =========================
-     SUBIR EVIDENCIAS (PDF)
-     ========================= -->
-<div class="note-box" style="margin-top:15px;">
-  <i class="fas fa-file-pdf"></i>
-  <strong>Subir evidencia (PDF):</strong>
-  <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-    <input id="archivoEvidencia" type="file" accept="application/pdf" />
-    <button id="btnEnviarEvidencia" type="button" class="btn btn-primary">
-      Enviar Evidencia
-    </button>
-  </div>
-  <div style="margin-top:8px; font-size:12px; color:#6c757d;">
-    *Solo PDF. Al enviar, el sistema lo guarda en Drive y devuelve el enlace.
-  </div>
-</div>
-                    
-                    <!-- Panel Admin (solo visible para Super Admin) -->
+<!-- Panel Admin (solo visible para Super Admin) -->
                     <div id="adminPanelEvidencias" class="admin-panel hidden">
                         <h3>⚙️ Panel de Control - </h3>
                         <div class="admin-controls">
@@ -2646,7 +2629,7 @@
             <span class="modal-close" onclick="closeModal()" role="button" tabindex="0">&times;</span>
             <h2 id="modalTitle" style="color: var(--guinda); margin-bottom: 2rem;">Registro de Evidencias Mensuales</h2>
             
-            <form id="evidenciaForm" onsubmit="event.preventDefault(); alert('✅ Evidencia enviada exitosamente!'); closeModal(); this.reset();">
+            <form id="evidenciaForm" onsubmit="submitEvidencia(event)">
                 <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 Datos del Enlace de Formación Académica que Registra</h3>
                 
                 <div class="form-grid">
@@ -2691,7 +2674,7 @@
     <div class="modal-content">
         <h3>📝 Registro de Usuario</h3>
         
-        <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
+        <form id="formRegistro" onsubmit="submitEvidencia(event)">
             <input
                 id="reg_curp"
                 type="tel"
@@ -2771,7 +2754,7 @@
         <div class="modal-content">
             <h3>🔑 Restaurar Contraseña</h3>
             
-            <form id="formRestaurarPassword" onsubmit="event.preventDefault(); restaurarPassword();">
+            <form id="formRestaurarPassword" onsubmit="submitEvidencia(event)">
                 <p style="color: #64748b; margin-bottom: 1.5rem; text-align: center;">
                     Ingresa tu usuario y te enviaremos instrucciones para restaurar tu contraseña.
                 </p>
