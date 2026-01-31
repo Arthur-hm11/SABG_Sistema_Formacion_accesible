@@ -3152,28 +3152,7 @@ function showBulkReportModal(aggregateReport, extra={}){
       }).join('');
 
       errorsHtml = `
-        <details class="bulk-details" open>
-          <summary>🧾 Detalle de errores (${errorsCount || errors.length})</summary>
-          <table class="bulk-report-table">
-            <thead>
-              <tr>
-                <th>#</th><th>Trimestre</th><th>CURP</th><th>ID RUSP</th><th>Nombre</th><th>Error</th>
-              </tr>
-            </thead>
-            <tbody>${rows || `<tr><td colspan="6">No hay detalle disponible.</td></tr>`}</tbody>
-          </table>
-        </details>
-      `;
-    }
-
-    // Extra raw summary (opcional)
-    const raw = extra?.raw ? String(extra.raw).slice(0, 1200) : '';
-    const rawHtml = raw ? `
-      <details class="bulk-details">
-        <summary>🧠 Respuesta cruda (debug)</summary>
-        <pre class="bulk-mono" style="white-space:pre-wrap; margin:8px 0; background:rgba(0,0,0,.03); padding:10px; border-radius:12px;">${raw.replace(/[<>&]/g, (m)=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[m]))}</pre>
-      </details>
-    ` : '';
+        ` : '';
 
     section.innerHTML = `
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
