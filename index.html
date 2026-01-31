@@ -3770,7 +3770,7 @@ async function loginUsuario() {
         document.getElementById('loadingOverlay')?.classList.add('active');
 
         // ✅ ÚNICA RUTA
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/api/auth/login', { credentials: 'include' },, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
