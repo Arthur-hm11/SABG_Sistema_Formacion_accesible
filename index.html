@@ -3192,9 +3192,6 @@ function showBulkReportModal(aggregateReport, extra={}){
     modal.appendChild(section);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
-  }catch(e){
-    console.error('No se pudo mostrar modal de reporte:', e);
-    alert('✅ Carga completada. (No se pudo renderizar el reporte visual; revisa consola).');
   }
 }
 
@@ -3602,9 +3599,7 @@ function auditLog(action, status, details = {}) {
 function formatNumberMX(n){
     try{
         return new Intl.NumberFormat('es-MX').format(Number(n) || 0);
-    }catch(e){
-        return (Number(n)||0).toString();
-    }
+  }
 }
 
 function updateStatsFromRegistros(registros){
@@ -3642,9 +3637,7 @@ function updateStatsFromRegistros(registros){
         if(elSrv) elSrv.textContent = formatNumberMX(servidores);
         if(elCum) elCum.textContent = (cumplimiento + '%');
         if(elAct) elAct.textContent = formatNumberMX(activos);
-    }catch(e){
-        // silencioso
-    }
+  }
 }
 
 }
@@ -4522,9 +4515,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             alert("✅ Evidencia enviada y guardada en Drive." + (link ? "\n\nEnlace: " + link : ""));
             if (typeof closeModal === "function") closeModal();
             document.getElementById("evidenciaForm")?.reset();
-        }catch(err){
-            alert("❌ " + (err?.message || String(err)));
-        }
+  }
     }
 
 2025`;
