@@ -1,0 +1,23 @@
+module.exports = async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+
+  const hasDriveRoot = !!process.env.DRIVE_FOLDER_ROOT;
+  const hasClientEmail = !!process.env.GOOGLE_CLIENT_EMAIL;
+  const hasPrivateKey = !!process.env.GOOGLE_PRIVATE_KEY;
+  const hasDb = !!(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+
+  return res.status(200).json({
+    ok: true,
+    now: new Date().toISOString(),
+    envFlags: {
+      hasDb,
+      hasDriveRoot,
+      hasClientEmail,
+      hasPrivateKey,
+    },
+  });
+};

@@ -1897,7 +1897,7 @@
                 <p>Secretaría Anticorrupción y Buen Gobierno</p>
             </div>
 
-            <form class="login-form" onsubmit="submitEvidencia(event)">
+            <form class="login-form" onsubmit="event.preventDefault(); loginUsuario();">
                 <div class="form-group">
                     <label for="usuario">Usuario</label>
                     <div class="input-wrapper">
@@ -2195,7 +2195,7 @@
                 <div id="formulario" class="tab-content">
                     <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">👤 Datos del Enlace de Formación Académica</h3>
                     
-                    <form id="trimestralForm" onsubmit="submitEvidencia(event)">
+                    <form id="trimestralForm" onsubmit="event.preventDefault(); guardarRegistroTrimestral();">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="enlace_nombre">Nombre(s) <span class="required">*</span></label>
@@ -2528,7 +2528,24 @@
             <div id="registro" class="subsection active">
                 <div class="card">
                     <h2>📄 Reporte de Evidencias Mensuales</h2>
-<!-- Panel Admin (solo visible para Super Admin) -->
+<!-- =========================
+     SUBIR EVIDENCIAS (PDF)
+     ========================= -->
+<div class="note-box" style="margin-top:15px;">
+  <i class="fas fa-file-pdf"></i>
+  <strong>Subir evidencia (PDF):</strong>
+  <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <input id="archivoEvidencia" type="file" accept="application/pdf" />
+    <button id="btnEnviarEvidencia" type="button" class="btn btn-primary">
+      Enviar Evidencia
+    </button>
+  </div>
+  <div style="margin-top:8px; font-size:12px; color:#6c757d;">
+    *Solo PDF. Al enviar, el sistema lo guarda en Drive y devuelve el enlace.
+  </div>
+</div>
+                    
+                    <!-- Panel Admin (solo visible para Super Admin) -->
                     <div id="adminPanelEvidencias" class="admin-panel hidden">
                         <h3>⚙️ Panel de Control - </h3>
                         <div class="admin-controls">
@@ -2556,7 +2573,7 @@
                             <h3>❄️ Enero</h3>
                             <p>2025</p>
                         </div>
-                    <div class="month-card" onclick="openMonthModal('Febrero')" style="background: var(--gradient2);" role="button" tabindex="0">
+                        <div class="month-card" onclick="openMonthModal('Febrero')" style="background: var(--gradient2);" role="button" tabindex="0">
                             <h3>💝 Febrero</h3>
                             <p>2025</p>
                         </div>
@@ -2576,7 +2593,7 @@
                             <h3>☀️ Junio</h3>
                             <p>2025</p>
                         </div>
-                    
+
                         <div class="month-card" onclick="openMonthModal('Julio')" style="background: var(--gradient3);" role="button" tabindex="0">
                             <h3>🎆 Julio</h3>
                             <p>2025</p>
@@ -2601,7 +2618,28 @@
                             <h3>🎄 Diciembre</h3>
                             <p>2025</p>
                         </div>
-</div>
+                    </div>
+                    <div class="month-card" onclick="openMonthModal('Febrero')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>💝 Febrero</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Marzo')" style="background: var(--gradient3);" role="button" tabindex="0">
+                            <h3>🌸 Marzo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Abril')" style="background: var(--gradient4);" role="button" tabindex="0">
+                            <h3>🌼 Abril</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Mayo')" style="background: var(--gradient1);" role="button" tabindex="0">
+                            <h3>🌻 Mayo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Junio')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>☀️ Junio</h3>
+                            <p>2025</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -2635,19 +2673,19 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Nombre(s) <span class="required">*</span></label>
-                        <input type="text" required>
+                        <input type="text" id="ev_nombre" required>
                     </div>
                     <div class="form-group">
                         <label>Primer Apellido <span class="required">*</span></label>
-                        <input type="text" required>
+                        <input type="text" id="ev_ap1" required>
                     </div>
                     <div class="form-group">
                         <label>Segundo Apellido <span class="required">*</span></label>
-                        <input type="text" required>
+                        <input type="text" id="ev_ap2" required>
                     </div>
                     <div class="form-group">
                         <label>Correo Institucional <span class="required">*</span></label>
-                        <input type="email" required>
+                        <input type="email" id="ev_correo" required>
                     </div>
                 </div>
 
@@ -2674,7 +2712,7 @@
     <div class="modal-content">
         <h3>📝 Registro de Usuario</h3>
         
-        <form id="formRegistro" onsubmit="submitEvidencia(event)">
+        <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
             <input
                 id="reg_curp"
                 type="tel"
@@ -2754,7 +2792,7 @@
         <div class="modal-content">
             <h3>🔑 Restaurar Contraseña</h3>
             
-            <form id="formRestaurarPassword" onsubmit="submitEvidencia(event)">
+            <form id="formRestaurarPassword" onsubmit="event.preventDefault(); restaurarPassword();">
                 <p style="color: #64748b; margin-bottom: 1.5rem; text-align: center;">
                     Ingresa tu usuario y te enviaremos instrucciones para restaurar tu contraseña.
                 </p>
@@ -4390,7 +4428,105 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
     function openMonthModal(month) {
         document.getElementById('monthModal').classList.add('active');
-        document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 2025`;
+        document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 
+
+    // ===== Evidencias por Mes (Modal -> Apps Script) =====
+    const APPS_SCRIPT_EVIDENCIAS_URL = "https://script.google.com/macros/s/AKfycbwuLKeSJL5-YSrvppBpaXJ4inbBaY91_iYdv7xFeCoLL0-HsFWFbhJikjFglNhDFeNqsg/exec";
+    let SELECTED_EVIDENCE_MONTH = null;
+
+    // Guardar el mes seleccionado cuando se abre el modal
+    (function patchOpenMonthModal(){
+        const original = window.openMonthModal;
+        window.openMonthModal = function(month){
+            SELECTED_EVIDENCE_MONTH = month;
+            if (typeof original === "function") original(month);
+            const t = document.getElementById("modalTitle");
+            if (t) t.textContent = "Registro de Evidencias Mensuales - " + String(month) + " 2025";
+        };
+    })();
+
+    function fileToBase64(file){
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+            reader.onload = () => {
+                const dataUrl = String(reader.result || "");
+                const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : "";
+                resolve(base64);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function submitEvidencia(e){
+        e.preventDefault();
+        try{
+            if (!SELECTED_EVIDENCE_MONTH){
+                alert("Selecciona un mes primero.");
+                return;
+            }
+
+            const nombre = (document.getElementById("ev_nombre")?.value || "").trim();
+            const ap1    = (document.getElementById("ev_ap1")?.value || "").trim();
+            const ap2    = (document.getElementById("ev_ap2")?.value || "").trim();
+            const correo = (document.getElementById("ev_correo")?.value || "").trim();
+
+            const fileInput = document.getElementById("pdfFile");
+            const file = fileInput?.files?.[0];
+
+            if (!nombre || !ap1 || !ap2 || !correo){
+                alert("Completa Nombre, Apellidos y Correo.");
+                return;
+            }
+            if (!file){
+                alert("Selecciona un PDF.");
+                return;
+            }
+            if ((file.type || "") !== "application/pdf"){
+                alert("Solo se permite PDF.");
+                return;
+            }
+
+            const safeMonth = String(SELECTED_EVIDENCE_MONTH).toLowerCase();
+            const fileName = (String(correo).toLowerCase() + "_" + String(safeMonth) + ".pdf")
+                .replace(/[^a-zA-Z0-9._-]/g, "_");
+            const base64 = await fileToBase64(file);
+
+            const payload = {
+                action: "uploadEvidence",
+                month: SELECTED_EVIDENCE_MONTH,
+                year: 2025,
+                fileName,
+                mimeType: file.type || "application/pdf",
+                base64,
+                enlace: { nombre, ap1, ap2, correo }
+            };
+
+            const resp = await fetch(APPS_SCRIPT_EVIDENCIAS_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            });
+
+            const raw = await resp.text();
+            let data;
+            try { data = JSON.parse(raw); }
+            catch { throw new Error("Respuesta no JSON (HTTP " + resp.status + "). " + raw.slice(0, 200)); }
+
+            if (!resp.ok || !data || data.success !== true){
+                throw new Error((data && (data.error || data.message)) ? (data.error || data.message) : "Fallo al subir evidencia");
+            }
+
+            const link = data.fileUrl || data.webViewLink || data.webContentLink || data.url || "";
+            alert("✅ Evidencia enviada y guardada en Drive." + (link ? "\n\nEnlace: " + link : ""));
+            if (typeof closeModal === "function") closeModal();
+            document.getElementById("evidenciaForm")?.reset();
+        }catch(err){
+            alert("❌ " + (err?.message || String(err)));
+        }
+    }
+
+2025`;
     }
 
     function closeModal() {
