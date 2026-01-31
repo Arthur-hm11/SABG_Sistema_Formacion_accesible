@@ -1,7 +1,22 @@
 node_modules/
 .vercel/
 .env.local
-cookies.txt
-*.bak_*
-.vercel
-.env*.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# temporales/pruebas
+cookies*.txt
+headers*.txt
+req.json
+data.json
+prueba.*
+*.b64
+_tmp_check.js
+all_scripts.js
+=
+
+# backups
+*.bak*
+*.BAK_*
