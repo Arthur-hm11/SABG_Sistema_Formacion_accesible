@@ -3151,7 +3151,30 @@ function showBulkReportModal(aggregateReport, extra={}){
         `;
       }).join('');
 
-      let errorsHtml = '';
+      let errorsHtml = errorsCount ? `
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer; font-weight:700;">⚠️ Ver errores (${errorsCount})</summary>
+          <div style="margin-top:8px; overflow:auto; max-height:260px;">
+            <table style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:6px; border-bottom:1px solid #ddd;">Fila</th>
+                  <th style="text-align:left; padding:6px; border-bottom:1px solid #ddd;">Mensaje</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(errors||[]).slice(0,200).map(e => `
+                  <tr>
+                    <td style="padding:6px; border-bottom:1px solid #eee;" class="bulk-mono">${String(e?.row ?? '')}</td>
+                    <td style="padding:6px; border-bottom:1px solid #eee;">${String(e?.message ?? e?.msg ?? '').replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            ${(errors||[]).length > 200 ? `<div style="margin-top:8px; opacity:.8;">Mostrando 200 de ${(errors||[]).length} errores.</div>` : ``}
+          </div>
+        </details>
+      ` : '';
 
     section.innerHTML = `
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
