@@ -1,20 +1,10 @@
-const { Pool } = require("pg");
 const crypto = require("crypto");
 const cookie = require("cookie");
 const bcrypt = require("bcrypt");
 
-const conn =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.POSTGRES_PRISMA_URL;
+const pool = require("../_lib/db.cjs");
 
-const pool = new Pool({
-  connectionString: conn,
-  ssl: { rejectUnauthorized: false },
-});
+const isProd = String(process.env.NODE_ENV || "").toLowerCase() === "production";
 
 // ---- Asegurar tabla sesiones (una sola vez por instancia) ----
 let _sesionesReady = false;
@@ -84,7 +74,7 @@ module.exports = async (req, res) => {
       "Set-Cookie",
       cookie.serialize("session_token", sessionToken, {
         httpOnly: true,
-        secure: true,
+        secure: isProd,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 8,

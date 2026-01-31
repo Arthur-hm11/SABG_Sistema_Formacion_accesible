@@ -1,13 +1,5 @@
 const { requireAuth } = require("../_lib/auth");
-import { Pool } from "pg";
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 1,
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 8000,
-});
+const pool = require("../_lib/db.cjs");
 
 const TABLE = "public.registros_trimestral";
 
@@ -29,7 +21,7 @@ function readJsonBody(req) {
   });
 }
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   setCors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
   
@@ -59,4 +51,4 @@ if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Métod
   } catch (e) {
     return res.status(500).json({ ok:false, error: e?.message || "Error interno" });
   }
-}
+};

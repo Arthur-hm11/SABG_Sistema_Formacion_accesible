@@ -1,5 +1,5 @@
 const { requireAuth } = require("../_lib/auth");
-import pool from "../_lib/db.js";
+const pool = require("../_lib/db.cjs");
 function norm(v) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
@@ -76,7 +76,7 @@ function isTrulyEmptyRow(r) {
   });
 }
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
@@ -258,4 +258,4 @@ if (req.method !== "POST") return res.status(405).json({ success: false, message
       report,
     });
   }
-}
+};

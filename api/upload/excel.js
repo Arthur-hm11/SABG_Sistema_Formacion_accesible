@@ -1,11 +1,13 @@
 const { requireAuth } = require("../_lib/auth");
-import formidable from 'formidable';
-import xlsx from 'xlsx';
-import pool from '../_lib/db.js';
+const formidable = require("formidable");
+const xlsx = require("xlsx");
+const pool = require("../_lib/db.cjs");
 
-export const config = {
-  api: { bodyParser: false }
-};
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
 
 function pickUploadedFile(files) {
   const f = files?.file;
@@ -13,23 +15,27 @@ function pickUploadedFile(files) {
   return Array.isArray(f) ? f[0] : f;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Método no permitido' });
+module.exports = async (req, res) => {
+  setCors(res);
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, message: "Método no permitido" });
   }
 
+  // Nota: formidable necesita bodyParser desactivado en Next.js,
+  // pero aquí estamos en Vercel Functions (no Next). Funciona sin config extra.
   const form = formidable({
     maxFileSize: 15 * 1024 * 1024, // 15MB
     multiples: false,
-    keepExtensions: true
+    keepExtensions: true,
   });
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
       return res.status(400).json({
         success: false,
-        message: 'Error leyendo el archivo',
-        error: err.message
+        message: "Error leyendo el archivo",
+        error: err.message,
       });
     }
 
@@ -37,9 +43,13 @@ export default async function handler(req, res) {
     if (!file?.filepath) {
       return res.status(400).json({
         success: false,
-        message: 'No se recibió archivo (campo esperado: file)'
+        message: "No se recibió archivo (campo esperado: file)",
       });
     }
+
+    // Auth (cookies)
+    const user = await requireAuth(req, res, pool);
+    if (!user) return;
 
     let client;
     try {
@@ -49,6 +59,7 @@ export default async function handler(req, res) {
 
       client = await pool.connect();
 
+      // Inserción mínima (demo). Tu flujo real usa /api/trimestral/bulkCreate.
       for (const row of rows) {
         await client.query(
           `
@@ -62,27 +73,25 @@ export default async function handler(req, res) {
             row.segundo_apellido ?? null,
             row.curp ?? null,
             row.dependencia ?? null,
-            row.observaciones ?? null
+            row.observaciones ?? null,
           ]
         );
       }
 
       return res.status(200).json({
         success: true,
-        message: 'Excel cargado correctamente',
-        inserted: rows.length
+        message: "Excel cargado correctamente",
+        inserted: rows.length,
       });
-
     } catch (e) {
-      console.error('upload/excel error:', e);
+      console.error("upload/excel error:", e);
       return res.status(500).json({
         success: false,
-        message: 'Error guardando en Neon',
-        error: e.message
+        message: "Error guardando en Neon",
+        error: e.message,
       });
-
     } finally {
       if (client) client.release();
     }
   });
-}
+};

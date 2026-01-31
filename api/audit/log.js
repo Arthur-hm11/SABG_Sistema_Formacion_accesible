@@ -1,6 +1,7 @@
 const { requireAuth } = require("../_lib/auth");
-import pool from "../_lib/db.js";
-export default async function handler(req, res) {
+const pool = require("../_lib/db.cjs");
+
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   // incluye Authorization por si luego mandas token, y Accept por compatibilidad
@@ -67,4 +68,4 @@ if (req.method !== 'POST') {
     console.error(err);
     return res.status(500).json({ success: false, error: 'Error del servidor' });
   }
-}
+};
