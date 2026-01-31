@@ -20,3 +20,6 @@ all_scripts.js
 # backups
 *.bak*
 *.BAK_*
+
+# no subir cookies
+cookies*.txt
