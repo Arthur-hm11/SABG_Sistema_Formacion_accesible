@@ -10,59 +10,55 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+  if (req.method !== "POST")
+    return res.status(405).json({ success: false, error: "Método no permitido" });
 
   const { usuario, password } = req.body || {};
-  if (!usuario || !password) return res.status(400).json({ error: "Faltan credenciales" });
+  if (!usuario || !password)
+    return res.status(400).json({ success: false, error: "Faltan credenciales" });
 
-  // ✅ Login compatible:
-  // - Usuarios nuevos: password_hash (bcrypt)
-  // - Usuarios legacy: password (texto plano)
-  const q = `
-    SELECT id, usuario, nombre, rol, dependencia, password, password_hash
-    FROM usuarios
-    WHERE usuario = $1
-    LIMIT 1
-  `;
-  const r = await pool.query(q, [usuario]);
+  try {
+    const q = `
+      SELECT id, usuario, password_hash, nombre, rol, dependencia
+      FROM public.usuarios
+      WHERE usuario = $1
+      LIMIT 1
+    `;
+    const r = await pool.query(q, [usuario]);
 
-  if (r.rows.length === 0) return res.status(401).json({ error: "Credenciales inválidas" });
+    if (!r.rows || r.rows.length === 0) {
+      return res.status(401).json({ success: false, error: "Credenciales inválidas" });
+    }
 
-  const user = r.rows[0];
+    const u = r.rows[0];
 
-  let ok = false;
-  if (user.password_hash) {
-    ok = await bcrypt.compare(String(password), String(user.password_hash));
-  } else if (user.password) {
-    ok = String(user.password) === String(password);
-  }
+    const ok = await bcrypt.compare(String(password), String(u.password_hash));
+    if (!ok) {
+      return res.status(401).json({ success: false, error: "Credenciales inválidas" });
+    }
 
-  if (!ok) return res.status(401).json({ error: "Credenciales inválidas" });
+    // Token de sesión (stateless; no requiere tabla sesiones)
+    const sessionToken = crypto.randomBytes(48).toString("hex");
 
-  const sessionToken = crypto.randomBytes(48).toString("hex");
-
-  await pool.query(
-    `INSERT INTO sesiones (usuario_id, token, expires_at)
-     VALUES ($1, $2, NOW() + INTERVAL '8 hours')`,
-    [user.id, sessionToken]
-  );
-
-  res.setHeader(
-    "Set-Cookie",
-    serialize("session_token", sessionToken, {
+    const cookie = serialize("session_token", sessionToken, {
       httpOnly: true,
-      secure: true,   // Vercel = HTTPS
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 8,
-    })
-  );
+      maxAge: 60 * 60 * 8, // 8 horas
+    });
 
-  return res.status(200).json({
-    success: true,
-    usuario: user.usuario,
-    nombre: user.nombre,
-    rol: user.rol,
-    dependencia: user.dependencia ?? null,
-  });
+    res.setHeader("Set-Cookie", cookie);
+
+    return res.json({
+      success: true,
+      usuario: u.usuario,
+      nombre: u.nombre,
+      rol: u.rol,
+      dependencia: u.dependencia,
+    });
+  } catch (err) {
+    console.error("Error /api/auth/login:", err);
+    return res.status(500).json({ success: false, error: "Error interno" });
+  }
 }
