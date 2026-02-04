@@ -1927,7 +1927,8 @@
                         <span class="input-icon">🔒</span>
                     </div>
                 </div>
-                <button type="submit" class="login-btn">🚀 Iniciar sesión</button><button type="button" class="btn-secondary" onclick="mostrarRestaurarPassword()" style="background: linear-gradient(135deg, #64748b, #475569) !important; margin-top: 0.5rem; width: 100%; color: white; border: none; padding: 1rem 2rem; font-size: 1rem; font-weight: bold; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);">
+                <button type="submit" class="login-btn">🚀 Iniciar sesión</button>
+                <button type="button" class="btn-secondary" onclick="mostrarRestaurarPassword()" style="background: linear-gradient(135deg, #64748b, #475569) !important; margin-top: 0.5rem; width: 100%; color: white; border: none; padding: 1rem 2rem; font-size: 1rem; font-weight: bold; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);">
                 🔑 ¿Olvidaste tu contraseña?
             </button>
             </form>
@@ -4605,6 +4606,46 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 // ---- Trimestral pager state ----
 let TRIM_PAGE = 1;
 let TRIM_LIMIT = 50;
+let TRIM_Q = "";
+
+function initTrimestralSearchGlobal() {
+  try {
+    const table = document.getElementById("registrosTable");
+    if (!table) return;
+
+    // busca el input por placeholder exacto de tu UI
+    let input = document.querySelector("input[placeholder=\"Buscar en la tabla...\"]");
+    if (!input) input = document.querySelector("input[placeholder=\"Buscar en la tabla…\"]");
+    if (!input) input = document.querySelector("input[placeholder*=Buscar]");
+    if (!input) return;
+
+    // clonar para eliminar listeners anteriores (busqueda local)
+    const clone = input.cloneNode(true);
+    input.parentNode.replaceChild(clone, input);
+    input = clone;
+
+    const run = () => {
+      TRIM_Q = String(input.value || "").trim();
+      cargarRegistrosTrimestral(1, 5000, TRIM_Q);
+    };
+
+    let t = null;
+    input.addEventListener("input", () => {
+      clearTimeout(t);
+      t = setTimeout(run, 250); // debounce
+    });
+
+    // enter inmediato
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); run(); }
+    });
+  } catch (_) {}
+}
+
+window.addEventListener("load", () => {
+  initTrimestralSearchGlobal();
+});
+
 
 function renderPagerTrimestral(meta = {}) {
   const el0 = document.getElementById("pagerTrimestral");
@@ -4630,6 +4671,9 @@ function renderPagerTrimestral(meta = {}) {
   const pages = Number(meta.pages ?? 1) || 1;
   const total = Number(meta.total ?? 0) || 0;
 
+  // Si hay busqueda, no mostramos pager (todo va en una sola vista)
+  if (TRIM_Q) { el.innerHTML = ""; return; }
+
   if (pages <= 1) { el.innerHTML = ""; return; }
 
   el.style.display = "block";
@@ -4653,7 +4697,7 @@ function renderPagerTrimestral(meta = {}) {
     b.style.borderRadius = "10px";
     b.style.border = "1px solid rgba(0,0,0,.15)";
     b.style.cursor = "pointer";
-    b.onclick = () => cargarRegistrosTrimestral(targetPage, limit);
+    b.onclick = () => cargarRegistrosTrimestral(targetPage, limit, TRIM_Q);
     return b;
   };
 
@@ -4675,9 +4719,16 @@ function renderPagerTrimestral(meta = {}) {
   el.appendChild(mkBtn(">", Math.min(pages, page + 1), page >= pages));
 }
 
-async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT) {
+async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q = TRIM_Q) {
   TRIM_PAGE = Math.max(1, Number(page) || 1);
   TRIM_LIMIT = Math.max(1, Number(limit) || 50);
+  TRIM_Q = String(q ?? TRIM_Q ?? "").trim();
+
+  // Si hay busqueda, mostrar TODO en una sola vista
+  if (TRIM_Q) {
+    TRIM_PAGE = 1;
+    if (TRIM_LIMIT < 5000) TRIM_LIMIT = 5000;
+  }
 
   try {
     const base = userRole === "superadmin"
@@ -4685,7 +4736,8 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT) {
       : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
 
     const sep = base.includes("?") ? "&" : "?";
-    const url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
+    let url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
+    if (TRIM_Q) url += `&q=${encodeURIComponent(TRIM_Q)}`;
 
     const response = await fetch(url);
     const result = await response.json();
