@@ -4611,7 +4611,22 @@ let TRIM_PAGE = 1;
 let TRIM_LIMIT = 50;
 
 function renderPagerTrimestral(meta = {}) {
-  const el = document.getElementById("pagerTrimestral");
+  const el0 = document.getElementById("pagerTrimestral");
+  let el = el0;
+  if (!el) {
+    const table = document.getElementById("registrosTable");
+    if (table && table.parentNode) {
+      el = document.createElement("div");
+      el.id = "pagerTrimestral";
+      el.style.margin = "12px 0";
+      el.style.padding = "8px 10px";
+      el.style.border = "1px solid rgba(0,0,0,.12)";
+      el.style.borderRadius = "12px";
+      el.style.background = "rgba(255,255,255,.65)";
+      el.style.backdropFilter = "blur(6px)";
+      table.parentNode.insertBefore(el, table);
+    }
+  }
   if (!el) return;
 
   const page = Number(meta.page ?? TRIM_PAGE) || 1;
@@ -4621,6 +4636,9 @@ function renderPagerTrimestral(meta = {}) {
 
   if (pages <= 1) { el.innerHTML = ""; return; }
 
+  el.style.display = "block";
+  el.style.minHeight = "40px";
+  el.style.overflow = "visible";
   el.innerHTML = "";
 
   const info = document.createElement("span");
