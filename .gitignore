@@ -6,3 +6,6 @@ cookies*.txt
 .env
 .env.*
 .vercel/
+
+index.html.backup_*
+backups_locales/
