@@ -4728,6 +4728,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
 
     const sep = base.includes("?") ? "&" : "?";
     const url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
+    if (TRIM_Q) url += `&q=${encodeURIComponent(TRIM_Q)}`;
 
     const response = await fetch(url);
     const result = await response.json();
