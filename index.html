@@ -1927,8 +1927,7 @@
                         <span class="input-icon">🔒</span>
                     </div>
                 </div>
-                <button type="submit" class="login-btn">🚀 Iniciar sesión</button>
-                <button type="button" class="btn-secondary" onclick="mostrarRestaurarPassword()" style="background: linear-gradient(135deg, #64748b, #475569) !important; margin-top: 0.5rem; width: 100%; color: white; border: none; padding: 1rem 2rem; font-size: 1rem; font-weight: bold; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);">
+                <button type="submit" class="login-btn">🚀 Iniciar sesión</button><button type="button" class="btn-secondary" onclick="mostrarRestaurarPassword()" style="background: linear-gradient(135deg, #64748b, #475569) !important; margin-top: 0.5rem; width: 100%; color: white; border: none; padding: 1rem 2rem; font-size: 1rem; font-weight: bold; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);">
                 🔑 ¿Olvidaste tu contraseña?
             </button>
             </form>
@@ -2151,284 +2150,32 @@
                 <!-- TAB: INSTRUCTIVO -->
                 <div id="instructivo" class="tab-content active">
                     <div class="info-box">
+                        <h3>📖 INSTRUCTIVO PARA EL LLENADO DEL FORMATO</h3>
+                        <p style="margin-bottom: 1rem;"><strong>Nota:</strong> Se solicita de la manera más atenta respetar los formatos de cada celda a llenar. En caso de tener duda con el registro de los mismos, favor de contactar a la Subdirectora de Formación y Capacitación Institucional A, al correo correo[arroba]institucional[punto]gob[punto]mx</p>
+                    </div>
 
-<!-- INSTRUCTIVO_PRO_START -->
-<style>
-/* INSTRUCTIVO_PRO_CSS_START */
-.inswrap{
-  margin: 14px 0;
-  padding: 18px;
-  border-radius: 18px;
-  background: rgba(255,255,255,.78);
-  border: 1px solid rgba(0,0,0,.10);
-  box-shadow: 0 12px 28px rgba(0,0,0,.10);
-}
-.inshead{
-  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-  margin-bottom: 14px;
-}
-.inshead h3{ margin:0; color: var(--guinda); }
-.inshead p{ margin:6px 0 0; opacity:.85; }
-.insbadge{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:800;
-  letter-spacing:.3px;
-  color: var(--guinda);
-  background: rgba(122,0,38,.10);
-  border: 1px solid rgba(122,0,38,.22);
-  white-space:nowrap;
-}
-.insgrid{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-@media (max-width: 900px){
-  .insgrid{ grid-template-columns: 1fr; }
-}
-.insitem{
-  border-radius: 14px;
-  padding: 12px 14px;
-  background: rgba(255,255,255,.82);
-  border: 1px solid rgba(0,0,0,.08);
-  border-left: 5px solid rgba(122,0,38,.55);
-  opacity:0;
-  transform: translateY(10px);
-  animation: insFadeUp .45s ease forwards;
-}
-.insitem b{
-  display:block;
-  margin-bottom: 6px;
-  color: #2b2b2b;
-}
-.insitem p{ margin:0 0 6px; color:#4b5563; }
-.insnote{
-  margin: 0 0 8px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: rgba(239,68,68,.08);
-  border: 1px solid rgba(239,68,68,.18);
-  color: #b91c1c;
-  font-weight: 700;
-  font-size: 12.5px;
-}
-@keyframes insFadeUp{
-  to{ opacity:1; transform: translateY(0); }
-}
-.insitem:nth-child(1){ animation-delay:.02s }
-.insitem:nth-child(2){ animation-delay:.05s }
-.insitem:nth-child(3){ animation-delay:.08s }
-.insitem:nth-child(4){ animation-delay:.11s }
-.insitem:nth-child(5){ animation-delay:.14s }
-.insitem:nth-child(6){ animation-delay:.17s }
-.insitem:nth-child(7){ animation-delay:.20s }
-.insitem:nth-child(8){ animation-delay:.23s }
-.insitem:nth-child(9){ animation-delay:.26s }
-.insitem:nth-child(10){ animation-delay:.29s }
-.insitem:nth-child(11){ animation-delay:.32s }
-.insitem:nth-child(12){ animation-delay:.35s }
-.insitem:nth-child(13){ animation-delay:.38s }
-.insitem:nth-child(14){ animation-delay:.41s }
-.insitem:nth-child(15){ animation-delay:.44s }
-.insitem:nth-child(16){ animation-delay:.47s }
-.insitem:nth-child(17){ animation-delay:.50s }
+                    <div class="card" style="background: white; padding: 2rem; margin: 2rem 0;">
+                        <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 DEFINICIONES DE CAMPOS</h3>
+                        
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">N°</h4>
+                            <p style="color: #64748b;">Corresponde al número consecutivo de registro.</p>
+                        </div>
 
-.instablewrap{
-  margin-top: 14px;
-  border-radius: 14px;
-  overflow-x: auto;
-  border: 1px solid rgba(0,0,0,.10);
-  background: rgba(255,255,255,.86);
-  -webkit-overflow-scrolling: touch;
-}
-.instable{
-  width: 100%;
-  min-width: 1600px;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 12px;
-}
-.instable th{
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: linear-gradient(135deg, #7a0026, #56001b);
-  color: #fff;
-  text-align:left;
-  padding: 10px 12px;
-  white-space: nowrap;
-}
-.instable td{
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(0,0,0,.08);
-  vertical-align: top;
-  color: #111827;
-}
-.instable tr:hover td{ background: rgba(0,0,0,.03); }
-/* INSTRUCTIVO_PRO_CSS_END */
-</style>
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">TRIMESTRE</h4>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">Corresponde al trimestre en que se registró a la persona servidora pública interesada.</p>
+                        </div>
 
-<div class="inswrap">
-  <div class="inshead">
-    <div>
-      <span class="insbadge">📖 INSTRUCTIVO</span>
-<!-- INSTRUCTIVO_PRO_START -->
-<div class="inspro-wrap">
-  <div class="inspro-hero inspro-reveal">
-    <div class="inspro-chip">📘 INSTRUCTIVO</div>
-    <h3>Instructivo de captura – Campos del registro</h3>
-    <p>Descripción de cada columna y notas importantes (formato trimestral).</p>
-  </div>
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
+                            <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">ID RUSP</h4>
+                            <p style="color: #64748b; margin-bottom: 0.5rem;">Corresponde al número de identificación de cada persona servidora pública en el Registro de Servidores Públicos. De no tener el dato, favor de acercarse con el área de Recursos Humanos para su obtención y registro.</p>
+                            <p style="color: #ef4444; font-weight: bold;">*Nota: En caso de ser personal de HONORARIOS, favor de registrar: HONORARIOS.</p>
+                        </div>
+                    </div>
 
-  <div class="inspro-grid">
-    <div class="inspro-card inspro-reveal">
-      <h4>N°</h4>
-      <p>Corresponde al número consecutivo de registro.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>TRIMESTRE</h4>
-      <div class="inspro-note">*Nota: La celda para registro está vinculada, si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</div>
-      <p>Corresponde al trimestre en que se registró a la persona servidora pública interesada.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>ID RUSP</h4>
-      <p>Corresponde al número de identificación de cada persona servidora pública en el Registro de Servidores Públicos. De no tener el dato, favor de acercarse con el área de Recursos Humanos para su obtención y registro.</p>
-      <div class="inspro-note">*Nota: En caso de ser personal de HONORARIOS, favor de registrar: HONORARIOS.</div>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>PRIMER APELLIDO</h4>
-      <p>Corresponde al primer apellido de la persona servidora pública interesada.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>SEGUNDO APELLIDO</h4>
-      <p>Corresponde al segundo apellido de la persona servidora pública interesada.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>NOMBRE(S)</h4>
-      <p>Corresponde al nombre de la persona servidora pública interesada. En caso de tener dos nombres, favor de registrar ambos.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>CURP</h4>
-      <p>Corresponde a la Clave Única de Registro de Población que contiene 18 caracteres.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>NIVEL DE PUESTO</h4>
-      <p>En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles de puestos. Se deberá seleccionar el nivel de puesto que le corresponda a la persona servidora pública interesada.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>NIVEL TABULAR</h4>
-      <div class="inspro-note">*Nota: La celda para registro está vinculada, si no selecciona el nivel de puesto, no se desplegará la lista para seleccionar el nivel tabular al que corresponde la persona servidora pública interesada.</div>
-      <p>En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles tabulares. Se deberá seleccionar el nivel tabular que le corresponda a la persona servidora pública interesada.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>RAMO - UR</h4>
-      <div class="inspro-note">*Nota: La celda para registro está vinculada, si no selecciona el nivel tabular, no se desplegará la lista para seleccionar el Ramo - UR al que corresponde la persona servidora pública interesada.</div>
-      <p>En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los ramos. Se deberá seleccionar el ramo que corresponda a la Institución en la cual esté adscrita la persona servidora pública interesada.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>DEPENDENCIA</h4>
-      <p>En la celda se visualizará una flecha que al seleccionarla desplegará una lista con las Dependencias e Instituciones de la Administración Pública Federal. Se deberá seleccionar la Dependencia o Institución donde esté adscrita la persona servidora pública interesada.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>CORREO INSTITUCIONAL</h4>
-      <p>Deberá registrar directamente el correo institucional de la persona servidora pública interesada. Favor de corroborar su registro ya que para cualquier comunicación, las Instituciones académicas deberán tener correcto este dato.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>TELÉFONO INSTITUCIONAL CON EXTENSIÓN</h4>
-      <p>Se deberá registrar directamente el teléfono institucional con extensión de la persona servidora pública interesada. Favor de corroborar su registro.</p>
-      <div class="inspro-note">*Nota: En caso de no contar con número telefónico institucional, favor de proporcionar un número de teléfono de contacto directo.</div>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>NIVEL EDUCATIVO</h4>
-      <p>En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles educativos. Se deberá seleccionar el nivel educativo que la persona servidora pública esté interesada en continuar y/o concluir.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>INSTITUCIÓN EDUCATIVA</h4>
-      <div class="inspro-note">*Nota: La celda para registro está vinculada, si no selecciona el nivel educativo, no se desplegará la lista para seleccionar la institución educativa que la persona servidora pública esté interesada.</div>
-      <p>En la celda de registro se visualizará una flecha que al seleccionarla desplegará una lista con las instituciones educativas. Se deberá seleccionar la Institución educativa de interés de la persona servidora pública.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>MODALIDAD</h4>
-      <div class="inspro-note">*Nota: La celda para registro está vinculada, si no selecciona la institución educativa, no se desplegará la lista para seleccionar la modalidad disponible.</div>
-      <p>En la celda de registro, se visualizará una flecha que al seleccionarla desplegará una lista con las modalidades disponibles de acuerdo a cada Institución educativa. Se deberá seleccionar la modalidad de interés.</p>
-    </div>
-
-    <div class="inspro-card inspro-reveal">
-      <h4>ESTADO DE AVANCE</h4>
-      <div class="inspro-note">Nota: La celda para registro está vinculada, si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</div>
-      <p>En la celda de registro se visualizará una flecha que al seleccionarla desplegará una lista con los estados de avance académico. Se deberá seleccionar el estado de avance académico en que se encuentra la persona servidora pública.</p>
-      <div class="inspro-warn">Poner especial atención en la opción que dice: <b>Cambió la institución académica de interés</b> (si cambiaron su elección, deben actualizar Nivel Educativo, Institución Educativa y Modalidad).</div>
-    </div>
-  </div>
-
-  <div class="inspro-ex inspro-reveal">
-    <div class="inspro-chip">🧾 EJEMPLO</div>
-    <h3>Ejemplo de registro</h3>
-    <p>Ejemplo ilustrativo de cómo debe capturarse la información.</p>
-
-    <div class="inspro-tablewrap">
-      <div class="inspro-scroll">
-        <table class="inspro-table">
-          <thead>
-            <tr>
-              <th>N°</th><th>TRIMESTRE</th><th>ID RUSP</th><th>PRIMER APELLIDO</th><th>SEGUNDO APELLIDO</th><th>NOMBRE(S)</th><th>CURP</th>
-              <th>NIVEL DE PUESTO</th><th>NIVEL TABULAR</th><th>RAMO - UR</th><th>DEPENDENCIA</th><th>CORREO INSTITUCIONAL</th>
-              <th>TELÉFONO INSTITUCIONAL CON EXTENSIÓN</th><th>NIVEL EDUCATIVO</th><th>INSTITUCIÓN EDUCATIVA</th><th>MODALIDAD</th><th>ESTADO DE AVANCE</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td><td>ABRIL_JUNIO</td><td>123456</td><td>RODRÍGUEZ</td><td>MARTÍNEZ</td><td>JOSÉ JUAN</td><td>ABCDE1234</td>
-              <td>ENLACE_U_HOMÓLOGO</td><td>P13</td><td>13-J3A</td><td>ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.</td>
-              <td>abcd@dominioinstitucional.****</td><td>12345 EXT. 123</td><td>SECUNDARIA</td><td>INSTITUTO_NACIONAL_PARA_LA_EDUCACIÓN_DE_ADULTOS_INEA</td>
-              <td>APRENDE_INEA_EN_LÍNEA</td><td>CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</td>
-            </tr>
-            <tr>
-              <td>2</td><td>JULIO_SEPTIEMBRE</td><td>HONORARIOS</td><td>RODRIGUEZ</td><td>MARTINEZ</td><td>JOSÉ JUAN</td><td>ABCDE1234</td>
-              <td>DIRECTOR_DE_ÁREA_U_HOMÓLOGO</td><td>P31</td><td>13-J2R</td><td>ADMINISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.</td>
-              <td>abcd@dominioinstitucional.****</td><td>12345 EXT. 123</td><td>LICENCIATURA</td><td>TECNOLÓGICO_NACIONAL_DE_MÉXICO_TECNM</td>
-              <td>MIXTO</td><td>PERSONA INTERESADA</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<script>
-(function(){
-  // reveal pro al hacer scroll (sin librerías)
-  const els = Array.from(document.querySelectorAll(".inspro-reveal"));
-  if (!("IntersectionObserver" in window) || !els.length) { els.forEach(e=>e.classList.add("is-in")); return; }
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(en=>{
-      if(en.isIntersecting){ en.target.classList.add("is-in"); io.unobserve(en.target); }
-    });
-  }, { threshold: 0.12 });
-  els.forEach(e=>io.observe(e));
-})();
-</script>
-<!-- INSTRUCTIVO_PRO_END -->
+                    <div class="info-box">
                         <h3>⚠️ RECORDATORIOS IMPORTANTES</h3>
                         <ul>
                             <li>El Enlace de Formación Académica tendrá que actualizar el estado de avance, de lo contrario no podrá cerrar el apartado de Ver Tabla de Registro</li>
@@ -4253,14 +4000,7 @@ async function loginUsuario() {
     });
 
     function showSectionAndTab(sectionId, tabId) {
-  try {
-    if (sectionId === "evidencias") {
-      document.querySelectorAll(".main-section").forEach(s=>s.style.display="none");
-      const ev = document.getElementById("evidencias");
-      if (ev) ev.style.display = "block";
-    }
-  } catch (_) {}
-document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
             menu.classList.remove('show');
         });
         document.querySelectorAll('.main-nav-btn').forEach(btn => {
@@ -4865,46 +4605,6 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 // ---- Trimestral pager state ----
 let TRIM_PAGE = 1;
 let TRIM_LIMIT = 50;
-let TRIM_Q = "";
-
-function initTrimestralSearchGlobal() {
-  try {
-    const table = document.getElementById("registrosTable");
-    if (!table) return;
-
-    // busca el input por placeholder exacto de tu UI
-    let input = document.querySelector("input[placeholder=\"Buscar en la tabla...\"]");
-    if (!input) input = document.querySelector("input[placeholder=\"Buscar en la tabla…\"]");
-    if (!input) input = document.querySelector("input[placeholder*=Buscar]");
-    if (!input) return;
-
-    // clonar para eliminar listeners anteriores (busqueda local)
-    const clone = input.cloneNode(true);
-    input.parentNode.replaceChild(clone, input);
-    input = clone;
-
-    const run = () => {
-      TRIM_Q = String(input.value || "").trim();
-      cargarRegistrosTrimestral(1, 5000, TRIM_Q);
-    };
-
-    let t = null;
-    input.addEventListener("input", () => {
-      clearTimeout(t);
-      t = setTimeout(run, 250); // debounce
-    });
-
-    // enter inmediato
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); run(); }
-    });
-  } catch (_) {}
-}
-
-window.addEventListener("load", () => {
-  initTrimestralSearchGlobal();
-});
-
 
 function renderPagerTrimestral(meta = {}) {
   const el0 = document.getElementById("pagerTrimestral");
@@ -4930,9 +4630,6 @@ function renderPagerTrimestral(meta = {}) {
   const pages = Number(meta.pages ?? 1) || 1;
   const total = Number(meta.total ?? 0) || 0;
 
-  // Si hay busqueda, no mostramos pager (todo va en una sola vista)
-  if (TRIM_Q) { el.innerHTML = ""; return; }
-
   if (pages <= 1) { el.innerHTML = ""; return; }
 
   el.style.display = "block";
@@ -4956,7 +4653,7 @@ function renderPagerTrimestral(meta = {}) {
     b.style.borderRadius = "10px";
     b.style.border = "1px solid rgba(0,0,0,.15)";
     b.style.cursor = "pointer";
-    b.onclick = () => cargarRegistrosTrimestral(targetPage, limit, TRIM_Q);
+    b.onclick = () => cargarRegistrosTrimestral(targetPage, limit);
     return b;
   };
 
@@ -4978,16 +4675,9 @@ function renderPagerTrimestral(meta = {}) {
   el.appendChild(mkBtn(">", Math.min(pages, page + 1), page >= pages));
 }
 
-async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q = TRIM_Q) {
+async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT) {
   TRIM_PAGE = Math.max(1, Number(page) || 1);
   TRIM_LIMIT = Math.max(1, Number(limit) || 50);
-  TRIM_Q = String(q ?? TRIM_Q ?? "").trim();
-
-  // Si hay busqueda, mostrar TODO en una sola vista
-  if (TRIM_Q) {
-    TRIM_PAGE = 1;
-    if (TRIM_LIMIT < 5000) TRIM_LIMIT = 5000;
-  }
 
   try {
     const base = userRole === "superadmin"
@@ -4995,8 +4685,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
       : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
 
     const sep = base.includes("?") ? "&" : "?";
-    let url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
-    if (TRIM_Q) url += `&q=${encodeURIComponent(TRIM_Q)}`;
+    const url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
 
     const response = await fetch(url);
     const result = await response.json();
