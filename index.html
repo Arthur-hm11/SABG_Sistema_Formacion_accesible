@@ -4626,7 +4626,7 @@ function initTrimestralSearchGlobal() {
 
     const run = () => {
       TRIM_Q = String(input.value || "").trim();
-      cargarRegistrosTrimestral(1, TRIM_LIMIT, TRIM_Q);
+      cargarRegistrosTrimestral(1, 5000, TRIM_Q);
     };
 
     let t = null;
@@ -4670,6 +4670,9 @@ function renderPagerTrimestral(meta = {}) {
   const limit = Number(meta.limit ?? TRIM_LIMIT) || TRIM_LIMIT;
   const pages = Number(meta.pages ?? 1) || 1;
   const total = Number(meta.total ?? 0) || 0;
+
+  // Si hay busqueda, no mostramos pager (todo va en una sola vista)
+  if (TRIM_Q) { el.innerHTML = ""; return; }
 
   if (pages <= 1) { el.innerHTML = ""; return; }
 
@@ -4720,6 +4723,12 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
   TRIM_PAGE = Math.max(1, Number(page) || 1);
   TRIM_LIMIT = Math.max(1, Number(limit) || 50);
   TRIM_Q = String(q ?? TRIM_Q ?? "").trim();
+
+  // Si hay busqueda, mostrar TODO en una sola vista
+  if (TRIM_Q) {
+    TRIM_PAGE = 1;
+    if (TRIM_LIMIT < 5000) TRIM_LIMIT = 5000;
+  }
 
   try {
     const base = userRole === "superadmin"
