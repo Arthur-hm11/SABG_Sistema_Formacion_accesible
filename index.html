@@ -4727,7 +4727,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
       : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
 
     const sep = base.includes("?") ? "&" : "?";
-    const url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
+    let url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
     if (TRIM_Q) url += `&q=${encodeURIComponent(TRIM_Q)}`;
 
     const response = await fetch(url);
