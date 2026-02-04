@@ -4606,6 +4606,46 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 // ---- Trimestral pager state ----
 let TRIM_PAGE = 1;
 let TRIM_LIMIT = 50;
+let TRIM_Q = "";
+
+function initTrimestralSearchGlobal() {
+  try {
+    const table = document.getElementById("registrosTable");
+    if (!table) return;
+
+    // busca el input por placeholder exacto de tu UI
+    let input = document.querySelector("input[placeholder=\"Buscar en la tabla...\"]");
+    if (!input) input = document.querySelector("input[placeholder=\"Buscar en la tabla…\"]");
+    if (!input) input = document.querySelector("input[placeholder*=Buscar]");
+    if (!input) return;
+
+    // clonar para eliminar listeners anteriores (busqueda local)
+    const clone = input.cloneNode(true);
+    input.parentNode.replaceChild(clone, input);
+    input = clone;
+
+    const run = () => {
+      TRIM_Q = String(input.value || "").trim();
+      cargarRegistrosTrimestral(1, TRIM_LIMIT, TRIM_Q);
+    };
+
+    let t = null;
+    input.addEventListener("input", () => {
+      clearTimeout(t);
+      t = setTimeout(run, 250); // debounce
+    });
+
+    // enter inmediato
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); run(); }
+    });
+  } catch (_) {}
+}
+
+window.addEventListener("load", () => {
+  initTrimestralSearchGlobal();
+});
+
 
 function renderPagerTrimestral(meta = {}) {
   const el0 = document.getElementById("pagerTrimestral");
@@ -4654,7 +4694,7 @@ function renderPagerTrimestral(meta = {}) {
     b.style.borderRadius = "10px";
     b.style.border = "1px solid rgba(0,0,0,.15)";
     b.style.cursor = "pointer";
-    b.onclick = () => cargarRegistrosTrimestral(targetPage, limit);
+    b.onclick = () => cargarRegistrosTrimestral(targetPage, limit, TRIM_Q);
     return b;
   };
 
@@ -4676,9 +4716,10 @@ function renderPagerTrimestral(meta = {}) {
   el.appendChild(mkBtn(">", Math.min(pages, page + 1), page >= pages));
 }
 
-async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT) {
+async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q = TRIM_Q) {
   TRIM_PAGE = Math.max(1, Number(page) || 1);
   TRIM_LIMIT = Math.max(1, Number(limit) || 50);
+  TRIM_Q = String(q ?? TRIM_Q ?? "").trim();
 
   try {
     const base = userRole === "superadmin"
