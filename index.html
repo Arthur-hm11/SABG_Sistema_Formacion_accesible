@@ -4606,72 +4606,138 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     });
 
 
-    async function cargarRegistrosTrimestral() {
-    try {
-        const url = userRole === 'superadmin' 
-            ? '/api/trimestral/list'
-            : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
+// ---- Trimestral pager state ----
+let TRIM_PAGE = 1;
+let TRIM_LIMIT = 50;
 
-        const response = await fetch(url);
-        const result = await response.json();
+function renderPagerTrimestral(meta = {}) {
+  const el = document.getElementById("pagerTrimestral");
+  if (!el) return;
 
-        if (result.success) {
-            const tbody = document.querySelector('#registrosTable tbody');
-            tbody.innerHTML = '';
+  const page = Number(meta.page ?? TRIM_PAGE) || 1;
+  const limit = Number(meta.limit ?? TRIM_LIMIT) || TRIM_LIMIT;
+  const pages = Number(meta.pages ?? 1) || 1;
+  const total = Number(meta.total ?? 0) || 0;
 
-            result.data.forEach((registro, index) => {
-                const row = tbody.insertRow();
-                
-                // Determinar si el estado de avance está desactualizado
-                const estadosRojos = ['CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS', 'PERSONA QUE DESERTÓ'];
-                const claseEstadoRojo = estadosRojos.includes(registro.estado_avance) ? 'estado-rojo' : '';
-                
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${registro.trimestre || ''}</td>
-                    <td>${registro.id_rusp || ''}</td>
-                    <td>${registro.primer_apellido || ''}</td>
-                    <td>${registro.segundo_apellido || ''}</td>
-                    <td>${registro.nombre || ''}</td>
-                    <td>${registro.curp || ''}</td>
-                    <td>${registro.nivel_puesto || ''}</td>
-                    <td>${registro.nivel_tabular || ''}</td>
-                    <td>${registro.ramo_ur || ''}</td>
-                    <td>${registro.dependencia || ''}</td>
-                    <td>${registro.correo_institucional || ''}</td>
-                    <td>${registro.telefono_institucional || ''}</td>
-                    <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.nivel_educativo || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.institucion_educativa || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.modalidad || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.estado_avance || ''}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
-                        ${registro.observaciones || '-'}
-                        <span class="edit-icon">✏️</span>
-                    </td>
-                    <td>${registro.enlace_nombre || ''}</td>
-                    <td>${registro.enlace_primer_apellido || ''}</td>
-                    <td>${registro.enlace_segundo_apellido || ''}</td>
-                    <td>${registro.enlace_correo || ''}</td>
-                    <td>${registro.enlace_telefono || ''}</td>
-                `;
-            });
-            updateStatsFromRegistros(result.data);
+  if (pages <= 1) { el.innerHTML = ""; return; }
 
-        }
-    } catch (error) {
+  el.innerHTML = "";
+
+  const info = document.createElement("span");
+  info.textContent = `Page ${page} / ${pages} (Total: ${total})`;
+  info.style.marginRight = "12px";
+  info.style.fontWeight = "600";
+  el.appendChild(info);
+
+  const mkBtn = (label, targetPage, disabled) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.disabled = !!disabled;
+    b.style.marginRight = "6px";
+    b.style.padding = "6px 10px";
+    b.style.borderRadius = "10px";
+    b.style.border = "1px solid rgba(0,0,0,.15)";
+    b.style.cursor = "pointer";
+    b.onclick = () => cargarRegistrosTrimestral(targetPage, limit);
+    return b;
+  };
+
+  el.appendChild(mkBtn("<", Math.max(1, page - 1), page <= 1));
+
+  const win = 2;
+  const start = Math.max(1, page - win);
+  const end = Math.min(pages, page + win);
+
+  for (let p = start; p <= end; p++) {
+    const b = mkBtn(String(p), p, p === page);
+    if (p === page) {
+      b.style.fontWeight = "700";
+      b.style.background = "rgba(0,0,0,.06)";
     }
+    el.appendChild(b);
+  }
+
+  el.appendChild(mkBtn(">", Math.min(pages, page + 1), page >= pages));
+}
+
+async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT) {
+  TRIM_PAGE = Math.max(1, Number(page) || 1);
+  TRIM_LIMIT = Math.max(1, Number(limit) || 50);
+
+  try {
+    const base = userRole === "superadmin"
+      ? "/api/trimestral/list"
+      : `/api/trimestral/list?dependencia=${encodeURIComponent(userDependencia)}`;
+
+    const sep = base.includes("?") ? "&" : "?";
+    const url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
+
+    const response = await fetch(url);
+    const result = await response.json();
+
+    if (result.success) {
+      const tbody = document.querySelector("#registrosTable tbody");
+      tbody.innerHTML = "";
+
+      result.data.forEach((registro, index) => {
+        const row = tbody.insertRow();
+        const globalIndex = ((TRIM_PAGE - 1) * TRIM_LIMIT) + index + 1;
+
+        const estadosRojos = ["CAMBIO LA INSTITUCION ACADEMICA DE INTERES", "PERSONA QUE DESERTO"];
+        const claseEstadoRojo = estadosRojos.includes(registro.estado_avance) ? "estado-rojo" : "";
+
+        row.innerHTML = `
+          <td>${globalIndex}</td>
+          <td>${registro.trimestre || ""}</td>
+          <td>${registro.id_rusp || ""}</td>
+          <td>${registro.primer_apellido || ""}</td>
+          <td>${registro.segundo_apellido || ""}</td>
+          <td>${registro.nombre || ""}</td>
+          <td>${registro.curp || ""}</td>
+          <td>${registro.nivel_puesto || ""}</td>
+          <td>${registro.nivel_tabular || ""}</td>
+          <td>${registro.ramo_ur || ""}</td>
+          <td>${registro.dependencia || ""}</td>
+          <td>${registro.correo_institucional || ""}</td>
+          <td>${registro.telefono_institucional || ""}</td>
+          <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
+            ${registro.nivel_educativo || ""}
+            <span class="edit-icon">✏️</span>
+          </td>
+          <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0">
+            ${registro.institucion_educativa || ""}
+            <span class="edit-icon">✏️</span>
+          </td>
+          <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0">
+            ${registro.modalidad || ""}
+            <span class="edit-icon">✏️</span>
+          </td>
+          <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
+            ${registro.estado_avance || ""}
+            <span class="edit-icon">✏️</span>
+          </td>
+          <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
+            ${registro.observaciones || "-"}
+            <span class="edit-icon">✏️</span>
+          </td>
+          <td>${registro.enlace_nombre || ""}</td>
+          <td>${registro.enlace_primer_apellido || ""}</td>
+          <td>${registro.enlace_segundo_apellido || ""}</td>
+          <td>${registro.enlace_correo || ""}</td>
+          <td>${registro.enlace_telefono || ""}</td>
+        `;
+      });
+
+      updateStatsFromRegistros(result.data);
+      renderPagerTrimestral(result);
+    } else {
+      alert("Error loading: " + (result.error || "unknown"));
+    }
+  } catch (error) {
+    console.error("cargarRegistrosTrimestral error:", error);
+    alert("Network/server error loading Trimestral.");
+  }
 }
 async function guardarRegistroTrimestral() {
     const form = document.getElementById('trimestralForm');
