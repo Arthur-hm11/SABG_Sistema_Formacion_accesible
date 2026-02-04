@@ -2393,7 +2393,8 @@
                         </div>
                     </div>
                 </div>
-                    <div class="table-container">
+                    <div id="pagerTrimestral" class="actions-bar" style="margin:12px 0;"></div>
+<div class="table-container">
                         <table id="registrosTable">
                             <thead>
                                 <tr>
@@ -2528,6 +2529,22 @@
             <div id="registro" class="subsection active">
                 <div class="card">
                     <h2>📄 Reporte de Evidencias Mensuales</h2>
+<!-- =========================
+     SUBIR EVIDENCIAS (PDF)
+     ========================= -->
+<div class="note-box" style="margin-top:15px;">
+  <i class="fas fa-file-pdf"></i>
+  <strong>Subir evidencia (PDF):</strong>
+  <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <input id="archivoEvidencia" type="file" accept="application/pdf" />
+    <button id="btnEnviarEvidencia" type="button" class="btn btn-primary">
+      Enviar Evidencia
+    </button>
+  </div>
+  <div style="margin-top:8px; font-size:12px; color:#6c757d;">
+    *Solo PDF. Al enviar, el sistema lo guarda en Drive y devuelve el enlace.
+  </div>
+</div>
                     
                     <!-- Panel Admin (solo visible para Super Admin) -->
                     <div id="adminPanelEvidencias" class="admin-panel hidden">
@@ -2577,6 +2594,52 @@
                             <h3>☀️ Junio</h3>
                             <p>2025</p>
                         </div>
+
+                        <div class="month-card" onclick="openMonthModal('Julio')" style="background: var(--gradient3);" role="button" tabindex="0">
+                            <h3>🎆 Julio</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Agosto')" style="background: var(--gradient4);" role="button" tabindex="0">
+                            <h3>🌧️ Agosto</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Septiembre')" style="background: var(--gradient1);" role="button" tabindex="0">
+                            <h3>🇲🇽 Septiembre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Octubre')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>🎃 Octubre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Noviembre')" style="background: var(--gradient3);" role="button" tabindex="0">
+                            <h3>🕯️ Noviembre</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Diciembre')" style="background: var(--gradient4);" role="button" tabindex="0">
+                            <h3>🎄 Diciembre</h3>
+                            <p>2025</p>
+                        </div>
+                    </div>
+                    <div class="month-card" onclick="openMonthModal('Febrero')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>💝 Febrero</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Marzo')" style="background: var(--gradient3);" role="button" tabindex="0">
+                            <h3>🌸 Marzo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Abril')" style="background: var(--gradient4);" role="button" tabindex="0">
+                            <h3>🌼 Abril</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Mayo')" style="background: var(--gradient1);" role="button" tabindex="0">
+                            <h3>🌻 Mayo</h3>
+                            <p>2025</p>
+                        </div>
+                        <div class="month-card" onclick="openMonthModal('Junio')" style="background: var(--gradient2);" role="button" tabindex="0">
+                            <h3>☀️ Junio</h3>
+                            <p>2025</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2605,25 +2668,25 @@
             <span class="modal-close" onclick="closeModal()" role="button" tabindex="0">&times;</span>
             <h2 id="modalTitle" style="color: var(--guinda); margin-bottom: 2rem;">Registro de Evidencias Mensuales</h2>
             
-            <form id="evidenciaForm" onsubmit="event.preventDefault(); alert('✅ Evidencia enviada exitosamente!'); closeModal(); this.reset();">
+            <form id="evidenciaForm" onsubmit="submitEvidencia(event)">
                 <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 Datos del Enlace de Formación Académica que Registra</h3>
                 
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Nombre(s) <span class="required">*</span></label>
-                        <input type="text" required>
+                        <input type="text" id="ev_nombre" required>
                     </div>
                     <div class="form-group">
                         <label>Primer Apellido <span class="required">*</span></label>
-                        <input type="text" required>
+                        <input type="text" id="ev_ap1" required>
                     </div>
                     <div class="form-group">
                         <label>Segundo Apellido <span class="required">*</span></label>
-                        <input type="text" required>
+                        <input type="text" id="ev_ap2" required>
                     </div>
                     <div class="form-group">
                         <label>Correo Institucional <span class="required">*</span></label>
-                        <input type="email" required>
+                        <input type="email" id="ev_correo" required>
                     </div>
                 </div>
 
@@ -2766,6 +2829,9 @@
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
         <script>
+const API_BASE = "";
+const LOGIN_URL = API_BASE + "/api/auth/login";
+
 // ===================== FIX: Evitar ReferenceError si falta updateStatsFromRegistros =====================
 if (typeof window.updateStatsFromRegistros !== 'function') {
   window.updateStatsFromRegistros = function(registros) {
@@ -3086,29 +3152,30 @@ function showBulkReportModal(aggregateReport, extra={}){
         `;
       }).join('');
 
-      errorsHtml = `
-        <details class="bulk-details" open>
-          <summary>🧾 Detalle de errores (${errorsCount || errors.length})</summary>
-          <table class="bulk-report-table">
-            <thead>
-              <tr>
-                <th>#</th><th>Trimestre</th><th>CURP</th><th>ID RUSP</th><th>Nombre</th><th>Error</th>
-              </tr>
-            </thead>
-            <tbody>${rows || `<tr><td colspan="6">No hay detalle disponible.</td></tr>`}</tbody>
-          </table>
+      let errorsHtml = errorsCount ? `
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer; font-weight:700;">⚠️ Ver errores (${errorsCount})</summary>
+          <div style="margin-top:8px; overflow:auto; max-height:260px;">
+            <table style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:6px; border-bottom:1px solid #ddd;">Fila</th>
+                  <th style="text-align:left; padding:6px; border-bottom:1px solid #ddd;">Mensaje</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(errors||[]).slice(0,200).map(e => `
+                  <tr>
+                    <td style="padding:6px; border-bottom:1px solid #eee;" class="bulk-mono">${String(e?.row ?? '')}</td>
+                    <td style="padding:6px; border-bottom:1px solid #eee;">${String(e?.message ?? e?.msg ?? '').replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            ${(errors||[]).length > 200 ? `<div style="margin-top:8px; opacity:.8;">Mostrando 200 de ${(errors||[]).length} errores.</div>` : ``}
+          </div>
         </details>
-      `;
-    }
-
-    // Extra raw summary (opcional)
-    const raw = extra?.raw ? String(extra.raw).slice(0, 1200) : '';
-    const rawHtml = raw ? `
-      <details class="bulk-details">
-        <summary>🧠 Respuesta cruda (debug)</summary>
-        <pre class="bulk-mono" style="white-space:pre-wrap; margin:8px 0; background:rgba(0,0,0,.03); padding:10px; border-radius:12px;">${raw.replace(/[<>&]/g, (m)=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[m]))}</pre>
-      </details>
-    ` : '';
+      ` : '';
 
     section.innerHTML = `
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -3119,7 +3186,6 @@ function showBulkReportModal(aggregateReport, extra={}){
         ${errorsCount ? `<span class="bulk-report-badge err">Errores: ${errorsCount}</span>` : ''}
       </div>
       ${errorsHtml}
-      ${rawHtml}
     `;
 
     modal.appendChild(head);
@@ -3127,9 +3193,6 @@ function showBulkReportModal(aggregateReport, extra={}){
     modal.appendChild(section);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
-  }catch(e){
-    console.error('No se pudo mostrar modal de reporte:', e);
-    alert('✅ Carga completada. (No se pudo renderizar el reporte visual; revisa consola).');
   }
 }
 
@@ -3537,9 +3600,7 @@ function auditLog(action, status, details = {}) {
 function formatNumberMX(n){
     try{
         return new Intl.NumberFormat('es-MX').format(Number(n) || 0);
-    }catch(e){
-        return (Number(n)||0).toString();
-    }
+  }
 }
 
 function updateStatsFromRegistros(registros){
@@ -3577,9 +3638,7 @@ function updateStatsFromRegistros(registros){
         if(elSrv) elSrv.textContent = formatNumberMX(servidores);
         if(elCum) elCum.textContent = (cumplimiento + '%');
         if(elAct) elAct.textContent = formatNumberMX(activos);
-    }catch(e){
-        // silencioso
-    }
+  }
 }
 
 }
@@ -3711,6 +3770,7 @@ async function loginUsuario() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({ usuario, password })
         });
 
@@ -4363,7 +4423,103 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
     function openMonthModal(month) {
         document.getElementById('monthModal').classList.add('active');
-        document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 2025`;
+        document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 
+
+    // ===== Evidencias por Mes (Modal -> Apps Script) =====
+    const APPS_SCRIPT_EVIDENCIAS_URL = "https://script.google.com/macros/s/AKfycbwuLKeSJL5-YSrvppBpaXJ4inbBaY91_iYdv7xFeCoLL0-HsFWFbhJikjFglNhDFeNqsg/exec";
+    let SELECTED_EVIDENCE_MONTH = null;
+
+    // Guardar el mes seleccionado cuando se abre el modal
+    (function patchOpenMonthModal(){
+        const original = window.openMonthModal;
+        window.openMonthModal = function(month){
+            SELECTED_EVIDENCE_MONTH = month;
+            if (typeof original === "function") original(month);
+            const t = document.getElementById("modalTitle");
+            if (t) t.textContent = "Registro de Evidencias Mensuales - " + String(month) + " 2025";
+        };
+    })();
+
+    function fileToBase64(file){
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+            reader.onload = () => {
+                const dataUrl = String(reader.result || "");
+                const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : "";
+                resolve(base64);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function submitEvidencia(e){
+        e.preventDefault();
+        try{
+            if (!SELECTED_EVIDENCE_MONTH){
+                alert("Selecciona un mes primero.");
+                return;
+            }
+
+            const nombre = (document.getElementById("ev_nombre")?.value || "").trim();
+            const ap1    = (document.getElementById("ev_ap1")?.value || "").trim();
+            const ap2    = (document.getElementById("ev_ap2")?.value || "").trim();
+            const correo = (document.getElementById("ev_correo")?.value || "").trim();
+
+            const fileInput = document.getElementById("pdfFile");
+            const file = fileInput?.files?.[0];
+
+            if (!nombre || !ap1 || !ap2 || !correo){
+                alert("Completa Nombre, Apellidos y Correo.");
+                return;
+            }
+            if (!file){
+                alert("Selecciona un PDF.");
+                return;
+            }
+            if ((file.type || "") !== "application/pdf"){
+                alert("Solo se permite PDF.");
+                return;
+            }
+
+            const safeMonth = String(SELECTED_EVIDENCE_MONTH).toLowerCase();
+            const fileName = (String(correo).toLowerCase() + "_" + String(safeMonth) + ".pdf")
+                .replace(/[^a-zA-Z0-9._-]/g, "_");
+            const base64 = await fileToBase64(file);
+
+            const payload = {
+                action: "uploadEvidence",
+                month: SELECTED_EVIDENCE_MONTH,
+                year: 2025,
+                fileName,
+                mimeType: file.type || "application/pdf",
+                base64,
+                enlace: { nombre, ap1, ap2, correo }
+            };
+
+            const resp = await fetch(APPS_SCRIPT_EVIDENCIAS_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            });
+
+            const raw = await resp.text();
+            let data;
+            try { data = JSON.parse(raw); }
+            catch { throw new Error("Respuesta no JSON (HTTP " + resp.status + "). " + raw.slice(0, 200)); }
+
+            if (!resp.ok || !data || data.success !== true){
+                throw new Error((data && (data.error || data.message)) ? (data.error || data.message) : "Fallo al subir evidencia");
+            }
+
+            const link = data.fileUrl || data.webViewLink || data.webContentLink || data.url || "";
+            alert("✅ Evidencia enviada y guardada en Drive." + (link ? "\n\nEnlace: " + link : ""));
+            if (typeof closeModal === "function") closeModal();
+            document.getElementById("evidenciaForm")?.reset();
+  }
+    }
+
+2025`;
     }
 
     function closeModal() {
@@ -4428,7 +4584,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             return lines.join('\n');
         };
 
-        const toXlsHtml = (headers, rowsCells) => {
+                const toXlsHtml = (headers, rowsCells) => {
             const escHtml = (s) => String(s ?? '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
@@ -4922,5 +5078,106 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+
+<script>
+/* =========================
+   SUBIR EVIDENCIAS (PDF) -> Google Drive (Apps Script)
+   =========================
+   - Evita preflight CORS usando Content-Type: text/plain
+   - Parse seguro (text -> JSON) para evitar: Unexpected end of JSON input
+*/
+
+const APPS_SCRIPT_EVIDENCIAS_URL = "https://script.google.com/macros/s/AKfycbwuLKeSJL5-YSrvppBpaXJ4inbBaY91_iYdv7xFeCoLL0-HsFWFbhJikjFglNhDFeNqsg/exec";
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadPdfToDrive(file) {
+  if (!file) throw new Error("No se seleccionó archivo");
+  const mime = file.type || "application/pdf";
+  if (mime !== "application/pdf") {
+    throw new Error("Solo se permiten archivos PDF");
+  }
+
+  const base64 = await fileToBase64(file);
+
+  const payload = {
+    fileName: file.name,
+    filename: file.name,          // compatibilidad por si tu Apps Script usa 'filename'
+    mimeType: mime,
+    base64
+  };
+
+  const resp = await fetch(APPS_SCRIPT_EVIDENCIAS_URL, {
+    method: "POST",
+    headers: {
+      // IMPORTANTE: text/plain para evitar preflight OPTIONS y errores CORS con Apps Script
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  // Parse seguro: Apps Script a veces regresa texto vacío/HTML en error
+  const raw = await resp.text();
+  let json;
+  try {
+    json = JSON.parse(raw);
+  } catch (e) {
+    throw new Error("Respuesta no-JSON desde Apps Script. Inicio: " + raw.slice(0, 200));
+  }
+
+  if (!resp.ok || !json.success) {
+    throw new Error(json.error || `Falló la subida del PDF (HTTP ${resp.status})`);
+  }
+
+  return json; // se espera: {success:true, fileId, fileUrl} (o equivalente)
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btnEnviar = document.getElementById("btnEnviarEvidencia");
+  const inputFile = document.getElementById("archivoEvidencia");
+
+  if (!btnEnviar || !inputFile) return;
+
+  btnEnviar.addEventListener("click", async () => {
+    try {
+      if (!inputFile.files.length) {
+        alert("Selecciona un archivo PDF");
+        return;
+      }
+
+      btnEnviar.disabled = true;
+      const originalText = btnEnviar.textContent;
+      btnEnviar.textContent = "Subiendo PDF...";
+
+      const result = await uploadPdfToDrive(inputFile.files[0]);
+
+      const link = result.fileUrl || result.webViewLink || result.webContentLink || result.url || "";
+      console.log("PDF en Drive:", link || result);
+
+      alert("✅ Evidencia cargada correctamente" + (link ? "\n\nEnlace: " + link : ""));
+      inputFile.value = "";
+      btnEnviar.textContent = originalText;
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error al subir PDF: " + (err && err.message ? err.message : String(err)));
+    } finally {
+      btnEnviar.disabled = false;
+      if (btnEnviar.textContent === "Subiendo PDF...") btnEnviar.textContent = "Enviar Evidencia";
+    }
+  });
+});
+</script>
+
 </body>
 </html>
