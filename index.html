@@ -2151,115 +2151,240 @@
                 <!-- TAB: INSTRUCTIVO -->
                 <div id="instructivo" class="tab-content active">
                     <div class="info-box">
+
 <!-- INSTRUCTIVO_PRO_START -->
-<div class="inspro-card inspro-reveal">
-  <div class="inspro-head">
-    <div class="inspro-badge">INSTRUCTIVO</div>
-    <h3 class="inspro-title">Instructivo de captura - Campos del registro</h3>
-    <p class="inspro-sub">Descripcion de cada columna y notas importantes (formato trimestral).</p>
+<style>
+/* INSTRUCTIVO_PRO_CSS_START */
+.inswrap{
+  margin: 14px 0;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(0,0,0,.10);
+  box-shadow: 0 12px 28px rgba(0,0,0,.10);
+}
+.inshead{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+  margin-bottom: 14px;
+}
+.inshead h3{ margin:0; color: var(--guinda); }
+.inshead p{ margin:6px 0 0; opacity:.85; }
+.insbadge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.3px;
+  color: var(--guinda);
+  background: rgba(122,0,38,.10);
+  border: 1px solid rgba(122,0,38,.22);
+  white-space:nowrap;
+}
+.insgrid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 900px){
+  .insgrid{ grid-template-columns: 1fr; }
+}
+.insitem{
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.82);
+  border: 1px solid rgba(0,0,0,.08);
+  border-left: 5px solid rgba(122,0,38,.55);
+  opacity:0;
+  transform: translateY(10px);
+  animation: insFadeUp .45s ease forwards;
+}
+.insitem b{
+  display:block;
+  margin-bottom: 6px;
+  color: #2b2b2b;
+}
+.insitem p{ margin:0 0 6px; color:#4b5563; }
+.insnote{
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.18);
+  color: #b91c1c;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+@keyframes insFadeUp{
+  to{ opacity:1; transform: translateY(0); }
+}
+.insitem:nth-child(1){ animation-delay:.02s }
+.insitem:nth-child(2){ animation-delay:.05s }
+.insitem:nth-child(3){ animation-delay:.08s }
+.insitem:nth-child(4){ animation-delay:.11s }
+.insitem:nth-child(5){ animation-delay:.14s }
+.insitem:nth-child(6){ animation-delay:.17s }
+.insitem:nth-child(7){ animation-delay:.20s }
+.insitem:nth-child(8){ animation-delay:.23s }
+.insitem:nth-child(9){ animation-delay:.26s }
+.insitem:nth-child(10){ animation-delay:.29s }
+.insitem:nth-child(11){ animation-delay:.32s }
+.insitem:nth-child(12){ animation-delay:.35s }
+.insitem:nth-child(13){ animation-delay:.38s }
+.insitem:nth-child(14){ animation-delay:.41s }
+.insitem:nth-child(15){ animation-delay:.44s }
+.insitem:nth-child(16){ animation-delay:.47s }
+.insitem:nth-child(17){ animation-delay:.50s }
+
+.instablewrap{
+  margin-top: 14px;
+  border-radius: 14px;
+  overflow-x: auto;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.86);
+  -webkit-overflow-scrolling: touch;
+}
+.instable{
+  width: 100%;
+  min-width: 1600px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+.instable th{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(135deg, #7a0026, #56001b);
+  color: #fff;
+  text-align:left;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+.instable td{
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  vertical-align: top;
+  color: #111827;
+}
+.instable tr:hover td{ background: rgba(0,0,0,.03); }
+/* INSTRUCTIVO_PRO_CSS_END */
+</style>
+
+<div class="inswrap">
+  <div class="inshead">
+    <div>
+      <span class="insbadge">📖 INSTRUCTIVO</span>
+      <h3>Instructivo de captura - Campos del registro</h3>
+      <p>Descripcion de cada columna y notas importantes (formato trimestral).</p>
+    </div>
   </div>
 
-  <div class="inspro-grid">
-    <div class="inspro-item"><b>N°</b><p>Corresponde al numero consecutivo de registro.</p></div>
+  <div class="insgrid">
+    <div class="insitem"><b>N°</b><p>Corresponde al numero consecutivo de registro.</p></div>
 
-    <div class="inspro-item"><b>TRIMESTRE</b>
-      <p class="inspro-note">Nota: celda vinculada (Excel). Si no selecciona el trimestre, no se despliega la lista de Estado de Avance.</p>
+    <div class="insitem"><b>TRIMESTRE</b>
+      <p class="insnote">*Nota: La celda para registro esta vinculada, si no selecciona el trimestre, no se desplegara la lista para seleccionar el Estado de Avance de la persona servidora publica interesada.</p>
       <p>Corresponde al trimestre en que se registro a la persona servidora publica interesada.</p>
     </div>
 
-    <div class="inspro-item"><b>ID RUSP</b>
-      <p>Corresponde al identificador en el Registro de Servidores Publicos. Si no cuenta con el dato, acercarse a Recursos Humanos.</p>
-      <p class="inspro-note">Nota: si es personal de HONORARIOS, registrar: HONORARIOS.</p>
+    <div class="insitem"><b>ID RUSP</b>
+      <p>Corresponde al numero de identificacion de cada persona servidora publica en el Registro de Servidores Publicos. De no tener el dato, favor de acercarse con el area de Recursos Humanos para su obtencion y registro.</p>
+      <p class="insnote">*Nota: En caso de ser personal de HONORARIOS, favor de registrar: HONORARIOS.</p>
     </div>
 
-    <div class="inspro-item"><b>PRIMER APELLIDO</b><p>Corresponde al primer apellido.</p></div>
-    <div class="inspro-item"><b>SEGUNDO APELLIDO</b><p>Corresponde al segundo apellido.</p></div>
+    <div class="insitem"><b>PRIMER APELLIDO</b><p>Corresponde al primer apellido de la persona servidora publica interesada.</p></div>
+    <div class="insitem"><b>SEGUNDO APELLIDO</b><p>Corresponde al segundo apellido de la persona servidora publica interesada.</p></div>
 
-    <div class="inspro-item"><b>NOMBRE(S)</b>
-      <p>Corresponde al/los nombre(s). Si tiene dos nombres, registrar ambos.</p>
+    <div class="insitem"><b>NOMBRE(S)</b>
+      <p>Corresponde al nombre de la persona servidora publica interesada. En caso de tener dos nombres, favor de registrar ambos.</p>
     </div>
 
-    <div class="inspro-item"><b>CURP</b><p>Clave Unica de Registro de Poblacion (18 caracteres).</p></div>
+    <div class="insitem"><b>CURP</b><p>Corresponde a la Clave Unica de Registro de Poblacion que contiene 18 caracteres.</p></div>
 
-    <div class="inspro-item"><b>NIVEL DE PUESTO</b>
-      <p>Seleccionar el nivel de puesto que corresponda (lista desplegable en Excel).</p>
+    <div class="insitem"><b>NIVEL DE PUESTO</b>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con los niveles de puestos. Se debera seleccionar el nivel de puesto que corresponda.</p>
     </div>
 
-    <div class="inspro-item"><b>NIVEL TABULAR</b>
-      <p class="inspro-note">Nota: celda vinculada (Excel). Si no selecciona el nivel de puesto, no se despliega la lista de Nivel Tabular.</p>
-      <p>Seleccionar el nivel tabular que corresponda.</p>
+    <div class="insitem"><b>NIVEL TABULAR</b>
+      <p class="insnote">*Nota: La celda para registro esta vinculada, si no selecciona el nivel de puesto, no se desplegara la lista para seleccionar el nivel tabular correspondiente.</p>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con los niveles tabulares. Se debera seleccionar el nivel tabular correspondiente.</p>
     </div>
 
-    <div class="inspro-item"><b>RAMO - UR</b>
-      <p class="inspro-note">Nota: celda vinculada (Excel). Si no selecciona el nivel tabular, no se despliega la lista de Ramo - UR.</p>
-      <p>Seleccionar el ramo que corresponda a la institucion donde esta adscrita la persona.</p>
+    <div class="insitem"><b>RAMO - UR</b>
+      <p class="insnote">*Nota: La celda para registro esta vinculada, si no selecciona el nivel tabular, no se desplegara la lista para seleccionar el Ramo - UR correspondiente.</p>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con los ramos. Se debera seleccionar el ramo que corresponda a la institucion.</p>
     </div>
 
-    <div class="inspro-item"><b>DEPENDENCIA</b>
-      <p>Seleccionar la Dependencia o Institucion de la APF donde esta adscrita la persona.</p>
+    <div class="insitem"><b>DEPENDENCIA</b>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con las Dependencias e Instituciones de la APF. Se debera seleccionar donde este adscrita la persona.</p>
     </div>
 
-    <div class="inspro-item"><b>CORREO INSTITUCIONAL</b>
-      <p>Registrar el correo institucional. Verificar que este correcto para comunicacion con instituciones academicas.</p>
+    <div class="insitem"><b>CORREO INSTITUCIONAL</b>
+      <p>Debera registrar el correo institucional. Favor de corroborar su registro ya que para cualquier comunicacion, las instituciones academicas deberan tener correcto este dato.</p>
     </div>
 
-    <div class="inspro-item"><b>TELEFONO INSTITUCIONAL CON EXTENSION</b>
-      <p>Registrar telefono institucional con extension.</p>
-      <p class="inspro-note">Nota: si no cuenta con telefono institucional, proporcionar un telefono de contacto directo.</p>
+    <div class="insitem"><b>TELEFONO INSTITUCIONAL CON EXTENSION</b>
+      <p>Se debera registrar el telefono institucional con extension. Favor de corroborar su registro.</p>
+      <p class="insnote">*Nota: En caso de no contar con telefono institucional, favor de proporcionar un telefono de contacto directo.</p>
     </div>
 
-    <div class="inspro-item"><b>NIVEL EDUCATIVO</b>
-      <p>Seleccionar el nivel educativo de interes (lista desplegable en Excel).</p>
+    <div class="insitem"><b>NIVEL EDUCATIVO</b>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con los niveles educativos. Se debera seleccionar el nivel educativo de interes.</p>
     </div>
 
-    <div class="inspro-item"><b>INSTITUCION EDUCATIVA</b>
-      <p class="inspro-note">Nota: celda vinculada (Excel). Si no selecciona el nivel educativo, no se despliega la lista de Institucion Educativa.</p>
-      <p>Seleccionar la Institucion educativa de interes.</p>
+    <div class="insitem"><b>INSTITUCION EDUCATIVA</b>
+      <p class="insnote">*Nota: La celda para registro esta vinculada, si no selecciona el nivel educativo, no se desplegara la lista para seleccionar la institucion educativa.</p>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con las instituciones educativas. Se debera seleccionar la institucion educativa de interes.</p>
     </div>
 
-    <div class="inspro-item"><b>MODALIDAD</b>
-      <p class="inspro-note">Nota: celda vinculada (Excel). Si no selecciona la institucion educativa, no se despliega la lista de modalidad.</p>
-      <p>Seleccionar la modalidad disponible de acuerdo a la institucion.</p>
+    <div class="insitem"><b>MODALIDAD</b>
+      <p class="insnote">*Nota: La celda para registro esta vinculada, si no selecciona la institucion educativa, no se desplegara la lista para seleccionar la modalidad disponible.</p>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con las modalidades disponibles. Se debera seleccionar la modalidad de interes.</p>
     </div>
 
-    <div class="inspro-item"><b>ESTADO DE AVANCE</b>
-      <p class="inspro-note">Nota: celda vinculada (Excel). Si no selecciona el trimestre, no se despliega la lista de Estado de Avance.</p>
-      <p>Seleccionar el estado de avance academico.</p>
-      <p class="inspro-note">Poner atencion en: "Cambio la institucion academica de interes" (aplica si cambiaron su eleccion y deben actualizar Nivel Educativo / Institucion / Modalidad).</p>
+    <div class="insitem"><b>ESTADO DE AVANCE</b>
+      <p class="insnote">Nota: La celda para registro esta vinculada, si no selecciona el trimestre, no se desplegara la lista para seleccionar el Estado de Avance.</p>
+      <p>En la celda se visualizara una flecha que al seleccionarla desplegara una lista con los estados de avance academico. Se debera seleccionar el estado correspondiente.</p>
+      <p class="insnote">Poner especial atencion en: "Cambio la institucion academica de interes" (si cambiaron su eleccion, deben actualizar Nivel Educativo, Institucion Educativa y Modalidad).</p>
     </div>
   </div>
-</div>
 
-<div class="inspro-card inspro-reveal example-card">
-  <div class="inspro-head">
-    <div class="inspro-badge">EJEMPLO</div>
-    <h3 class="inspro-title">Ejemplo de registro</h3>
-    <p class="inspro-sub">Ejemplo ilustrativo de como debe capturarse la informacion.</p>
-  </div>
+  <div style="margin-top:16px;">
+    <span class="insbadge">📌 EJEMPLO</span>
+    <h3 style="margin:8px 0 6px; color: var(--guinda);">Ejemplo de registro</h3>
+    <p style="margin:0 0 10px; opacity:.85;">Ejemplo ilustrativo de como debe capturarse la informacion.</p>
 
-  <div class="inspro-tablewrap">
-    <table class="inspro-table">
-      <thead>
-        <tr>
-          <th>N°</th><th>TRIMESTRE</th><th>ID RUSP</th><th>PRIMER APELLIDO</th><th>SEGUNDO APELLIDO</th><th>NOMBRE(S)</th>
-          <th>CURP</th><th>NIVEL DE PUESTO</th><th>NIVEL TABULAR</th><th>RAMO - UR</th><th>DEPENDENCIA</th>
-          <th>CORREO INSTITUCIONAL</th><th>TELEFONO INSTITUCIONAL CON EXTENSION</th><th>NIVEL EDUCATIVO</th>
-          <th>INSTITUCION EDUCATIVA</th><th>MODALIDAD</th><th>ESTADO DE AVANCE</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>1</td><td>ABRIL_JUNIO</td><td>123456</td><td>RODRIGUEZ</td><td>MARTINEZ</td><td>JOSE JUAN</td>
-          <td>ABCDE1234</td><td>ENLACE_U_HOMOLOGO</td><td>P13</td><td>13-J3A</td><td>ADMINISTRACION DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.</td>
-          <td>abcd@dominioinstitucional.****</td><td>12345 EXT. 123</td><td>SECUNDARIA</td><td>INEA</td><td>APRENDE_INEA_EN_LINEA</td><td>CAMBIO LA INSTITUCION ACADEMICA DE INTERES</td>
-        </tr>
-        <tr>
-          <td>2</td><td>JULIO_SEPTIEMBRE</td><td>HONORARIOS</td><td>RODRIGUEZ</td><td>MARTINEZ</td><td>JOSE JUAN</td>
-          <td>ABCDE1234</td><td>DIRECTOR_DE_AREA_U_HOMOLOGO</td><td>P31</td><td>13-J2R</td><td>ADMINISTRACION DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.</td>
-          <td>abcd@dominioinstitucional.****</td><td>12345 EXT. 123</td><td>LICENCIATURA</td><td>TECNM</td><td>MIXTO</td><td>PERSONA INTERESADA</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="instablewrap">
+      <table class="instable">
+        <thead>
+          <tr>
+            <th>N°</th><th>TRIMESTRE</th><th>ID RUSP</th><th>PRIMER APELLIDO</th><th>SEGUNDO APELLIDO</th><th>NOMBRE(S)</th>
+            <th>CURP</th><th>NIVEL DE PUESTO</th><th>NIVEL TABULAR</th><th>RAMO - UR</th><th>DEPENDENCIA</th>
+            <th>CORREO INSTITUCIONAL</th><th>TELEFONO INSTITUCIONAL CON EXTENSION</th><th>NIVEL EDUCATIVO</th>
+            <th>INSTITUCION EDUCATIVA</th><th>MODALIDAD</th><th>ESTADO DE AVANCE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td><td>ABRIL_JUNIO</td><td>123456</td><td>RODRIGUEZ</td><td>MARTINEZ</td><td>JOSE JUAN</td>
+            <td>ABCDE1234</td><td>ENLACE_U_HOMOLOGO</td><td>P13</td><td>13-J3A</td>
+            <td>ADMINISTRACION DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA, S.A. DE C.V.</td>
+            <td>abcd@dominioinstitucional.****</td><td>12345 EXT. 123</td><td>SECUNDARIA</td>
+            <td>INSTITUTO_NACIONAL_PARA_LA_EDUCACION_DE_ADULTOS_INEA</td><td>APRENDE_INEA_EN_LINEA</td>
+            <td>CAMBIO LA INSTITUCION ACADEMICA DE INTERES</td>
+          </tr>
+          <tr>
+            <td>2</td><td>JULIO_SEPTIEMBRE</td><td>HONORARIOS</td><td>RODRIGUEZ</td><td>MARTINEZ</td><td>JOSE JUAN</td>
+            <td>ABCDE1234</td><td>DIRECTOR_DE_AREA_U_HOMOLOGO</td><td>P31</td><td>13-J2R</td>
+            <td>ADMINISTRACION DEL SISTEMA PORTUARIO NACIONAL PROGRESO, S.A. DE C.V.</td>
+            <td>abcd@dominioinstitucional.****</td><td>12345 EXT. 123</td><td>LICENCIATURA</td>
+            <td>TECNOLOGICO_NACIONAL_DE_MEXICO_TECNM</td><td>MIXTO</td>
+            <td>PERSONA INTERESADA</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 <!-- INSTRUCTIVO_PRO_END -->
