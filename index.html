@@ -4223,46 +4223,34 @@ async function loginUsuario() {
     });
 
     function showSectionAndTab(sectionId, tabId) {
-    // Fail-safe: nunca dejar la pantalla en blanco aunque falte un id o truene una función
-    const prevActiveSection = (document.querySelector('.main-section.active') || {}).id || 'inicio';
-
-    const safeActivateSection = (sid) => {
-        document.querySelectorAll('.main-section').forEach(sec => sec.classList.remove('active'));
-        const el = document.getElementById(sid);
-        if (el) el.classList.add('active');
-    };
-
-    try {
-        // Cerrar menús
-        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
-        document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('expanded'));
-        document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('active'));
-
-        // Validar sección antes de ocultar todo
-        const sectionEl = document.getElementById(sectionId);
-        if (!sectionEl) {
-            console.warn('[showSectionAndTab] Sección no encontrada:', sectionId);
-            safeActivateSection(prevActiveSection);
-            return;
-        }
-
-        // Activar sección
-        safeActivateSection(sectionId);
-
-        // Trimestral: tabs (instructivo/formulario/tabla)
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('expanded');
+        });
+        
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        document.querySelectorAll('.main-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        document.getElementById(sectionId).classList.add('active');
+        
         if (sectionId === 'trimestral') {
-            const contentEl = document.getElementById(tabId);
-            if (!contentEl) {
-                console.warn('[showSectionAndTab] Tab trimestral no encontrado:', tabId);
-                tabId = 'instructivo';
-            }
-
-            document.querySelectorAll('#trimestral .tab-content').forEach(content => content.classList.remove('active'));
-            document.querySelectorAll('#trimestral .tab').forEach(tab => tab.classList.remove('active'));
-
-            const finalContent = document.getElementById(tabId);
-            if (finalContent) finalContent.classList.add('active');
-
+            document.querySelectorAll('#trimestral .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.querySelectorAll('#trimestral .tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            
             const tabs = document.querySelectorAll('#trimestral .tab');
             tabs.forEach(tab => {
                 if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
@@ -4270,36 +4258,6 @@ async function loginUsuario() {
                     (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
                     tab.classList.add('active');
                 }
-            });
-
-            if (tabId === 'tabla') {
-                // No permitir que una función faltante rompa la UI
-                setTimeout(() => {
-                    try { filtrarTablaPorDependencia(); } catch (e) { console.warn('filtrarTablaPorDependencia error:', e); }
-                }, 100);
-
-                try { cargarRegistrosTrimestral(); } catch (e) { console.warn('cargarRegistrosTrimestral error:', e); }
-            }
-        }
-
-        // Evidencias: subsecciones (registro/revision)
-        if (sectionId === 'evidencias') {
-            const subEl = document.getElementById(tabId);
-            if (!subEl) {
-                console.warn('[showSectionAndTab] Sub-sección evidencias no encontrada:', tabId);
-                tabId = 'registro';
-            }
-
-            document.querySelectorAll('#evidencias .subsection').forEach(subsection => subsection.classList.remove('active'));
-            const finalSub = document.getElementById(tabId);
-            if (finalSub) finalSub.classList.add('active');
-        }
-    } catch (err) {
-        console.error('[showSectionAndTab] Error:', err);
-        // Recuperación: regresar a una sección válida
-        safeActivateSection(prevActiveSection || 'inicio');
-    }
-}
             });
             
             if (tabId === 'tabla') {
