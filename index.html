@@ -1984,11 +1984,11 @@
                     <span class="icon">📖</span>
                     <span>Instructivo</span>
                 </div>
-                <div class="dropdown-item" onclick="showSectionAndTab('trimestral', 'formulario')" role="button" tabindex="0">
+                <div class="dropdown-item" onclick="showMainSection('trimestral'); showTrimestralTab('formulario')" role="button" tabindex="0">
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-<div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
+<div class="dropdown-item" id="dropdownItemTabla" onclick="showMainSection('trimestral'); showTrimestralTab('tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
 </div>
@@ -2001,11 +2001,11 @@
                 <span class="arrow">▼</span>
             </button>
             <div id="dropdownEvidencias" class="dropdown-menu">
-                <div class="dropdown-item" onclick="showSectionAndTab('evidencias', 'registro')" role="button" tabindex="0">
+                <div class="dropdown-item" onclick="showEvidenciasSubsection('registro')" role="button" tabindex="0">
                     <span class="icon">📅</span>
                     <span>Registrar Evidencias</span>
                 </div>
-                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
+                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showEvidenciasSubsection('revision')" role="button" tabindex="0">
                     <span class="icon">🔍</span>
                     <span>Panel Revisión DCEVE</span>
 </div>
@@ -5302,6 +5302,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+function showEvidenciasSubsection(subId){
+    showMainSection('evidencias');
+    document.querySelectorAll('#evidencias .subsection').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(subId);
+    if (el) el.classList.add('active');
+}
+
 </script>
 </body>
 </html>
