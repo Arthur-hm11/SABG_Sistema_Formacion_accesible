@@ -1984,11 +1984,11 @@
                     <span class="icon">📖</span>
                     <span>Instructivo</span>
                 </div>
-                <div class="dropdown-item" onclick="showMainSection('trimestral'); showTrimestralTab('formulario')" role="button" tabindex="0">
+                <div class="dropdown-item" onclick="showSectionAndTab('trimestral', 'formulario')" role="button" tabindex="0">
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-<div class="dropdown-item" id="dropdownItemTabla" onclick="showMainSection('trimestral'); showTrimestralTab('tabla')" role="button" tabindex="0">
+<div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
 </div>
@@ -2001,11 +2001,11 @@
                 <span class="arrow">▼</span>
             </button>
             <div id="dropdownEvidencias" class="dropdown-menu">
-                <div class="dropdown-item" onclick="showEvidenciasSubsection('registro')" role="button" tabindex="0">
+                <div class="dropdown-item" onclick="showSectionAndTab('evidencias', 'registro')" role="button" tabindex="0">
                     <span class="icon">📅</span>
                     <span>Registrar Evidencias</span>
                 </div>
-                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showEvidenciasSubsection('revision')" role="button" tabindex="0">
+                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
                     <span class="icon">🔍</span>
                     <span>Panel Revisión DCEVE</span>
 </div>
@@ -4223,145 +4223,88 @@ async function loginUsuario() {
     });
 
     function showSectionAndTab(sectionId, tabId) {
-        // Fail-safe: nunca dejar la pantalla “en blanco”
-        try {
-            const sectionEl = document.getElementById(sectionId);
-            if (!sectionEl) {
-                console.error('[NAV] Sección no encontrada:', sectionId);
-                // fallback seguro
-                const fallback = document.getElementById('inicio') ? 'inicio' : null;
-                if (fallback) showMainSection(fallback);
-                return;
-            }
+    // Cierra dropdowns
+    document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+    document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('expanded'));
 
-            // Cierra dropdowns
-            document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
-            document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('expanded'));
+    // Activa sección principal
+    showMainSection(sectionId);
 
-            // Limpia activos (solo después de validar la sección)
-            document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.main-section').forEach(section => section.classList.remove('active'));
+    // Activa pestaña/subsección según sección
+    if (sectionId === 'trimestral') {
+        showTrimestralTab(tabId);
 
-            // Activa sección
-            sectionEl.classList.add('active');
-
-            if (sectionId === 'trimestral') {
-                document.querySelectorAll('#trimestral .tab-content').forEach(content => content.classList.remove('active'));
-                document.querySelectorAll('#trimestral .tab').forEach(tab => tab.classList.remove('active'));
-
-                const tabEl = document.getElementById(tabId);
-                if (!tabEl) {
-                    console.error('[NAV] Tab trimestral no encontrado:', tabId);
-                    // fallback al instructivo (si existe)
-                    const fb = document.getElementById('instructivo') ? 'instructivo' : null;
-                    if (fb) {
-                        document.getElementById(fb).classList.add('active');
-                        document.querySelectorAll('#trimestral .tab').forEach(tab => {
-                            if ((tab.textContent || '').includes('Instructivo')) tab.classList.add('active');
-                        });
-                    }
-                    return;
-                }
-
-                tabEl.classList.add('active');
-
-                // Marca tab activo por texto (como ya lo hacías)
-                document.querySelectorAll('#trimestral .tab').forEach(tab => {
-                    const t = tab.textContent || '';
-                    if ((tabId === 'instructivo' && t.includes('Instructivo')) ||
-                        (tabId === 'formulario' && t.includes('Formulario')) ||
-                        (tabId === 'tabla' && t.includes('Tabla'))) {
-                        tab.classList.add('active');
-                    }
-                });
-
-                // Acciones de Tabla (protegidas)
-                if (tabId === 'tabla') {
-                    setTimeout(() => {
-                        try { filtrarTablaPorDependencia(); } catch (e) { console.warn('filtrarTablaPorDependencia falló:', e); }
-                    }, 100);
-
-                    // Cargar datos reales
-                    setTimeout(() => {
-                        try { cargarRegistrosTrimestral(); } catch (e) { console.warn('cargarRegistrosTrimestral falló:', e); }
-                    }, 150);
-                }
-            }
-
-            if (sectionId === 'evidencias') {
-                document.querySelectorAll('#evidencias .subsection').forEach(subsection => subsection.classList.remove('active'));
-
-                const subEl = document.getElementById(tabId);
-                if (!subEl) {
-                    console.error('[NAV] Sub-sección evidencias no encontrada:', tabId);
-                    // fallback a registro
-                    const fb = document.getElementById('registro') ? 'registro' : null;
-                    if (fb) document.getElementById(fb).classList.add('active');
-                    return;
-                }
-
-                subEl.classList.add('active');
-            }
-        } catch (err) {
-            console.error('[showSectionAndTab] Error:', err);
-            // Recuperación: mantener algo visible
-            try { showMainSection('inicio'); } catch (_) {}
+        // Cargar/filtrar al abrir la tabla (sin romper si faltan funciones)
+        if (tabId === 'tabla') {
+            try { cargarRegistrosTrimestral(); } catch (e) { console.warn('cargarRegistrosTrimestral falló:', e); }
+            try { setTimeout(() => filtrarTablaPorDependencia(), 100); } catch (e) { /* noop */ }
         }
+    } else if (sectionId === 'evidencias') {
+        const root = document.getElementById('evidencias');
+        if (!root) return;
+
+        root.querySelectorAll('.subsection').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(tabId) || root.querySelector('#' + CSS.escape(tabId));
+        if (target) target.classList.add('active');
+        else console.warn('Subsección no encontrada:', tabId);
     }
 
-    function showMainSection(sectionId) {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-            menu.classList.remove('show');
-        });
-        document.querySelectorAll('.main-nav-btn').forEach(btn => {
-            btn.classList.remove('expanded');
-        });
-        
-        const sections = document.querySelectorAll('.main-section');
-        const navButtons = document.querySelectorAll('.main-nav-btn');
+    // Scroll a la sección
+    try {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (_) {}
+}
 
-        sections.forEach(section => {
-            section.classList.remove('active');
-        });
+function showMainSection(sectionId) {
+    // Limpia estados de navegación
+    document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+    document.querySelectorAll('.main-nav-btn').forEach(btn => {
+        btn.classList.remove('expanded');
+        btn.classList.remove('active');
+    });
 
-        navButtons.forEach(btn => {
-            btn.classList.remove('active');
-        });
+    // Oculta todas las secciones
+    document.querySelectorAll('.main-section').forEach(section => section.classList.remove('active'));
 
-        document.getElementById(sectionId).classList.add('active');
-        
-        navButtons.forEach(btn => {
-            if (btn.textContent.includes('Inicio') && sectionId === 'inicio') {
-                btn.classList.add('active');
-            }
-        });
-    }
+    // Muestra la solicitada (si existe)
+    const target = document.getElementById(sectionId);
+    if (target) target.classList.add('active');
+    else console.warn('Sección no encontrada:', sectionId);
 
-    function showTrimestralTab(tabId) {
-        // ✅ Acceso a la tabla habilitado para todos los usuarios
-const tabs = document.querySelectorAll('#trimestral .tab');
-        const tabContents = document.querySelectorAll('#trimestral .tab-content');
+    // Marcar botón Inicio como activo si aplica (sin tocar los dropdown)
+    document.querySelectorAll('.main-nav-btn').forEach(btn => {
+        if (sectionId === 'inicio' && btn.textContent.includes('Inicio')) btn.classList.add('active');
+    });
+}
 
-        tabs.forEach(tab => {
-            tab.classList.remove('active');
-        });
+function showTrimestralTab(tabId) {
+    const root = document.getElementById('trimestral');
+    if (!root) return;
 
-        tabContents.forEach(content => {
-            content.classList.remove('active');
-        });
+    const tabs = root.querySelectorAll('.tab');
+    const tabContents = root.querySelectorAll('.tab-content');
 
-        tabs.forEach(tab => {
-            if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
-                (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
-                (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
-                tab.classList.add('active');
-            }
-        });
+    tabs.forEach(t => t.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
 
-        document.getElementById(tabId).classList.add('active');
-    }
+    // Activar contenido por id
+    const content = document.getElementById(tabId) || root.querySelector('#' + CSS.escape(tabId));
+    if (content) content.classList.add('active');
+    else console.warn('Tab content no encontrado:', tabId);
 
-    // ========================================
+    // Activar pestaña visual por texto (compatibilidad)
+    tabs.forEach(t => {
+        const txt = (t.textContent || '').toLowerCase();
+        if ((tabId === 'instructivo' && txt.includes('instructivo')) ||
+            (tabId === 'formulario' && txt.includes('formulario')) ||
+            (tabId === 'tabla' && txt.includes('tabla'))) {
+            t.classList.add('active');
+        }
+    });
+}
+
+// ========================================
     // FUNCIONES DE ISTRACIÓN
     // ========================================
     function togglePanelRevision() {
@@ -5302,13 +5245,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-function showEvidenciasSubsection(subId){
-    showMainSection('evidencias');
-    document.querySelectorAll('#evidencias .subsection').forEach(s => s.classList.remove('active'));
-    const el = document.getElementById(subId);
-    if (el) el.classList.add('active');
-}
-
 </script>
 </body>
 </html>
