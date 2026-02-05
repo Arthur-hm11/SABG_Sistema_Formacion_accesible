@@ -1988,7 +1988,7 @@
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-<div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
+<div class="dropdown-item hidden" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
 </div>
@@ -2005,7 +2005,7 @@
                     <span class="icon">📅</span>
                     <span>Registrar Evidencias</span>
                 </div>
-                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
+                <div class="dropdown-item admin-only hidden" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
                     <span class="icon">🔍</span>
                     <span>Panel Revisión DCEVE</span>
 </div>
@@ -2143,7 +2143,7 @@
                     <div class="tab" onclick="showTrimestralTab('formulario')" role="button" tabindex="0">
                         📝 Formulario de Registro
                     </div>
-                    <div id="tabVerTabla" class="tab " onclick="showTrimestralTab('tabla')" role="button" tabindex="0">
+                    <div id="tabVerTabla" class="tab hidden" onclick="showTrimestralTab('tabla')" role="button" tabindex="0">
                         📋 Ver Tabla de Registros
                     </div>
                 </div>
@@ -2654,7 +2654,7 @@
                                     <td>P13</td>
                                     <td>13-J3A</td>
                                     <td>. SIST. PORTUARIO NAL. ALTAMIRA</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c5a6aab7b7a0aa85acabb6b1acb1b0a6acaaaba4a9eba2aaa7eba8bd">[email&#160;protected]</a></td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         SECUNDARIA
@@ -2679,7 +2679,7 @@
                                     <td>María</td>
                                     <td>González</td>
                                     <td>Pérez</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="98fbf7eaeafdf7d8f1f6ebecf1ecedfbf1f7f6f9f4b6fff7fab6f5e0">[email&#160;protected]</a></td>
                                     <td>55-5555-5555</td>
                                 </tr>
                                 <tr>
@@ -2694,7 +2694,7 @@
                                     <td>P31</td>
                                     <td>13-J2R</td>
                                     <td>. SIST. PORTUARIO NAL. PROGRESO</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="06656974746369466f6875726f7273656f6968676a28616964286b7e">[email&#160;protected]</a></td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         LICENCIATURA
@@ -2719,7 +2719,7 @@
                                     <td>Juan</td>
                                     <td>López</td>
                                     <td>Ramírez</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0e6d617c7c6b614e67607d7a677a7b6d6761606f622069616c206376">[email&#160;protected]</a></td>
                                     <td>55-6666-6666</td>
                                 </tr>
                             </tbody>
@@ -2984,7 +2984,7 @@
         <p>Sistema de Promoción de la Formación Académica</p>
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
-        <script>
+        <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ===================== FIX: Evitar ReferenceError si falta updateStatsFromRegistros =====================
 if (typeof window.updateStatsFromRegistros !== 'function') {
   window.updateStatsFromRegistros = function(registros) {
@@ -3048,6 +3048,37 @@ function applyRoleVisibility() {
         if (isAdminUser()) excelBox.classList.remove('hidden');
         else excelBox.classList.add('hidden');
     }
+
+    // Control de visibilidad del menú según rol
+    const isSuperAdmin = (userRole === 'superadmin');
+    
+    // Elementos que deben estar ocultos para enlaces
+    const adminOnlyElements = [
+        'dropdownItemTabla',
+        'dropdownItemRevision', 
+        'tabVerTabla',
+        'adminPanelTrimestral',
+        'exportButtonsTrimestral',
+        'estadoEdicion',
+        'notasTablaTrimestral',
+        'adminPanelEvidencias'
+    ];
+    
+    adminOnlyElements.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        if (isSuperAdmin) {
+            // Mostrar para super admin
+            element.classList.remove('hidden');
+            element.classList.remove('admin-only');
+            element.style.display = '';
+        } else {
+            // Ocultar para enlaces
+            element.classList.add('hidden');
+            element.style.display = 'none';
+        }
+    });
 
 }
 // ========================================
@@ -5228,23 +5259,30 @@ function initDependenciaAutocomplete() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Restaurar rol si existe
-    try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
-    initDependenciaAutocomplete();
-    applyRoleVisibility();
-
-    // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
-    const excelInput = document.getElementById('excelFile');
-    if (excelInput) {
-        excelInput.addEventListener('change', () => {
-            try {
-                if (excelInput.files && excelInput.files.length) uploadExcel();
-            } catch (e) {
-                console.error(e);
-                alert('Error al cargar el archivo. Revisa la consola.');
-            }
-        });
+    try { 
+        userRole = localStorage.getItem('SABG_ROL') || '';
+        userName = localStorage.getItem('SABG_NOMBRE') || '';
+        userDependencia = localStorage.getItem('SABG_DEPENDENCIA') || '';
+        
+        // Si hay sesión guardada, aplicar permisos
+        if (userRole) {
+            applyRoleVisibility();
+        }
+    } catch (e) {
+        console.error('Error al restaurar sesión:', e);
+    }
+    
+    // Inicializar autocompletado de dependencias si existe
+    if (typeof initDependenciaAutocomplete === 'function') {
+        initDependenciaAutocomplete();
+    }
+    
+    // Inicializar otros componentes
+    if (typeof populateRegDependencias === 'function') {
+        populateRegDependencias();
     }
 });
+
 </script>
 </body>
 </html>
