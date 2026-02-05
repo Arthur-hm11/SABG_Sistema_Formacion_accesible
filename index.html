@@ -2296,12 +2296,14 @@
                                 </div>
                                 <div class="card" style="background: white; padding: 2rem; margin: 2rem 0;">
                                     <style>
-                                        .ejemplo-registro tbody td { color: #111 !important; }
+                                        table tbody td {
+                                            color: black;
+                                        }
                                     </style>                                    
                                     <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📊 EJEMPLO DE REGISTRO</h3>
                                     
                                     <div style="overflow-x: auto; margin-top: 1rem;">
-                                        <table class="ejemplo-registro" style="min-width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                        <table style="min-width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                                             <thead>
                                                 <tr style="background: var(--gradient1); color: white;">
                                                     <th style="padding: 1rem; border: 1px solid #e2e8f0;">N°</th>
@@ -4221,77 +4223,64 @@ async function loginUsuario() {
     });
 
     function showSectionAndTab(sectionId, tabId) {
-        // Cierra menús
-        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
         document.querySelectorAll('.main-nav-btn').forEach(btn => {
             btn.classList.remove('expanded');
+        });
+        
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-
-        // Oculta todas las secciones
-        document.querySelectorAll('.main-section').forEach(section => section.classList.remove('active'));
-
-        // Activa sección (con guardas para evitar “pantalla en blanco”)
-        const sectionEl = document.getElementById(sectionId);
-        if (!sectionEl) {
-            console.error('[UI] No existe la sección:', sectionId);
-            // fallback seguro
-            const inicio = document.getElementById('inicio');
-            if (inicio) inicio.classList.add('active');
-            return;
-        }
-        sectionEl.classList.add('active');
-
-        // --- Trimestral: tabs ---
+        
+        document.querySelectorAll('.main-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        document.getElementById(sectionId).classList.add('active');
+        
         if (sectionId === 'trimestral') {
-            document.querySelectorAll('#trimestral .tab-content').forEach(content => content.classList.remove('active'));
-            document.querySelectorAll('#trimestral .tab').forEach(tab => tab.classList.remove('active'));
-
-            let tabEl = document.getElementById(tabId);
-            if (!tabEl) {
-                console.error('[UI] No existe el tab:', tabId, '-> usando instructivo');
-                tabId = 'instructivo';
-                tabEl = document.getElementById(tabId);
-            }
-            if (tabEl) tabEl.classList.add('active');
-
-            // Activa botón de tab por texto
+            document.querySelectorAll('#trimestral .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
             document.querySelectorAll('#trimestral .tab').forEach(tab => {
-                const t = tab.textContent || '';
-                if ((tabId === 'instructivo' && t.includes('Instructivo')) ||
-                    (tabId === 'formulario' && t.includes('Formulario')) ||
-                    (tabId === 'tabla' && t.includes('Tabla'))) {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            
+            const tabs = document.querySelectorAll('#trimestral .tab');
+            tabs.forEach(tab => {
+                if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
+                    (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
+                    (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
                     tab.classList.add('active');
                 }
             });
-
+            
             if (tabId === 'tabla') {
                 setTimeout(() => {
-                    try { filtrarTablaPorDependencia(); } catch (e) { console.warn('filtrarTablaPorDependencia falló:', e); }
+                    filtrarTablaPorDependencia();
                 }, 100);
             }
         }
-
-        // --- Evidencias: subsecciones ---
+        
         if (sectionId === 'evidencias') {
-            document.querySelectorAll('#evidencias .subsection').forEach(sub => sub.classList.remove('active'));
-
-            let subEl = document.getElementById(tabId);
-            if (!subEl) {
-                console.error('[UI] No existe la subsección:', tabId, '-> usando registro');
-                tabId = 'registro';
-                subEl = document.getElementById(tabId);
-            }
-            if (subEl) subEl.classList.add('active');
+            document.querySelectorAll('#evidencias .subsection').forEach(subsection => {
+                subsection.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
         }
-
-        // Si se entra a tabla trimestral, intenta cargar registros (sin romper la UI)
+    
+        // ✅ Cargar datos reales al abrir la pestaña "Tabla de Registros" (evita que se queden filas de muestra)
         if (sectionId === 'trimestral' && tabId === 'tabla') {
             try { cargarRegistrosTrimestral(); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
         }
-    }
 
-
+}
 
     function showMainSection(sectionId) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
