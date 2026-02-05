@@ -4222,158 +4222,161 @@ async function loginUsuario() {
         }
     });
 
-    
     function showSectionAndTab(sectionId, tabId) {
-        // ⚠️ Fail-safe: no dejes la pantalla en blanco si llega un ID inválido.
-        const targetSection = document.getElementById(sectionId);
-        if (!targetSection) {
-            console.error('[NAV] Sección no encontrada:', sectionId);
-            return; // NO quitamos lo que ya estaba visible
-        }
+    // Fail-safe: nunca dejar la pantalla en blanco aunque falte un id o truene una función
+    const prevActiveSection = (document.querySelector('.main-section.active') || {}).id || 'inicio';
 
-        // Cierra menús
+    const safeActivateSection = (sid) => {
+        document.querySelectorAll('.main-section').forEach(sec => sec.classList.remove('active'));
+        const el = document.getElementById(sid);
+        if (el) el.classList.add('active');
+    };
+
+    try {
+        // Cerrar menús
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
         document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('expanded'));
+        document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('active'));
 
-        // Oculta todas las secciones y muestra la objetivo
-        document.querySelectorAll('.main-section').forEach(section => section.classList.remove('active'));
-        targetSection.classList.add('active');
+        // Validar sección antes de ocultar todo
+        const sectionEl = document.getElementById(sectionId);
+        if (!sectionEl) {
+            console.warn('[showSectionAndTab] Sección no encontrada:', sectionId);
+            safeActivateSection(prevActiveSection);
+            return;
+        }
 
-        // Trimestral: tabs
+        // Activar sección
+        safeActivateSection(sectionId);
+
+        // Trimestral: tabs (instructivo/formulario/tabla)
         if (sectionId === 'trimestral') {
+            const contentEl = document.getElementById(tabId);
+            if (!contentEl) {
+                console.warn('[showSectionAndTab] Tab trimestral no encontrado:', tabId);
+                tabId = 'instructivo';
+            }
+
             document.querySelectorAll('#trimestral .tab-content').forEach(content => content.classList.remove('active'));
             document.querySelectorAll('#trimestral .tab').forEach(tab => tab.classList.remove('active'));
 
-            const targetTabContent = document.getElementById(tabId);
-            if (!targetTabContent) {
-                console.error('[NAV] Tab-content no encontrado:', tabId);
-                // fallback seguro
-                const fallback = document.getElementById('instructivo');
-                if (fallback) fallback.classList.add('active');
-                const fallbackTab = Array.from(document.querySelectorAll('#trimestral .tab'))
-                    .find(t => t.textContent.includes('Instructivo'));
-                if (fallbackTab) fallbackTab.classList.add('active');
-                return;
-            }
-
-            targetTabContent.classList.add('active');
+            const finalContent = document.getElementById(tabId);
+            if (finalContent) finalContent.classList.add('active');
 
             const tabs = document.querySelectorAll('#trimestral .tab');
             tabs.forEach(tab => {
-                const t = tab.textContent || '';
-                if ((tabId === 'instructivo' && t.includes('Instructivo')) ||
-                    (tabId === 'formulario' && t.includes('Formulario')) ||
-                    (tabId === 'tabla' && t.includes('Tabla'))) {
+                if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
+                    (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
+                    (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
                     tab.classList.add('active');
                 }
             });
 
             if (tabId === 'tabla') {
-                // Evita que un error aquí rompa la vista
-                try { filtrarTablaPorDependencia(); } catch (e) { console.warn('filtrarTablaPorDependencia falló:', e); }
-                try { cargarRegistrosTrimestral(); } catch (e) { console.warn('cargarRegistrosTrimestral falló:', e); }
+                // No permitir que una función faltante rompa la UI
+                setTimeout(() => {
+                    try { filtrarTablaPorDependencia(); } catch (e) { console.warn('filtrarTablaPorDependencia error:', e); }
+                }, 100);
+
+                try { cargarRegistrosTrimestral(); } catch (e) { console.warn('cargarRegistrosTrimestral error:', e); }
             }
         }
 
-        // Evidencias: subsecciones
+        // Evidencias: subsecciones (registro/revision)
         if (sectionId === 'evidencias') {
-            document.querySelectorAll('#evidencias .subsection').forEach(subsection => subsection.classList.remove('active'));
-            const targetSub = document.getElementById(tabId);
-            if (!targetSub) {
-                console.error('[NAV] Sub-sección no encontrada:', tabId);
-                const fallback = document.getElementById('registro');
-                if (fallback) fallback.classList.add('active');
-                return;
+            const subEl = document.getElementById(tabId);
+            if (!subEl) {
+                console.warn('[showSectionAndTab] Sub-sección evidencias no encontrada:', tabId);
+                tabId = 'registro';
             }
-            targetSub.classList.add('active');
+
+            document.querySelectorAll('#evidencias .subsection').forEach(subsection => subsection.classList.remove('active'));
+            const finalSub = document.getElementById(tabId);
+            if (finalSub) finalSub.classList.add('active');
         }
+    } catch (err) {
+        console.error('[showSectionAndTab] Error:', err);
+        // Recuperación: regresar a una sección válida
+        safeActivateSection(prevActiveSection || 'inicio');
     }
-
+}
+            });
+            
+            if (tabId === 'tabla') {
+                setTimeout(() => {
+                    filtrarTablaPorDependencia();
+                }, 100);
+            }
+        }
+        
+        if (sectionId === 'evidencias') {
+            document.querySelectorAll('#evidencias .subsection').forEach(subsection => {
+                subsection.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+        }
     
-    function showMainSection(sectionId) {
-        const targetSection = document.getElementById(sectionId);
-        if (!targetSection) {
-            console.error('[NAV] Sección principal no encontrada:', sectionId);
-            return;
+        // ✅ Cargar datos reales al abrir la pestaña "Tabla de Registros" (evita que se queden filas de muestra)
+        if (sectionId === 'trimestral' && tabId === 'tabla') {
+            try { cargarRegistrosTrimestral(); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
         }
 
-        // Cierra menús
-        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
-        document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('expanded'));
+}
 
-        // Cambia sección
-        document.querySelectorAll('.main-section').forEach(section => section.classList.remove('active'));
-        targetSection.classList.add('active');
-
-        // (Opcional) marca activo "Inicio"
+    function showMainSection(sectionId) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
         document.querySelectorAll('.main-nav-btn').forEach(btn => {
-            btn.classList.toggle('active', (sectionId === 'inicio' && (btn.textContent || '').includes('Inicio')));
+            btn.classList.remove('expanded');
+        });
+        
+        const sections = document.querySelectorAll('.main-section');
+        const navButtons = document.querySelectorAll('.main-nav-btn');
+
+        sections.forEach(section => {
+            section.classList.remove('active');
+        });
+
+        navButtons.forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        document.getElementById(sectionId).classList.add('active');
+        
+        navButtons.forEach(btn => {
+            if (btn.textContent.includes('Inicio') && sectionId === 'inicio') {
+                btn.classList.add('active');
+            }
         });
     }
 
-    
-    
-    // 🔧 Seguro anti-"pantalla en blanco": si por cualquier error ninguna sección queda activa,
-    // forzamos a mostrar "inicio".
-    function ensureAtLeastOneSectionVisible() {
-        const anyActive = document.querySelector('.main-section.active');
-        if (!anyActive) {
-            const inicio = document.getElementById('inicio');
-            if (inicio) inicio.classList.add('active');
-        }
-    }
-
-    window.addEventListener('error', function() {
-        try { ensureAtLeastOneSectionVisible(); } catch(_) {}
-    });
-
-    window.addEventListener('unhandledrejection', function() {
-        try { ensureAtLeastOneSectionVisible(); } catch(_) {}
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        try { ensureAtLeastOneSectionVisible(); } catch(_) {}
-    });
-
-function showTrimestralTab(tabId) {
-        const container = document.getElementById('trimestral');
-        if (!container) return;
-
-        const tabs = document.querySelectorAll('#trimestral .tab');
+    function showTrimestralTab(tabId) {
+        // ✅ Acceso a la tabla habilitado para todos los usuarios
+const tabs = document.querySelectorAll('#trimestral .tab');
         const tabContents = document.querySelectorAll('#trimestral .tab-content');
 
-        tabs.forEach(tab => tab.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
 
-        const targetTabContent = document.getElementById(tabId);
-        if (!targetTabContent) {
-            console.error('[NAV] Tab trimestral no encontrado:', tabId);
-            const fallback = document.getElementById('instructivo');
-            if (fallback) fallback.classList.add('active');
-            const fallbackTab = Array.from(tabs).find(t => (t.textContent || '').includes('Instructivo'));
-            if (fallbackTab) fallbackTab.classList.add('active');
-            return;
-        }
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+        });
 
         tabs.forEach(tab => {
-            const t = tab.textContent || '';
-            if ((tabId === 'instructivo' && t.includes('Instructivo')) ||
-                (tabId === 'formulario' && t.includes('Formulario')) ||
-                (tabId === 'tabla' && t.includes('Tabla'))) {
+            if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
+                (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
+                (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
                 tab.classList.add('active');
             }
         });
 
-        targetTabContent.classList.add('active');
-
-        if (tabId === 'tabla') {
-            try { filtrarTablaPorDependencia(); } catch (e) { console.warn('filtrarTablaPorDependencia falló:', e); }
-            try { cargarRegistrosTrimestral(); } catch (e) { console.warn('cargarRegistrosTrimestral falló:', e); }
-        }
+        document.getElementById(tabId).classList.add('active');
     }
 
     // ========================================
-
     // FUNCIONES DE ISTRACIÓN
     // ========================================
     function togglePanelRevision() {
