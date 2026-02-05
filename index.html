@@ -1988,10 +1988,10 @@
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-<div class="dropdown-item hidden" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
+                <div class="dropdown-item hidden" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
-</div>
+                </div>
             </div>
         </div>
 
@@ -2008,7 +2008,7 @@
                 <div class="dropdown-item admin-only hidden" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
                     <span class="icon">🔍</span>
                     <span>Panel Revisión DCEVE</span>
-</div>
+                </div>
             </div>
         </div>
     </nav>
@@ -2654,7 +2654,7 @@
                                     <td>P13</td>
                                     <td>13-J3A</td>
                                     <td>. SIST. PORTUARIO NAL. ALTAMIRA</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c5a6aab7b7a0aa85acabb6b1acb1b0a6acaaaba4a9eba2aaa7eba8bd">[email&#160;protected]</a></td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d8bbb7aaaabdb798b1b6abacb1acadbbb1b7b6b9b4f6bfb7baf6b5a0">[email&#160;protected]</a></td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         SECUNDARIA
@@ -2679,7 +2679,7 @@
                                     <td>María</td>
                                     <td>González</td>
                                     <td>Pérez</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="98fbf7eaeafdf7d8f1f6ebecf1ecedfbf1f7f6f9f4b6fff7fab6f5e0">[email&#160;protected]</a></td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dbb8b4a9a9beb49bb2b5a8afb2afaeb8b2b4b5bab7f5bcb4b9f5b6a3">[email&#160;protected]</a></td>
                                     <td>55-5555-5555</td>
                                 </tr>
                                 <tr>
@@ -2694,7 +2694,7 @@
                                     <td>P31</td>
                                     <td>13-J2R</td>
                                     <td>. SIST. PORTUARIO NAL. PROGRESO</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="06656974746369466f6875726f7273656f6968676a28616964286b7e">[email&#160;protected]</a></td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fb989489899e94bb9295888f928f8e989294959a97d59c9499d59683">[email&#160;protected]</a></td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         LICENCIATURA
@@ -2719,7 +2719,7 @@
                                     <td>Juan</td>
                                     <td>López</td>
                                     <td>Ramírez</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0e6d617c7c6b614e67607d7a677a7b6d6761606f622069616c206376">[email&#160;protected]</a></td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e98a869b9b8c86a980879a9d809d9c8a8086878885c78e868bc78491">[email&#160;protected]</a></td>
                                     <td>55-6666-6666</td>
                                 </tr>
                             </tbody>
@@ -3072,11 +3072,9 @@ function applyRoleVisibility() {
             // Mostrar para super admin
             element.classList.remove('hidden');
             element.classList.remove('admin-only');
-            element.style.display = '';
         } else {
             // Ocultar para enlaces
             element.classList.add('hidden');
-            element.style.display = 'none';
         }
     });
 
@@ -4019,14 +4017,22 @@ async function loginUsuario() {
         });
 
         if (userRole === 'superadmin') {
+            // Remover hidden de todos los elementos admin
             document.getElementById('adminPanelTrimestral')?.classList.remove('hidden');
             document.getElementById('exportButtonsTrimestral')?.classList.remove('hidden');
             document.getElementById('estadoEdicion')?.classList.remove('hidden');
             document.getElementById('notasTablaTrimestral')?.classList.remove('hidden');
             document.getElementById('adminPanelEvidencias')?.classList.remove('hidden');
             document.getElementById('tabVerTabla')?.classList.remove('hidden');
+            document.getElementById('dropdownItemTabla')?.classList.remove('hidden');
             document.getElementById('dropdownItemTabla')?.classList.remove('admin-only');
+            document.getElementById('dropdownItemRevision')?.classList.remove('hidden');
             document.getElementById('dropdownItemRevision')?.classList.remove('admin-only');
+        } else {
+            // Asegurar que están ocultos para no-admin
+            document.getElementById('tabVerTabla')?.classList.add('hidden');
+            document.getElementById('dropdownItemTabla')?.classList.add('hidden');
+            document.getElementById('dropdownItemRevision')?.classList.add('hidden');
         }
 
         await cargarRegistrosTrimestral();
@@ -4254,8 +4260,6 @@ async function loginUsuario() {
     });
 
     function showSectionAndTab(sectionId, tabId) {
-  try { document.getElementById(sectionId)?.scrollIntoView({behavior:"smooth", block:"start"}); } catch(e) {}
-
     // Cierra dropdowns
     document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
     document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('expanded'));
@@ -4290,8 +4294,6 @@ async function loginUsuario() {
 }
 
 function showMainSection(sectionId) {
-  try { document.getElementById(sectionId)?.scrollIntoView({behavior:"smooth", block:"start"}); } catch(e) {}
-
     // Limpia estados de navegación
     document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
     document.querySelectorAll('.main-nav-btn').forEach(btn => {
@@ -4314,8 +4316,6 @@ function showMainSection(sectionId) {
 }
 
 function showTrimestralTab(tabId) {
-  try { document.getElementById("trimestral")?.scrollIntoView({behavior:"smooth", block:"start"}); } catch(e) {}
-
     const root = document.getElementById('trimestral');
     if (!root) return;
 
@@ -5271,8 +5271,11 @@ document.addEventListener('DOMContentLoaded', () => {
         userDependencia = localStorage.getItem('SABG_DEPENDENCIA') || '';
         
         // Si hay sesión guardada, aplicar permisos
-        if (userRole) {
-            applyRoleVisibility();
+        if (userRole && userRole === 'superadmin') {
+            // Mostrar elementos admin si ya hay sesión
+            document.getElementById('tabVerTabla')?.classList.remove('hidden');
+            document.getElementById('dropdownItemTabla')?.classList.remove('hidden');
+            document.getElementById('dropdownItemRevision')?.classList.remove('hidden');
         }
     } catch (e) {
         console.error('Error al restaurar sesión:', e);
@@ -5280,12 +5283,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicializar autocompletado de dependencias si existe
     if (typeof initDependenciaAutocomplete === 'function') {
-        initDependenciaAutocomplete();
+        try {
+            initDependenciaAutocomplete();
+        } catch (e) {
+            console.error('Error en initDependenciaAutocomplete:', e);
+        }
     }
     
     // Inicializar otros componentes
     if (typeof populateRegDependencias === 'function') {
-        populateRegDependencias();
+        try {
+            populateRegDependencias();
+        } catch (e) {
+            console.error('Error en populateRegDependencias:', e);
+        }
     }
 });
 
