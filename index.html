@@ -1988,10 +1988,10 @@
                     <span class="icon">📝</span>
                     <span>Formulario de Registro</span>
                 </div>
-                <div class="dropdown-item hidden" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
+<div class="dropdown-item" id="dropdownItemTabla" onclick="showSectionAndTab('trimestral', 'tabla')" role="button" tabindex="0">
                     <span class="icon">📋</span>
                     <span>Ver Tabla de Registros</span>
-                </div>
+</div>
             </div>
         </div>
 
@@ -2005,10 +2005,10 @@
                     <span class="icon">📅</span>
                     <span>Registrar Evidencias</span>
                 </div>
-                <div class="dropdown-item admin-only hidden" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
+                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
                     <span class="icon">🔍</span>
                     <span>Panel Revisión DCEVE</span>
-                </div>
+</div>
             </div>
         </div>
     </nav>
@@ -2143,7 +2143,7 @@
                     <div class="tab" onclick="showTrimestralTab('formulario')" role="button" tabindex="0">
                         📝 Formulario de Registro
                     </div>
-                    <div id="tabVerTabla" class="tab hidden" onclick="showTrimestralTab('tabla')" role="button" tabindex="0">
+                    <div id="tabVerTabla" class="tab " onclick="showTrimestralTab('tabla')" role="button" tabindex="0">
                         📋 Ver Tabla de Registros
                     </div>
                 </div>
@@ -2654,7 +2654,7 @@
                                     <td>P13</td>
                                     <td>13-J3A</td>
                                     <td>. SIST. PORTUARIO NAL. ALTAMIRA</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d8bbb7aaaabdb798b1b6abacb1acadbbb1b7b6b9b4f6bfb7baf6b5a0">[email&#160;protected]</a></td>
+                                    <td>correo@institucional.gob.mx</td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         SECUNDARIA
@@ -2679,7 +2679,7 @@
                                     <td>María</td>
                                     <td>González</td>
                                     <td>Pérez</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dbb8b4a9a9beb49bb2b5a8afb2afaeb8b2b4b5bab7f5bcb4b9f5b6a3">[email&#160;protected]</a></td>
+                                    <td>correo@institucional.gob.mx</td>
                                     <td>55-5555-5555</td>
                                 </tr>
                                 <tr>
@@ -2694,7 +2694,7 @@
                                     <td>P31</td>
                                     <td>13-J2R</td>
                                     <td>. SIST. PORTUARIO NAL. PROGRESO</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fb989489899e94bb9295888f928f8e989294959a97d59c9499d59683">[email&#160;protected]</a></td>
+                                    <td>correo@institucional.gob.mx</td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         LICENCIATURA
@@ -2719,7 +2719,7 @@
                                     <td>Juan</td>
                                     <td>López</td>
                                     <td>Ramírez</td>
-                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e98a869b9b8c86a980879a9d809d9c8a8086878885c78e868bc78491">[email&#160;protected]</a></td>
+                                    <td>correo@institucional.gob.mx</td>
                                     <td>55-6666-6666</td>
                                 </tr>
                             </tbody>
@@ -2984,7 +2984,7 @@
         <p>Sistema de Promoción de la Formación Académica</p>
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
-        <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        <script>
 // ===================== FIX: Evitar ReferenceError si falta updateStatsFromRegistros =====================
 if (typeof window.updateStatsFromRegistros !== 'function') {
   window.updateStatsFromRegistros = function(registros) {
@@ -3048,35 +3048,6 @@ function applyRoleVisibility() {
         if (isAdminUser()) excelBox.classList.remove('hidden');
         else excelBox.classList.add('hidden');
     }
-
-    // Control de visibilidad del menú según rol
-    const isSuperAdmin = (userRole === 'superadmin');
-    
-    // Elementos que deben estar ocultos para enlaces
-    const adminOnlyElements = [
-        'dropdownItemTabla',
-        'dropdownItemRevision', 
-        'tabVerTabla',
-        'adminPanelTrimestral',
-        'exportButtonsTrimestral',
-        'estadoEdicion',
-        'notasTablaTrimestral',
-        'adminPanelEvidencias'
-    ];
-    
-    adminOnlyElements.forEach(elementId => {
-        const element = document.getElementById(elementId);
-        if (!element) return;
-        
-        if (isSuperAdmin) {
-            // Mostrar para super admin
-            element.classList.remove('hidden');
-            element.classList.remove('admin-only');
-        } else {
-            // Ocultar para enlaces
-            element.classList.add('hidden');
-        }
-    });
 
 }
 // ========================================
@@ -4017,22 +3988,14 @@ async function loginUsuario() {
         });
 
         if (userRole === 'superadmin') {
-            // Remover hidden de todos los elementos admin
             document.getElementById('adminPanelTrimestral')?.classList.remove('hidden');
             document.getElementById('exportButtonsTrimestral')?.classList.remove('hidden');
             document.getElementById('estadoEdicion')?.classList.remove('hidden');
             document.getElementById('notasTablaTrimestral')?.classList.remove('hidden');
             document.getElementById('adminPanelEvidencias')?.classList.remove('hidden');
             document.getElementById('tabVerTabla')?.classList.remove('hidden');
-            document.getElementById('dropdownItemTabla')?.classList.remove('hidden');
             document.getElementById('dropdownItemTabla')?.classList.remove('admin-only');
-            document.getElementById('dropdownItemRevision')?.classList.remove('hidden');
             document.getElementById('dropdownItemRevision')?.classList.remove('admin-only');
-        } else {
-            // Asegurar que están ocultos para no-admin
-            document.getElementById('tabVerTabla')?.classList.add('hidden');
-            document.getElementById('dropdownItemTabla')?.classList.add('hidden');
-            document.getElementById('dropdownItemRevision')?.classList.add('hidden');
         }
 
         await cargarRegistrosTrimestral();
@@ -4260,88 +4223,118 @@ async function loginUsuario() {
     });
 
     function showSectionAndTab(sectionId, tabId) {
-    // Cierra dropdowns
-    document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
-    document.querySelectorAll('.main-nav-btn').forEach(btn => btn.classList.remove('expanded'));
-
-    // Activa sección principal
-    showMainSection(sectionId);
-
-    // Activa pestaña/subsección según sección
-    if (sectionId === 'trimestral') {
-        showTrimestralTab(tabId);
-
-        // Cargar/filtrar al abrir la tabla (sin romper si faltan funciones)
-        if (tabId === 'tabla') {
-            try { cargarRegistrosTrimestral(); } catch (e) { console.warn('cargarRegistrosTrimestral falló:', e); }
-            try { setTimeout(() => filtrarTablaPorDependencia(), 100); } catch (e) { /* noop */ }
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('expanded');
+        });
+        
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        document.querySelectorAll('.main-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        document.getElementById(sectionId).classList.add('active');
+        
+        if (sectionId === 'trimestral') {
+            document.querySelectorAll('#trimestral .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.querySelectorAll('#trimestral .tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            
+            const tabs = document.querySelectorAll('#trimestral .tab');
+            tabs.forEach(tab => {
+                if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
+                    (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
+                    (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            if (tabId === 'tabla') {
+                setTimeout(() => {
+                    filtrarTablaPorDependencia();
+                }, 100);
+            }
         }
-    } else if (sectionId === 'evidencias') {
-        const root = document.getElementById('evidencias');
-        if (!root) return;
+        
+        if (sectionId === 'evidencias') {
+            document.querySelectorAll('#evidencias .subsection').forEach(subsection => {
+                subsection.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+        }
+    
+        // ✅ Cargar datos reales al abrir la pestaña "Tabla de Registros" (evita que se queden filas de muestra)
+        if (sectionId === 'trimestral' && tabId === 'tabla') {
+            try { cargarRegistrosTrimestral(); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
+        }
 
-        root.querySelectorAll('.subsection').forEach(s => s.classList.remove('active'));
-        const target = document.getElementById(tabId) || root.querySelector('#' + CSS.escape(tabId));
-        if (target) target.classList.add('active');
-        else console.warn('Subsección no encontrada:', tabId);
+}
+
+    function showMainSection(sectionId) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        document.querySelectorAll('.main-nav-btn').forEach(btn => {
+            btn.classList.remove('expanded');
+        });
+        
+        const sections = document.querySelectorAll('.main-section');
+        const navButtons = document.querySelectorAll('.main-nav-btn');
+
+        sections.forEach(section => {
+            section.classList.remove('active');
+        });
+
+        navButtons.forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        document.getElementById(sectionId).classList.add('active');
+        
+        navButtons.forEach(btn => {
+            if (btn.textContent.includes('Inicio') && sectionId === 'inicio') {
+                btn.classList.add('active');
+            }
+        });
     }
 
-    // Scroll a la sección
-    try {
-        const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (_) {}
-}
+    function showTrimestralTab(tabId) {
+        // ✅ Acceso a la tabla habilitado para todos los usuarios
+const tabs = document.querySelectorAll('#trimestral .tab');
+        const tabContents = document.querySelectorAll('#trimestral .tab-content');
 
-function showMainSection(sectionId) {
-    // Limpia estados de navegación
-    document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
-    document.querySelectorAll('.main-nav-btn').forEach(btn => {
-        btn.classList.remove('expanded');
-        btn.classList.remove('active');
-    });
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
 
-    // Oculta todas las secciones
-    document.querySelectorAll('.main-section').forEach(section => section.classList.remove('active'));
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+        });
 
-    // Muestra la solicitada (si existe)
-    const target = document.getElementById(sectionId);
-    if (target) target.classList.add('active');
-    else console.warn('Sección no encontrada:', sectionId);
+        tabs.forEach(tab => {
+            if ((tabId === 'instructivo' && tab.textContent.includes('Instructivo')) ||
+                (tabId === 'formulario' && tab.textContent.includes('Formulario')) ||
+                (tabId === 'tabla' && tab.textContent.includes('Tabla'))) {
+                tab.classList.add('active');
+            }
+        });
 
-    // Marcar botón Inicio como activo si aplica (sin tocar los dropdown)
-    document.querySelectorAll('.main-nav-btn').forEach(btn => {
-        if (sectionId === 'inicio' && btn.textContent.includes('Inicio')) btn.classList.add('active');
-    });
-}
+        document.getElementById(tabId).classList.add('active');
+    }
 
-function showTrimestralTab(tabId) {
-    const root = document.getElementById('trimestral');
-    if (!root) return;
-
-    const tabs = root.querySelectorAll('.tab');
-    const tabContents = root.querySelectorAll('.tab-content');
-
-    tabs.forEach(t => t.classList.remove('active'));
-    tabContents.forEach(c => c.classList.remove('active'));
-
-    // Activar contenido por id
-    const content = document.getElementById(tabId) || root.querySelector('#' + CSS.escape(tabId));
-    if (content) content.classList.add('active');
-    else console.warn('Tab content no encontrado:', tabId);
-
-    // Activar pestaña visual por texto (compatibilidad)
-    tabs.forEach(t => {
-        const txt = (t.textContent || '').toLowerCase();
-        if ((tabId === 'instructivo' && txt.includes('instructivo')) ||
-            (tabId === 'formulario' && txt.includes('formulario')) ||
-            (tabId === 'tabla' && txt.includes('tabla'))) {
-            t.classList.add('active');
-        }
-    });
-}
-
-// ========================================
+    // ========================================
     // FUNCIONES DE ISTRACIÓN
     // ========================================
     function togglePanelRevision() {
@@ -5265,41 +5258,23 @@ function initDependenciaAutocomplete() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Restaurar rol si existe
-    try { 
-        userRole = localStorage.getItem('SABG_ROL') || '';
-        userName = localStorage.getItem('SABG_NOMBRE') || '';
-        userDependencia = localStorage.getItem('SABG_DEPENDENCIA') || '';
-        
-        // Si hay sesión guardada, aplicar permisos
-        if (userRole && userRole === 'superadmin') {
-            // Mostrar elementos admin si ya hay sesión
-            document.getElementById('tabVerTabla')?.classList.remove('hidden');
-            document.getElementById('dropdownItemTabla')?.classList.remove('hidden');
-            document.getElementById('dropdownItemRevision')?.classList.remove('hidden');
-        }
-    } catch (e) {
-        console.error('Error al restaurar sesión:', e);
-    }
-    
-    // Inicializar autocompletado de dependencias si existe
-    if (typeof initDependenciaAutocomplete === 'function') {
-        try {
-            initDependenciaAutocomplete();
-        } catch (e) {
-            console.error('Error en initDependenciaAutocomplete:', e);
-        }
-    }
-    
-    // Inicializar otros componentes
-    if (typeof populateRegDependencias === 'function') {
-        try {
-            populateRegDependencias();
-        } catch (e) {
-            console.error('Error en populateRegDependencias:', e);
-        }
+    try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
+    initDependenciaAutocomplete();
+    applyRoleVisibility();
+
+    // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
+    const excelInput = document.getElementById('excelFile');
+    if (excelInput) {
+        excelInput.addEventListener('change', () => {
+            try {
+                if (excelInput.files && excelInput.files.length) uploadExcel();
+            } catch (e) {
+                console.error(e);
+                alert('Error al cargar el archivo. Revisa la consola.');
+            }
+        });
     }
 });
-
 </script>
 </body>
 </html>
