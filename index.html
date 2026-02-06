@@ -2740,7 +2740,7 @@
                     <div class="actions-bar">
                         <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
                         <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
-                        <button id="btnGuardarNeon" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:inline-block;" disabled>💾 Guardar cambios</button>
+                        <button id="btnGuardarNeon" type="button" class="btn btn-success admin-only" onclick="guardarCambiosNeon(event)" style="display:inline-block;" disabled>💾 Guardar cambios</button>
                         <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
 
                         <!-- Solo administradores: carga masiva vía Excel -->
@@ -5486,7 +5486,9 @@ function markPendingEdit(id, field, value) {
   if (st) st.textContent = "Pendientes: " + window.__pendingNeonEdits.length;
 }
 
-async function guardarCambiosNeon() {
+async function guardarCambiosNeon(ev){
+  try{ ev && ev.preventDefault && ev.preventDefault(); ev && ev.stopPropagation && ev.stopPropagation(); }catch(_){ }
+
   const st = document.getElementById("saveNeonStatus");
   const btn = document.getElementById("btnGuardarNeon");
 
@@ -5501,6 +5503,7 @@ async function guardarCambiosNeon() {
 
     const resp = await fetch("/api/trimestral/batchUpdate", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ edits: window.__pendingNeonEdits })
     });
@@ -5514,15 +5517,14 @@ async function guardarCambiosNeon() {
     __setSaveButtonsState();
 
     if (st) st.textContent = "✅ Guardado en Neon. Cambios: " + (j.updated || 0) + " (de " + total + ")";
-    if (btn) btn.style.display = "none";
+    __setSaveButtonsState();
 
-    // Para que quede guardado en la página también:
-    // Si existe una función de recarga, úsala; si no, recarga.
-    try {
-      if (typeof cargarTablaTrimestral === "function") await cargarTablaTrimestral();
-      else if (typeof loadTrimestralTable === "function") await loadTrimestralTable();
-      else location.reload();
-    } catch (_) {
+    // (Temporal) No recargar despues de guardar para evitar que te mande a login.
+    // Si quieres, luego lo reactivamos cuando confirmemos sesion estable.
+    
+    __setSaveButtonsState();
+
+  } catch (_) {
       location.reload();
     }
 
