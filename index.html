@@ -2176,6 +2176,10 @@
                 </div>
             </div>
                 <div class="tabs">
+<button class="tab-btn" type="button" onclick="showSectionAndTab('trimestral','tabla')">
+  📋 Tabla de Registros
+</button>
+
                     <div class="tab active" onclick="showTrimestralTab('instructivo')" role="button" tabindex="0">
                         📖 Instructivo
                     </div>
@@ -2667,7 +2671,7 @@
                 <!-- TAB: TABLA DE REGISTROS (Solo visible para Super Admin) -->
                 <div id="tabla" class="tab-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                        <h3 style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
+                        <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
                     </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
                    <div id="exportButtonsTrimestral" class="hidden" style="margin-bottom: 1rem;">
