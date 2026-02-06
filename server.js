@@ -35,6 +35,7 @@ async function mount(method, route, handlerPath) {
 await mount("get",  "/api/trimestral/list",        "./api/trimestral/list.js");
 await mount("post", "/api/trimestral/create",      "./api/trimestral/create.js");
 await mount("post", "/api/trimestral/bulkCreate",  "./api/trimestral/bulkCreate.js");
+await mount("post", "/api/trimestral/batchUpdate", "./api/trimestral/batchUpdate.js");
 await mount("post", "/api/trimestral/deleteTest",  "./api/trimestral/deleteTest.js");
 
 await mount("post", "/api/auth/login",             "./api/auth/login.js");
