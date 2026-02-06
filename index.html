@@ -1877,6 +1877,45 @@
         }
         /* ========================================================= */
 
+
+
+/* ===== FIX: INSTRUCTIVO NO ESTIRADO ===== */
+#instructivo{
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+#instructivo .card,
+#instructivo .info-box{
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box;
+}
+#instructivo table{
+  width: 100%;
+  table-layout: auto;
+}
+#instructivo th, #instructivo td{
+  white-space: nowrap;
+}
+#instructivo .card > div[style*="overflow-x"]{
+  max-width: 100%;
+}
+@media (max-width: 768px){
+  #instructivo{
+    max-width: 100%;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  #instructivo th, #instructivo td{
+    white-space: normal;
+  }
+}
+/* ===== FIN FIX INSTRUCTIVO ===== */
+
 </style>
 </head>
 <body>
