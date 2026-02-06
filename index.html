@@ -2734,22 +2734,19 @@
                 <!-- TAB: TABLA DE REGISTROS (Solo visible para Super Admin) -->
                 <div id="tabla" class="tab-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                        <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
-                        <div style="margin:10px 0;">
-                          <button id="btnGuardarNeon" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:inline-block;" disabled>💾 Guardar cambios en Neon</button>
-                          <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
-                        </div>
-                    </div>
+                        <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>                    </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
                    <div id="exportButtonsTrimestral" class="hidden" style="margin-bottom: 1rem;">
                     <div class="actions-bar">
                         <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
                         <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
+                        <button id="btnGuardarNeon" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:inline-block;" disabled>💾 Guardar cambios</button>
+                        <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
 
                         <!-- Solo administradores: carga masiva vía Excel -->
                         <input type="file" id="excelFile" accept=".csv,.xlsx,.xls" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
                         <div id="excelUploadBox" class="hidden" style="display:inline-flex; gap:14px; align-items:center;">
-                            <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">📎 Seleccionar carga de Excel</label>
+                            <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">📎 Seleccionar carga de Excel</label>                <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
                         </div>
                     </div>
                 </div>
@@ -2864,11 +2861,7 @@
                                     <td>55-6666-6666</td>
                                 </tr>
                             </tbody>
-                        </table>
-                        <div style="margin:12px 0; text-align:right;">
-                          <button id="btnGuardarNeonBottom" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:inline-block;" disabled>💾 Guardar cambios en Neon</button>
-                        </div>
-                    </div>
+                        </table>                    </div>
 
                     <div id="notasTablaTrimestral" class="info-box hidden" style="margin-top: 2rem;">
                         <h3>⚠️ Notas Importantes sobre la Tabla</h3>
@@ -5467,12 +5460,9 @@ function __setSaveButtonsState(){
     var isAdmin = (typeof isAdminUser === "function") ? !!isAdminUser() : (document.body.classList.contains("role-admin") || document.body.classList.contains("role-superadmin"));
 
     var btn1 = document.getElementById("btnGuardarNeon");
-    var btn2 = document.getElementById("btnGuardarNeonBottom");
     var st = document.getElementById("saveNeonStatus");
 
-    if (btn1) { btn1.style.display = isAdmin ? "inline-block" : "none"; btn1.disabled = !(isAdmin && pending > 0); }
-    if (btn2) { btn2.style.display = isAdmin ? "inline-block" : "none"; btn2.disabled = !(isAdmin && pending > 0); }
-    if (st) st.textContent = (isAdmin ? (pending > 0 ? ("Pendientes: " + pending) : "Sin cambios pendientes") : "");
+    if (btn1) { btn1.style.display = isAdmin ? "inline-block" : "none"; btn1.disabled = !(isAdmin && pending > 0); }if (st) st.textContent = (isAdmin ? (pending > 0 ? ("Pendientes: " + pending) : "Sin cambios pendientes") : "");
   } catch (e) {}
 }
 
