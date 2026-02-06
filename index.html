@@ -213,6 +213,7 @@
 
         .form-group {
             position: relative;
+            margin-bottom: 1rem;
         }
 
         .form-group label {
@@ -353,7 +354,6 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            /*text-transform: uppercase;*/
             letter-spacing: 1px;
             position: relative;
             overflow: hidden;
@@ -539,6 +539,9 @@
         .header-logo-escudo {
             height: 70px;
             width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            display: block;
             filter: brightness(0.3) contrast(1.8) saturate(0);
         }
         
@@ -762,30 +765,11 @@
             border-color: var(--guinda);
         }
 
-        .dropdown-item.admin-only {
-            background: rgba(245, 158, 11, 0.1);
-            border: 2px dashed var(--warning);
-        }
-
-        .dropdown-item.admin-only:hover {
-            background: linear-gradient(135deg, #f59e0b, #f97316);
-            border-style: solid;
-        }
-
         .dropdown-item .icon {
             font-size: 1.5rem;
         }
 
-        .dropdown-item .badge {
-            background: var(--warning);
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            margin-left: auto;
-        }
-        
-        /* ======= Neutralizar apariencia de opciones solo-admin (sin etiquetas visibles) ======= */
+        /* Apariencia de opciones solo-admin */
         .dropdown-item.admin-only {
             background: transparent !important;
             border: 1px solid transparent !important;
@@ -1052,10 +1036,6 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
             margin-bottom: 1.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
         }
 
         label {
@@ -1773,13 +1753,6 @@
         .register-btn:active {
             transform: translateY(0);
         }
-        .header-logo-escudo{
-  height: 56px;          /* ajusta: 40–72px típico en headers */
-  width: auto;           /* respeta proporción */
-  max-width: 100%;
-  object-fit: contain;   /* evita recortes */
-  display: block;        /* quita espacios raros inline */
-}
 
     
         /* Vista solo lectura para no superadmin */
@@ -2654,7 +2627,7 @@
                                     <td>P13</td>
                                     <td>13-J3A</td>
                                     <td>. SIST. PORTUARIO NAL. ALTAMIRA</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8deee2ffffe8e2cde4e3fef9e4f9f8eee4e2e3ece1a3eae2efa3e0f5">[email&#160;protected]</a></td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         SECUNDARIA
@@ -2679,7 +2652,7 @@
                                     <td>María</td>
                                     <td>González</td>
                                     <td>Pérez</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="95f6fae7e7f0fad5fcfbe6e1fce1e0f6fcfafbf4f9bbf2faf7bbf8ed">[email&#160;protected]</a></td>
                                     <td>55-5555-5555</td>
                                 </tr>
                                 <tr>
@@ -2694,7 +2667,7 @@
                                     <td>P31</td>
                                     <td>13-J2R</td>
                                     <td>. SIST. PORTUARIO NAL. PROGRESO</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="25464a5757404a654c4b56514c5150464c4a4b44490b424a470b485d">[email&#160;protected]</a></td>
                                     <td>12345 EXT. 123</td>
                                     <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
                                         LICENCIATURA
@@ -2719,7 +2692,7 @@
                                     <td>Juan</td>
                                     <td>López</td>
                                     <td>Ramírez</td>
-                                    <td>correo@institucional.gob.mx</td>
+                                    <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a6c5c9d4d4c3c9e6cfc8d5d2cfd2d3c5cfc9c8c7ca88c1c9c488cbde">[email&#160;protected]</a></td>
                                     <td>55-6666-6666</td>
                                 </tr>
                             </tbody>
@@ -2984,7 +2957,7 @@
         <p>Sistema de Promoción de la Formación Académica</p>
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
-        <script>
+        <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ===================== FIX: Evitar ReferenceError si falta updateStatsFromRegistros =====================
 if (typeof window.updateStatsFromRegistros !== 'function') {
   window.updateStatsFromRegistros = function(registros) {
@@ -5258,23 +5231,4 @@ function initDependenciaAutocomplete() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Restaurar rol si existe
-    try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
-    initDependenciaAutocomplete();
-    applyRoleVisibility();
-
-    // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
-    const excelInput = document.getElementById('excelFile');
-    if (excelInput) {
-        excelInput.addEventListener('change', () => {
-            try {
-                if (excelInput.files && excelInput.files.length) uploadExcel();
-            } catch (e) {
-                console.error(e);
-                alert('Error al cargar el archivo. Revisa la consola.');
-            }
-        });
-    }
-});
-</script>
-</body>
-</html>
+    try { userRole = localS
