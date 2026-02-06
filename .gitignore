@@ -12,3 +12,13 @@ backups_locales/
 
 index.html.backup_*
 SABG_Sistema_Formacion_accesible.backup_*
+COMMIT_PRODUCCION.txt
+DB_PRODUCCION.dump
+DB_PRODUCCION.sql
+ENV_LOCAL.txt
+index.html.RESPALDO_ACTUAL_*
+
+# Backups y zips locales
+RESPALDO_*.zip
+*.zip
+.DS_Store
