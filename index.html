@@ -2736,7 +2736,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                         <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
                         <div style="margin:10px 0;">
-                          <button id="btnGuardarNeon" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:none;">💾 Guardar cambios en Neon</button>
+                          <button id="btnGuardarNeon" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:inline-block;" disabled>💾 Guardar cambios en Neon</button>
                           <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
                         </div>
                     </div>
@@ -2865,6 +2865,9 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div style="margin:12px 0; text-align:right;">
+                          <button id="btnGuardarNeonBottom" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:inline-block;" disabled>💾 Guardar cambios en Neon</button>
+                        </div>
                     </div>
 
                     <div id="notasTablaTrimestral" class="info-box hidden" style="margin-top: 2rem;">
@@ -4570,6 +4573,27 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     function makeEditable(cell) {
         const field = cell.dataset.field;
 
+        // Marcar cambios como pendientes (Guardar en Neon)
+        try {
+            const row = cell.closest("tr");
+            const rid = cell.dataset.id || (row && row.dataset && row.dataset.id);
+            const capture = () => {
+                let v = "";
+                const sel = cell.querySelector("select");
+                const inp = cell.querySelector("input, textarea");
+                if (sel) v = sel.value;
+                else if (inp) v = inp.value;
+                else v = cell.textContent;
+                markPendingEdit(rid, field, (v == null ? "" : String(v)).trim());
+                __setSaveButtonsState();
+            };
+            const sel = cell.querySelector("select");
+            const inp = cell.querySelector("input, textarea");
+            if (sel) sel.addEventListener("change", capture);
+            if (inp) inp.addEventListener("blur", capture);
+        } catch (_) {}
+
+
         // 🔒 Permisos: SOLO admin/superadmin pueden editar (otros: solo OBSERVACIONES)
         const isAdminOrSuper = document.body.classList.contains("role-superadmin") || document.body.classList.contains("role-admin");
         if (!isAdminOrSuper && field !== "observaciones") {
@@ -5435,6 +5459,24 @@ document.addEventListener('DOMContentLoaded', () => {
 // === GUARDADO MASIVO A NEON (solo admin) ===
 window.__pendingNeonEdits = window.__pendingNeonEdits || [];
 
+
+
+function __setSaveButtonsState(){
+  try {
+    var pending = (window.__pendingNeonEdits || []).length;
+    var isAdmin = (typeof isAdminUser === "function") ? !!isAdminUser() : (document.body.classList.contains("role-admin") || document.body.classList.contains("role-superadmin"));
+
+    var btn1 = document.getElementById("btnGuardarNeon");
+    var btn2 = document.getElementById("btnGuardarNeonBottom");
+    var st = document.getElementById("saveNeonStatus");
+
+    if (btn1) { btn1.style.display = isAdmin ? "inline-block" : "none"; btn1.disabled = !(isAdmin && pending > 0); }
+    if (btn2) { btn2.style.display = isAdmin ? "inline-block" : "none"; btn2.disabled = !(isAdmin && pending > 0); }
+    if (st) st.textContent = (isAdmin ? (pending > 0 ? ("Pendientes: " + pending) : "Sin cambios pendientes") : "");
+  } catch (e) {}
+}
+
+setTimeout(__setSaveButtonsState, 800);
 function markPendingEdit(id, field, value) {
   if (!id || !field) return;
   const sid = String(id);
@@ -5478,6 +5520,8 @@ async function guardarCambiosNeon() {
 
     const total = window.__pendingNeonEdits.length;
     window.__pendingNeonEdits = [];
+
+    __setSaveButtonsState();
 
     if (st) st.textContent = "✅ Guardado en Neon. Cambios: " + (j.updated || 0) + " (de " + total + ")";
     if (btn) btn.style.display = "none";
