@@ -4122,6 +4122,13 @@ async function loginUsuario() {
             if (!el) return;
             if (userRole === 'superadmin') el.classList.remove('hidden');
             else el.classList.add('hidden');
+
+            // ✅ Clases de rol en <body> (necesario para edición)
+            try {
+                document.body.classList.toggle("role-superadmin", userRole === "superadmin");
+                document.body.classList.toggle("role-admin", (userRole === "admin") || String(userRole).includes("admin"));
+            } catch (_) {}
+
         });
 
         if (userRole === 'superadmin') {
