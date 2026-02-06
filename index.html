@@ -2735,6 +2735,10 @@
                 <div id="tabla" class="tab-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                         <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
+                        <div style="margin:10px 0;">
+                          <button id="btnGuardarNeon" class="btn btn-success admin-only" onclick="guardarCambiosNeon()" style="display:none;">💾 Guardar cambios en Neon</button>
+                          <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
+                        </div>
                     </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
                    <div id="exportButtonsTrimestral" class="hidden" style="margin-bottom: 1rem;">
@@ -5122,6 +5126,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
 
       result.data.forEach((registro, index) => {
         const row = tbody.insertRow();
+        row.dataset.id = registro.id;
         const globalIndex = ((TRIM_PAGE - 1) * TRIM_LIMIT) + index + 1;
 
         const estadosRojos = ["CAMBIO LA INSTITUCION ACADEMICA DE INTERES", "PERSONA QUE DESERTO"];
@@ -5427,6 +5432,73 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+// === GUARDADO MASIVO A NEON (solo admin) ===
+window.__pendingNeonEdits = window.__pendingNeonEdits || [];
+
+function markPendingEdit(id, field, value) {
+  if (!id || !field) return;
+  const sid = String(id);
+  const f = String(field);
+  const v = (value == null ? "" : String(value));
+
+  // Reemplaza si ya existe (id+field)
+  const i = window.__pendingNeonEdits.findIndex(x => String(x.id) === sid && x.field === f);
+  const obj = { id: Number(id), field: f, value: v };
+  if (i >= 0) window.__pendingNeonEdits[i] = obj;
+  else window.__pendingNeonEdits.push(obj);
+
+  const btn = document.getElementById("btnGuardarNeon");
+  if (btn) btn.style.display = "inline-block";
+
+  const st = document.getElementById("saveNeonStatus");
+  if (st) st.textContent = "Pendientes: " + window.__pendingNeonEdits.length;
+}
+
+async function guardarCambiosNeon() {
+  const st = document.getElementById("saveNeonStatus");
+  const btn = document.getElementById("btnGuardarNeon");
+
+  try {
+    if (!window.__pendingNeonEdits || window.__pendingNeonEdits.length === 0) {
+      if (st) st.textContent = "Sin cambios pendientes";
+      return;
+    }
+
+    if (btn) btn.disabled = true;
+    if (st) st.textContent = "Guardando en Neon...";
+
+    const resp = await fetch("/api/trimestral/batchUpdate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ edits: window.__pendingNeonEdits })
+    });
+
+    const j = await resp.json();
+    if (!j.success) throw new Error(j.error || "No se pudo guardar");
+
+    const total = window.__pendingNeonEdits.length;
+    window.__pendingNeonEdits = [];
+
+    if (st) st.textContent = "✅ Guardado en Neon. Cambios: " + (j.updated || 0) + " (de " + total + ")";
+    if (btn) btn.style.display = "none";
+
+    // Para que quede guardado en la página también:
+    // Si existe una función de recarga, úsala; si no, recarga.
+    try {
+      if (typeof cargarTablaTrimestral === "function") await cargarTablaTrimestral();
+      else if (typeof loadTrimestralTable === "function") await loadTrimestralTable();
+      else location.reload();
+    } catch (_) {
+      location.reload();
+    }
+
+  } catch (e) {
+    if (st) st.textContent = "❌ Error: " + (e.message || e);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+// === FIN GUARDADO MASIVO A NEON ===
 </script>
 </body>
 </html>
