@@ -4736,6 +4736,43 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     // FUNCIONES DE UTILIDAD
     // ========================================
 
+    // =====================================================
+    // SAVE EDIT (cola cambios + actualiza UI, sin autosave)
+    // =====================================================
+    function saveEdit(cell, field, newValue, oldValue){
+        try {
+            const row = cell.closest('tr');
+            const id = (cell && cell.dataset && cell.dataset.id) || (row && row.dataset && row.dataset.id);
+
+            const isAdminOrSuper =
+                document.body.classList.contains('role-superadmin') ||
+                document.body.classList.contains('role-admin');
+
+            // Permisos: solo admin/superadmin editan todo; otros solo observaciones
+            if (!isAdminOrSuper && field !== 'observaciones') {
+                newValue = (oldValue == null ? '' : String(oldValue));
+            } else {
+                if (typeof markPendingEdit === 'function') {
+                    markPendingEdit(id, field, (newValue == null ? '' : String(newValue)).trim());
+                }
+                if (typeof __setSaveButtonsState === 'function') __setSaveButtonsState();
+            }
+
+            // Pintar celda (sin recargar)
+            const vTrim = (newValue == null ? '' : String(newValue)).trim();
+            const display = (field === 'observaciones')
+                ? (vTrim === '' ? '-' : vTrim)
+                : vTrim;
+
+            // Mantener icono
+            cell.classList.remove('editing');
+            const safe = (typeof escapeHtml === 'function') ? escapeHtml(display) : display;
+            cell.innerHTML = safe + ' <span class="edit-icon">✏️</span>';
+
+        } catch (e) {
+            console.error('saveEdit error', e);
+        }
+    }
     function createParticles() {
         const particlesContainer = document.getElementById('particles');
         const particleCount = 50;
