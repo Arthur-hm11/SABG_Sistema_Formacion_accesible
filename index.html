@@ -1783,7 +1783,7 @@
 
     
         /* Vista solo lectura para no superadmin */
-        body:not(.role-superadmin) .editable-cell{
+        body:not(.role-superadmin):not(.role-admin) .editable-cell{
             pointer-events: none !important;
             cursor: default !important;
         }
@@ -4558,6 +4558,14 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
     function makeEditable(cell) {
         const field = cell.dataset.field;
+
+        // 🔒 Permisos: SOLO admin/superadmin pueden editar (otros: solo OBSERVACIONES)
+        const isAdminOrSuper = document.body.classList.contains("role-superadmin") || document.body.classList.contains("role-admin");
+        if (!isAdminOrSuper && field !== "observaciones") {
+            alert("⚠️ Solo administradores pueden editar estas columnas.");
+            return;
+        }
+
 
         // ✅ Regla solicitada:
         // - TODOS los usuarios pueden editar SOLO OBSERVACIONES (máx. 150 caracteres)
