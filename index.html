@@ -4722,16 +4722,9 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             });
 
             editControl.addEventListener('blur', function() {
+                if (editControl && String(editControl.tagName).toUpperCase() === "SELECT") return;
                 saveEdit(cell, field, this.value.trim(), currentValue);
             });
-
-            // FIX: si es SELECT, guardar en cuanto cambia
-            if (editControl && String(editControl.tagName).toUpperCase() === "SELECT") {
-                editControl.addEventListener("change", function(){
-                    saveEdit(cell, field, this.value.trim(), currentValue);
-                });
-            }
-
             // FIX: si es SELECT, guardar en cuanto cambia
             if (editControl && String(editControl.tagName).toUpperCase() === "SELECT") {
                 editControl.addEventListener("change", function(){
@@ -4781,7 +4774,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             // Mantener icono
             cell.classList.remove('editing');
             const safe = (typeof escapeHtml === 'function') ? escapeHtml(display) : display;
-            cell.innerHTML = safe + ' <span class="edit-icon">✏️</span>';
+            cell.replaceChildren(document.createTextNode(safe + " "), (()=>{ const s=document.createElement("span"); s.className="edit-icon"; s.textContent="✏️"; return s; })());
 
         } catch (e) {
             console.error('saveEdit error', e);
