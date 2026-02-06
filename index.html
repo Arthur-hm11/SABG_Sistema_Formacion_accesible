@@ -4724,6 +4724,20 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             editControl.addEventListener('blur', function() {
                 saveEdit(cell, field, this.value.trim(), currentValue);
             });
+
+            // FIX: si es SELECT, guardar en cuanto cambia
+            if (editControl && String(editControl.tagName).toUpperCase() === "SELECT") {
+                editControl.addEventListener("change", function(){
+                    saveEdit(cell, field, this.value.trim(), currentValue);
+                });
+            }
+
+            // FIX: si es SELECT, guardar en cuanto cambia
+            if (editControl && String(editControl.tagName).toUpperCase() === "SELECT") {
+                editControl.addEventListener("change", function(){
+                    saveEdit(cell, field, this.value.trim(), currentValue);
+                });
+            }
         } else {
             // Observaciones: también guardar al perder foco
             editControl.addEventListener('blur', function() {
