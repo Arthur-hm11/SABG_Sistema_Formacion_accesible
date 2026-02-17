@@ -2966,7 +2966,7 @@
             <span class="modal-close" onclick="closeModal()" role="button" tabindex="0">&times;</span>
             <h2 id="modalTitle" style="color: var(--guinda); margin-bottom: 2rem;">Registro de Evidencias Mensuales</h2>
             
-            <form id="evidenciaForm" onsubmit="event.preventDefault(); alert('✅ Evidencia enviada exitosamente!'); closeModal(); this.reset();">
+            <form id="evidenciaForm" onsubmit="submitEvidencia(event)">
                 <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 Datos del Enlace de Formación Académica que Registra</h3>
                 
                 <div class="form-grid">
@@ -4888,6 +4888,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 <thead>${thead}</thead>
 <tbody>${tbody}</tbody>
 </table>
+<script src="/evidencias-drive.js"></script>
 </body>
 </html>`;
         };
