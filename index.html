@@ -2966,7 +2966,7 @@
             <span class="modal-close" onclick="closeModal()" role="button" tabindex="0">&times;</span>
             <h2 id="modalTitle" style="color: var(--guinda); margin-bottom: 2rem;">Registro de Evidencias Mensuales</h2>
             
-            <form id="evidenciaForm" onsubmit="event.preventDefault(); alert('✅ Evidencia enviada exitosamente!'); closeModal(); this.reset();">
+            <form id="evidenciaForm" onsubmit="submitEvidencia(event)">
                 <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 Datos del Enlace de Formación Académica que Registra</h3>
                 
                 <div class="form-grid">
@@ -4888,6 +4888,127 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 <thead>${thead}</thead>
 <tbody>${tbody}</tbody>
 </table>
+
+<script>
+/* ==== Evidencias PDF -> Apps Script -> Drive (SIN Render) ==== */
+window.APPS_SCRIPT_EVIDENCIAS_URL = "https://script.google.com/macros/s/AKfycbzBf07jF2UaPMxshfYD7GWGUabYQOxGVqoxguEWsZj9Desl3CKYZbLwY2tAV4zjOVv2bg/exec";
+
+/* Extrae el mes del título del modal: "Registro de Evidencias Mensuales - Febrero 2025" */
+function getMonthLabelFromUI(){
+  const candidates = [
+    document.querySelector("#evidencias h2"),
+    document.querySelector(".modal h2"),
+    document.querySelector(".modal-title"),
+    document.querySelector("h2")
+  ].filter(Boolean);
+
+  for (const el of candidates){
+    const t = (el.textContent || "").trim();
+    if (/Registro de Evidencias Mensuales/i.test(t) && t.includes("-")){
+      return t.split("-").slice(1).join("-").trim();
+    }
+  }
+  return "Mes desconocido";
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const s = String(r.result || "");
+      resolve(s.split(",")[1] || "");
+    };
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function submitEvidencia(event){
+  event.preventDefault();
+
+  const form = document.getElementById("evidenciaForm");
+  const pdfInput = document.getElementById("pdfFile");
+  const file = pdfInput?.files?.[0];
+
+  if (!window.APPS_SCRIPT_EVIDENCIAS_URL || !String(window.APPS_SCRIPT_EVIDENCIAS_URL).startsWith("https://script.google.com/macros/s/")){
+    alert("❌ Falta configurar APPS_SCRIPT_EVIDENCIAS_URL (Apps Script WebApp /exec).");
+    return;
+  }
+
+  if (!file){
+    alert("❌ Selecciona un PDF antes de enviar.");
+    return;
+  }
+  if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)){
+    alert("❌ Solo se permiten archivos PDF.");
+    return;
+  }
+
+  // Límite recomendado (base64 crece ~33%)
+  const maxMB = 8;
+  const sizeMB = file.size / (1024*1024);
+  if (sizeMB > maxMB + 0.2){
+    alert("❌ El PDF pesa " + sizeMB.toFixed(2) + " MB. Máximo recomendado: " + maxMB + " MB.");
+    return;
+  }
+
+  // Captura inputs del form sin depender de IDs
+  const textInputs = [...form.querySelectorAll('input[type="text"], input[type="email"]')];
+  const fields = textInputs.map((el, idx) => ({ idx, value: (el.value||"").trim() }));
+
+  const payload = {
+    monthLabel: getMonthLabelFromUI(),
+    fileName: file.name,
+    mimeType: file.type || "application/pdf",
+    base64: await fileToBase64(file),
+    fields
+  };
+
+  try{
+    const res = await fetch(window.APPS_SCRIPT_EVIDENCIAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const out = await res.json().catch(()=>null);
+
+    if (!res.ok || !out || !out.ok){
+      console.error("Evidencia upload fail:", res.status, out);
+      alert("❌ Error al subir a Drive: " + (out?.error || ("HTTP " + res.status)));
+      return;
+    }
+
+    alert("✅ Evidencia subida a Drive. ID: " + out.fileId);
+    if (typeof closeModal === "function") closeModal();
+    form.reset();
+  }catch(err){
+    console.error(err);
+    alert("❌ Fallo de red al subir evidencia. Revisa consola.");
+  }
+}
+
+/* UX: muestra nombre del PDF seleccionado */
+document.addEventListener("change", (e) => {
+  if (e.target && e.target.id === "pdfFile"){
+    const f = e.target.files?.[0];
+    const box = document.getElementById("fileUpload");
+    if (box && f){
+      let info = document.getElementById("pdfFileInfo");
+      if (!info){
+        info = document.createElement("div");
+        info.id = "pdfFileInfo";
+        info.style.marginTop = "10px";
+        info.style.fontSize = "0.95rem";
+        info.style.color = "#334155";
+        box.appendChild(info);
+      }
+      info.textContent = "📄 " + f.name + " (" + Math.round(f.size/1024) + " KB)";
+    }
+  }
+});
+
+</script>
 </body>
 </html>`;
         };
