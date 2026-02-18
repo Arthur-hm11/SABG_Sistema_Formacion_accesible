@@ -4,3 +4,8 @@ node_modules/
 .DS_Store
 cookies.txt
 get_refresh_token.js
+index.html.bak_*
+RESET_ENLACES.csv
+RESET_ENLACES.sql
+*.dump
+*.bak
