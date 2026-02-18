@@ -2,5 +2,5 @@
 .env.local
 node_modules/
 .DS_Store
-get_refresh_token.js
 cookies.txt
+get_refresh_token.js
