@@ -25,4 +25,12 @@ async function uploadPdf() {
     alert("❌ No se pudo subir el PDF: " + (e?.message || e));
   }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("pdfFile");
+  if (input && !input.__hasUploadPdf) {
+    input.addEventListener("change", uploadPdf);
+    input.__hasUploadPdf = true;
+  }
+});
 </script>
