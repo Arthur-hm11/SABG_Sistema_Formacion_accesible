@@ -1,0 +1,80 @@
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
+
+  const { format } = req.query;
+
+  try {
+    const result = await pool.query(`
+      SELECT * FROM trimestral_registros 
+      ORDER BY created_at DESC
+    `);
+
+    if (format === 'csv') {
+      // Generar CSV
+      const headers = Object.keys(result.rows[0] || {});
+      let csv = headers.join(',') + '\n';
+      
+      result.rows.forEach(row => {
+        const values = headers.map(header => {
+          const value = row[header];
+          if (value === null || value === undefined) return '';
+          const stringValue = String(value).replace(/"/g, '""');
+          return `"${stringValue}"`;
+        });
+        csv += values.join(',') + '\n';
+      });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=registros_sabg_${new Date().toISOString().split('T')[0]}.csv`);
+      return res.status(200).send(csv);
+    } else {
+      // Generar JSON para Excel (formato compatible)
+      const data = result.rows.map((row, index) => ({
+        'N°': index + 1,
+        'TRIMESTRE': row.trimestre || '',
+        'ID RUSP': row.id_rusp || '',
+        'PRIMER APELLIDO': row.primer_apellido || '',
+        'SEGUNDO APELLIDO': row.segundo_apellido || '',
+        'NOMBRE(S)': row.nombre || '',
+        'CURP': row.curp || '',
+        'NIVEL DE PUESTO': row.nivel_puesto || '',
+        'NIVEL TABULAR': row.nivel_tabular || '',
+        'RAMO - UR': row.ramo_ur || '',
+        'DEPENDENCIA': row.dependencia || '',
+        'CORREO INSTITUCIONAL': row.correo_institucional || '',
+        'TELÉFONO': row.telefono_institucional || '',
+        'NIVEL EDUCATIVO': row.nivel_educativo || '',
+        'INSTITUCIÓN EDUCATIVA': row.institucion_educativa || '',
+        'MODALIDAD': row.modalidad || '',
+        'ESTADO DE AVANCE': row.estado_avance || '',
+        'OBSERVACIONES': row.observaciones || '',
+        'ENLACE NOMBRE(S)': row.enlace_nombre || '',
+        'ENLACE PRIMER APELLIDO': row.enlace_primer_apellido || '',
+        'ENLACE SEGUNDO APELLIDO': row.enlace_segundo_apellido || '',
+        'ENLACE CORREO': row.enlace_correo || '',
+        'ENLACE TELÉFONO': row.enlace_telefono || '',
+        'FECHA REGISTRO': row.created_at || ''
+      }));
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename=registros_sabg_${new Date().toISOString().split('T')[0]}.json`);
+      return res.status(200).json(data);
+    }
+
+  } catch (error) {
+    console.error('Error al exportar:', error);
+    return res.status(500).json({ error: 'Error al exportar: ' + error.message });
+  }
+};
