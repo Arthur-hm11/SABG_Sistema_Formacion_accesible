@@ -5587,6 +5587,120 @@ async function guardarCambiosNeon(ev){
 
 setTimeout(__setSaveButtonsState, 800);
 // === FIN GUARDADO MASIVO A NEON ===
+
+
+// ======================================================
+// ✅ Evidencias PDF: selección + UI + submit (PRO)
+// ======================================================
+(function(){
+  // 1) Guardar mes seleccionado sin tocar tu HTML
+  window.__evidenciaMes = window.__evidenciaMes || "";
+  const _open = window.openMonthModal;
+  window.openMonthModal = function(month){
+    try { window.__evidenciaMes = String(month || ""); } catch(e) {}
+    return _open ? _open.apply(this, arguments) : undefined;
+  };
+
+  // 2) UI: mostrar nombre del PDF seleccionado
+  function setFileLabel(file){
+    const box = document.getElementById("fileUpload");
+    if (!box) return;
+    const p = box.querySelector("p:nth-of-type(2)");
+    if (p) p.textContent = file ? ("✅ Archivo: " + file.name) : "Haga clic o arrastre el archivo PDF aquí";
+  }
+
+  const input = document.getElementById("pdfFile");
+  const box = document.getElementById("fileUpload");
+  if (input){
+    input.addEventListener("change", () => {
+      const f = input.files && input.files[0];
+      setFileLabel(f || null);
+    });
+  }
+
+  // 3) Drag & Drop real (sin romper click existente)
+  if (box && input){
+    box.addEventListener("dragover", (e) => { e.preventDefault(); box.classList.add("drag"); });
+    box.addEventListener("dragleave", () => box.classList.remove("drag"));
+    box.addEventListener("drop", (e) => {
+      e.preventDefault();
+      box.classList.remove("drag");
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      if (!String(f.name||"").toLowerCase().endsWith(".pdf")) { alert("⚠️ Solo se permiten archivos PDF"); return; }
+      // Asignar al input (DataTransfer)
+      const dt = new DataTransfer();
+      dt.items.add(f);
+      input.files = dt.files;
+      setFileLabel(f);
+    });
+  }
+
+  // 4) Submit global (el form lo llama por onsubmit)
+  window.submitEvidencia = async function submitEvidencia(event){
+    try{
+      if (event && event.preventDefault) event.preventDefault();
+
+      const form = document.getElementById("evidenciaForm");
+      if (!form) throw new Error("No se encontró el formulario de evidencias");
+
+      // Inputs en tu HTML NO tienen id/name, se leen por orden
+      const inputs = Array.from(form.querySelectorAll("input"));
+      const nombre = (inputs[0]?.value || "").trim();
+      const primerApellido = (inputs[1]?.value || "").trim();
+      const segundoApellido = (inputs[2]?.value || "").trim();
+      const correo = (inputs[3]?.value || "").trim();
+      const file = document.getElementById("pdfFile")?.files?.[0] || null;
+
+      if (!nombre || !primerApellido || !segundoApellido || !correo) throw new Error("Completa todos los datos del Enlace.");
+      if (!file) throw new Error("Selecciona un archivo PDF.");
+      if (!String(file.name||"").toLowerCase().endsWith(".pdf")) throw new Error("Solo se permiten archivos PDF.");
+
+      const overlay = document.getElementById("loadingOverlay");
+      const loadingText = document.querySelector(".loading-text");
+      if (overlay) overlay.classList.add("active");
+      if (loadingText) loadingText.textContent = "📤 Subiendo evidencia PDF...";
+
+      const fd = new FormData();
+      fd.append("pdf", file, file.name);
+      fd.append("mes", window.__evidenciaMes || "");
+      fd.append("nombre", nombre);
+      fd.append("primerApellido", primerApellido);
+      fd.append("segundoApellido", segundoApellido);
+      fd.append("correo", correo);
+      fd.append("ts", String(Date.now()));
+
+      const resp = await fetch("/api/evidencias/upload?cb=" + Date.now(), {
+        method: "POST",
+        body: fd,
+        credentials: "include"
+      });
+
+      const raw = await resp.text();
+      let data = {};
+      try { data = JSON.parse(raw); } catch(_) { data = { raw }; }
+
+      if (!resp.ok || data.ok === false) {
+        throw new Error(data.error || data.message || ("HTTP " + resp.status + " - " + String(data.raw||"").slice(0,200)));
+      }
+
+      alert("✅ Evidencia enviada" + (data.link ? ("\nLink: " + data.link) : ""));
+      try { document.getElementById("pdfFile").value = ""; } catch(e) {}
+      setFileLabel(null);
+      try { closeModal(); } catch(e) {}
+
+    } catch(e){
+      console.error("❌ submitEvidencia:", e);
+      alert("❌ No se pudo enviar: " + (e?.message || e));
+    } finally {
+      const overlay = document.getElementById("loadingOverlay");
+      const loadingText = document.querySelector(".loading-text");
+      if (overlay) overlay.classList.remove("active");
+      if (loadingText) loadingText.textContent = "🚀 Procesando...";
+    }
+  };
+})();
+
 </script>
 </body>
 </html>
