@@ -4888,6 +4888,94 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 <thead>${thead}</thead>
 <tbody>${tbody}</tbody>
 </table>
+
+<script id="anti-blank-guard">
+(function () {
+  function hideOverlays() {
+    // Apaga overlays típicos (si existen)
+    const selectors = [
+      "#loadingOverlay", "#overlay", ".overlay", ".modal-overlay", ".backdrop",
+      ".swal2-container", ".loader-overlay", ".loading-overlay"
+    ];
+    selectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        try {
+          el.style.display = "none";
+          el.style.visibility = "hidden";
+          el.style.opacity = "0";
+          el.classList.remove("show", "active", "open");
+        } catch (_) {}
+      });
+    });
+
+    // Rehabilita scroll por si quedó bloqueado
+    try { document.body.style.overflow = "auto"; } catch (_) {}
+    try { document.documentElement.style.overflow = "auto"; } catch (_) {}
+  }
+
+  // 1) Si ocurre cualquier error JS, no dejes la UI "muerta"
+  window.addEventListener("error", (e) => {
+    console.error("💥 JS error (anti-blank):", e?.error || e?.message || e);
+    hideOverlays();
+  });
+
+  window.addEventListener("unhandledrejection", (e) => {
+    console.error("💥 Promise rejection (anti-blank):", e?.reason || e);
+    hideOverlays();
+  });
+
+  // 2) Evita submit normal (recarga) de forms que contengan el input pdfFile
+  document.addEventListener("submit", (e) => {
+    try {
+      const form = e.target;
+      if (form && form.querySelector && form.querySelector("#pdfFile")) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.warn("🛑 submit normal bloqueado (pdfFile)");
+        return false;
+      }
+    } catch (_) {}
+  }, true);
+
+  // 3) Reatacha change handler del input de PDF de forma segura
+  function attachSafePdfHandler() {
+    const input = document.getElementById("pdfFile");
+    if (!input) return;
+    if (input.__safePdfAttached) return;
+
+    input.addEventListener("change", async () => {
+      try {
+        if (typeof uploadPdf === "function") {
+          await uploadPdf(); // si existe tu función, úsala
+        } else {
+          console.warn("⚠️ uploadPdf() no existe (solo se seleccionó archivo).");
+        }
+      } catch (err) {
+        console.error("❌ uploadPdf crash:", err);
+        hideOverlays();
+        alert("❌ Error al subir PDF (se evitó que se rompiera la página). Revisa consola.");
+      } finally {
+        // pase lo que pase: NO overlay colgado
+        hideOverlays();
+      }
+    });
+
+    input.__safePdfAttached = true;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    hideOverlays();
+    attachSafePdfHandler();
+  });
+
+  window.addEventListener("pageshow", () => {
+    // Safari a veces regresa del file picker con estados raros
+    hideOverlays();
+    attachSafePdfHandler();
+  });
+})();
+</script>
+
 </body>
 </html>`;
         };
@@ -5588,5 +5676,93 @@ async function guardarCambiosNeon(ev){
 setTimeout(__setSaveButtonsState, 800);
 // === FIN GUARDADO MASIVO A NEON ===
 </script>
+
+<script id="anti-blank-guard">
+(function () {
+  function hideOverlays() {
+    // Apaga overlays típicos (si existen)
+    const selectors = [
+      "#loadingOverlay", "#overlay", ".overlay", ".modal-overlay", ".backdrop",
+      ".swal2-container", ".loader-overlay", ".loading-overlay"
+    ];
+    selectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        try {
+          el.style.display = "none";
+          el.style.visibility = "hidden";
+          el.style.opacity = "0";
+          el.classList.remove("show", "active", "open");
+        } catch (_) {}
+      });
+    });
+
+    // Rehabilita scroll por si quedó bloqueado
+    try { document.body.style.overflow = "auto"; } catch (_) {}
+    try { document.documentElement.style.overflow = "auto"; } catch (_) {}
+  }
+
+  // 1) Si ocurre cualquier error JS, no dejes la UI "muerta"
+  window.addEventListener("error", (e) => {
+    console.error("💥 JS error (anti-blank):", e?.error || e?.message || e);
+    hideOverlays();
+  });
+
+  window.addEventListener("unhandledrejection", (e) => {
+    console.error("💥 Promise rejection (anti-blank):", e?.reason || e);
+    hideOverlays();
+  });
+
+  // 2) Evita submit normal (recarga) de forms que contengan el input pdfFile
+  document.addEventListener("submit", (e) => {
+    try {
+      const form = e.target;
+      if (form && form.querySelector && form.querySelector("#pdfFile")) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.warn("🛑 submit normal bloqueado (pdfFile)");
+        return false;
+      }
+    } catch (_) {}
+  }, true);
+
+  // 3) Reatacha change handler del input de PDF de forma segura
+  function attachSafePdfHandler() {
+    const input = document.getElementById("pdfFile");
+    if (!input) return;
+    if (input.__safePdfAttached) return;
+
+    input.addEventListener("change", async () => {
+      try {
+        if (typeof uploadPdf === "function") {
+          await uploadPdf(); // si existe tu función, úsala
+        } else {
+          console.warn("⚠️ uploadPdf() no existe (solo se seleccionó archivo).");
+        }
+      } catch (err) {
+        console.error("❌ uploadPdf crash:", err);
+        hideOverlays();
+        alert("❌ Error al subir PDF (se evitó que se rompiera la página). Revisa consola.");
+      } finally {
+        // pase lo que pase: NO overlay colgado
+        hideOverlays();
+      }
+    });
+
+    input.__safePdfAttached = true;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    hideOverlays();
+    attachSafePdfHandler();
+  });
+
+  window.addEventListener("pageshow", () => {
+    // Safari a veces regresa del file picker con estados raros
+    hideOverlays();
+    attachSafePdfHandler();
+  });
+})();
+</script>
+
 </body>
 </html>
