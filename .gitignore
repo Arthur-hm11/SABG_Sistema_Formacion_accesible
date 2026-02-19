@@ -9,3 +9,6 @@ RESET_ENLACES.csv
 RESET_ENLACES.sql
 *.dump
 *.bak
+_respaldo_*
+.gitignore.bak_*
+_restore_*
