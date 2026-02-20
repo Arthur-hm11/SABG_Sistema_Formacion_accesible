@@ -5684,7 +5684,7 @@ setTimeout(__setSaveButtonsState, 800);
         throw new Error(data.error || data.message || ("HTTP " + resp.status + " - " + String(data.raw||"").slice(0,200)));
       }
 
-      alert("✅ Evidencia enviada" + (data.link ? ("\nLink: " + data.link) : ""));
+      alert("✅ Evidencia enviada");
       try { document.getElementById("pdfFile").value = ""; } catch(e) {}
       setFileLabel(null);
       try { closeModal(); } catch(e) {}
