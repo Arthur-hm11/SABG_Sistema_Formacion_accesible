@@ -20,3 +20,7 @@ client_secret.json
 RESPALDOS_SEGURIDAD/
 *.BKP_*
 *.bak_*
+
+# local scratch
+/generate_refresh.mjs
+/test.txt
