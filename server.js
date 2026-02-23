@@ -39,6 +39,111 @@ async function mount(method, route, handlerPath) {
 }
 
 // Montaje de rutas (import dinámico)
+// =========================
+// 🔐 API SECURITY GUARD (global)
+// Requiere cookie sabg_session firmada (HMAC) para /api/*
+// =========================
+import crypto from "crypto";
+
+function parseCookies(cookieHeader) {
+  const out = {};
+  if (!cookieHeader) return out;
+  cookieHeader.split(";").forEach(p => {
+    const i = p.indexOf("=");
+    if (i === -1) return;
+    const k = p.slice(0, i).trim();
+    const v = p.slice(i + 1).trim();
+    out[k] = decodeURIComponent(v);
+  });
+  return out;
+}
+
+function b64urlEncode(buf) {
+  return Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function b64urlDecode(str) {
+  const s = String(str).replace(/-/g, "+").replace(/_/g, "/");
+  const pad = s.length % 4 ? "=".repeat(4 - (s.length % 4)) : "";
+  return Buffer.from(s + pad, "base64").toString("utf8");
+}
+
+function verifySessionFromReq(req) {
+  const secret = process.env.SESSION_SECRET || "";
+  if (!secret) return null;
+
+  const cookies = parseCookies(req.headers.cookie || "");
+  const token = cookies.sabg_session;
+  if (!token) return null;
+
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const payloadB64 = parts[0];
+  const sig = parts[1];
+
+  const expected = b64urlEncode(
+    crypto.createHmac("sha256", secret).update(payloadB64).digest()
+  );
+
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  } catch {
+    return null;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(b64urlDecode(payloadB64));
+  } catch {
+    return null;
+  }
+
+  if (payload && payload.exp && Date.now() / 1000 > payload.exp) return null;
+  return payload;
+}
+
+const API_PUBLIC = new Set([
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/evidencias/envcheck"
+]);
+
+function requireRole(routePath, user) {
+  const rol = (user && user.rol) ? String(user.rol).toLowerCase() : "";
+
+  const adminOnly = [
+    "/api/backup/export",
+    "/api/export/excel",
+    "/api/upload/excel",
+    "/api/trimestral/deleteTest",
+    "/api/trimestral/bulkCreate"
+  ];
+
+  if (adminOnly.includes(routePath)) {
+    if (rol !== "admin" && rol !== "superadmin") return false;
+  }
+
+  if (routePath === "/api/evidencias/upload") {
+    if (!["admin", "superadmin", "enlace"].includes(rol)) return false;
+  }
+
+  return true;
+}
+
+app.use("/api", (req, res, next) => {
+  const full = req.originalUrl.split("?")[0];
+
+  if (API_PUBLIC.has(full)) return next();
+
+  const user = verifySessionFromReq(req);
+  if (!user) return res.status(401).json({ success: false, error: "No autenticado" });
+
+  if (!requireRole(full, user)) return res.status(403).json({ success: false, error: "No autorizado" });
+
+  req.user = user;
+  return next();
+});
+
 await mount("post", "/api/evidencias/upload",      "./api/evidencias/upload.js");
 await mount("get",  "/api/evidencias/envcheck",   "./api/evidencias/envcheck.js");
 await mount("get",  "/api/trimestral/list",        "./api/trimestral/list.js");
