@@ -3,37 +3,26 @@
 <head>
 <!-- SABG_IOS_OVERSCROLL_FIX_START -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
 <style>
+  :root { color-scheme: light; }
+
   html, body {
-    height: 100%;
     margin: 0;
-    background: #fff; /* fondo sólido */
-    overscroll-behavior: none; /* iOS lo ignora parcial, pero no estorba */
-  }
-
-  /* iOS Safari: evitar “bleed” del fondo moviendo el scroll a un contenedor interno */
-  body {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-  }
-
-  .page {
-    height: 100%;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     padding: 16px;
-    background: #fff;
-    color: #111;
+    min-height: 100vh;
+    background: #ffffff;
+    color: #111111;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     font-size: 16px;
     line-height: 1.6;
     overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
   }
 
-  .page a { word-break: break-word; }
-  .page img, .page table { max-width: 100%; height: auto; }
-  .page pre, .page code { white-space: pre-wrap; word-break: break-word; }
+  /* Responsive: evita zoom-out por contenido ancho */
+  img, table { max-width: 100%; height: auto; }
+  pre, code, a { word-break: break-word; white-space: pre-wrap; }
 </style>
 <!-- SABG_IOS_OVERSCROLL_FIX_END -->
 
@@ -52,8 +41,7 @@
   </style>
 </head>
 <body>
-  <div class="page">
-  <header>
+<header>
     <strong>Aviso de Privacidad</strong>
     <div><small>Formación Académica para Personas Servidoras Públicas de la APF</small></div>
   </header>
@@ -68,6 +56,5 @@
 
     <iframe class="pdf" src="aviso_privacidad.pdf"></iframe>
   </main>
-  </div>
 </body>
 </html>
