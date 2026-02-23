@@ -40,6 +40,35 @@ async function mount(method, route, handlerPath) {
 
 // Montaje de rutas (import dinámico)
 // =========================
+// =========================
+// 🌐 CORS (Render) + Hardening básico
+// =========================
+import cors from "cors";
+
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+
+const ALLOWED_ORIGINS = new Set([
+  "https://sabg-sistema-formacion.onrender.com"
+]);
+
+if (process.env.NODE_ENV !== "production") {
+  ALLOWED_ORIGINS.add("http://localhost:3000");
+  ALLOWED_ORIGINS.add("http://127.0.0.1:3000");
+}
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
+    return cb(new Error("CORS bloqueado"), false);
+  },
+  credentials: true,
+  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  maxAge: 600
+}));
+
 // 🔐 API SECURITY GUARD (global)
 // Requiere cookie sabg_session firmada (HMAC) para /api/*
 // =========================
