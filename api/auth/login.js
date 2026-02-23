@@ -37,15 +37,37 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: "Credenciales inválidas" });
     }
 
-    // Token de sesión (stateless; no requiere tabla sesiones)
-    const sessionToken = crypto.randomBytes(48).toString("hex");
+    // Sesión SABG (HMAC stateless) -> cookie sabg_session
+    const secret = process.env.SESSION_SECRET || "";
+    if (!secret) return res.status(500).json({ success:false, error:"Falta SESSION_SECRET" });
 
-    const cookie = serialize("session_token", sessionToken, {
+    const payload = {
+      id: u.id,
+      usuario: u.usuario,
+      rol: u.rol,
+      dependencia: u.dependencia,
+      exp: Math.floor(Date.now()/1000) + (60 * 60 * 8)
+    };
+
+    const payloadB64 = Buffer.from(JSON.stringify(payload), "utf8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+g, "");
+
+    const sig = crypto.createHmac("sha256", secret).update(payloadB64).digest("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+g, "");
+
+    const sabg = `.`;
+
+    const cookie = serialize("sabg_session", sabg, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 8, // 8 horas
+      maxAge: 60 * 60 * 8,
     });
 
     res.setHeader("Set-Cookie", cookie);
