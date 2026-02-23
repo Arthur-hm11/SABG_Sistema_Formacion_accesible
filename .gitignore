@@ -13,3 +13,10 @@ _respaldo_*
 .gitignore.bak_*
 _restore_*
 SABG_AUDITORIA_LIGERO.zip
+
+# secrets/backups
+.env*
+client_secret.json
+RESPALDOS_SEGURIDAD/
+*.BKP_*
+*.bak_*
