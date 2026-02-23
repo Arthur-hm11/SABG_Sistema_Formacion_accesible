@@ -13,7 +13,13 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 // Estáticos
-app.use(express.static(__dirname, { extensions: ["html"] }));
+// Servir SOLO archivos públicos (no exponer el repo)
+app.use("/public", express.static(path.join(__dirname, "public")));
+
+// Home
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // Helper para montar handlers estilo Vercel: (req,res)=>{}
 async function mount(method, route, handlerPath) {
@@ -34,7 +40,6 @@ async function mount(method, route, handlerPath) {
 
 // Montaje de rutas (import dinámico)
 await mount("post", "/api/evidencias/upload",      "./api/evidencias/upload.js");
-await mount("get",  "/api/evidencias/envcheck",   "./api/evidencias/envcheck.js");
 await mount("get",  "/api/trimestral/list",        "./api/trimestral/list.js");
 await mount("post", "/api/trimestral/create",      "./api/trimestral/create.js");
 await mount("post", "/api/trimestral/bulkCreate",  "./api/trimestral/bulkCreate.js");
@@ -50,8 +55,20 @@ await mount("get",  "/api/backup/export",          "./api/backup/export.js");
 
 await mount("post", "/api/audit/log",              "./api/audit/log.js");
 
-// SPA fallback
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+// SPA fallback seguro (NO responder index para rutas tipo archivo)
+app.get(/\.*/, (req, res, next) => {
+  const p = (req.path || "");
+
+  // No tocar API ni estáticos
+  if (p.startsWith("/api/") || p.startsWith("/public/")) return next();
+
+  // Si parece archivo (tiene punto), 404
+  if (p.includes(".")) return res.status(404).send("Not found");
+
+  // Solo si el cliente acepta HTML
+  const accept = req.headers.accept || "";
+  if (!accept.includes("text/html")) return next();
+
+  return res.sendFile(path.join(__dirname, "index.html"));
 });
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
