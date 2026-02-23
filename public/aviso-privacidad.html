@@ -43,5 +43,56 @@
 
     <iframe class="viewer" src="/public/aviso_privacidad.pdf"></iframe>
   </div>
+<!-- SABG_IOS_BOUNCE_LOCK_START -->
+<script>
+(function () {
+  // Solo iOS (Safari/Chrome iOS usan WebKit)
+  var isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+  if (!isIOS) return;
+
+  // Si hay contenedor scroll, lo usamos; si no, usamos body
+  var scroller = document.querySelector('.viewer') || document.querySelector('.page') || document.body;
+
+  // Evitar rubber-band: bloquear touchmove cuando estás en top/bottom
+  var startY = 0;
+
+  document.addEventListener('touchstart', function(e) {
+    if (!e.touches || !e.touches.length) return;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!e.touches || !e.touches.length) return;
+
+    var y = e.touches[0].clientY;
+    var dy = y - startY;
+
+    // Determina scrollTop/Height del contenedor scroll real
+    var el = scroller;
+
+    // Si es iframe (PDF), no podemos leer su scroll; bloqueamos el rebote general del viewport:
+    // (esto es lo que evita que "se vea atrás")
+    if (el && el.tagName === 'IFRAME') {
+      // Si jalas hacia abajo estando arriba, o hacia arriba estando abajo, cancela.
+      // Como no podemos medir, cancelamos cualquier intento de overscroll del viewport.
+      e.preventDefault();
+      return;
+    }
+
+    var st = el.scrollTop || 0;
+    var sh = el.scrollHeight || 0;
+    var ch = el.clientHeight || 0;
+
+    var atTop = st <= 0;
+    var atBottom = (st + ch) >= (sh - 1);
+
+    if ((atTop && dy > 0) || (atBottom && dy < 0)) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+})();
+</script>
+<!-- SABG_IOS_BOUNCE_LOCK_END -->
+
 </body>
 </html>
