@@ -53,12 +53,12 @@ export default async function handler(req, res) {
       .toString("base64")
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
-      .replace(/=+g, "");
+      .replace(/=+$/g, "");
 
     const sig = crypto.createHmac("sha256", secret).update(payloadB64).digest("base64")
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
-      .replace(/=+g, "");
+      .replace(/=+$/g, "");
 
     const sabg = `.`;
 
