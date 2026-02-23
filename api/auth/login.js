@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       .replace(/\//g, "_")
       .replace(/=+$/g, "");
 
-    const sabg = `.`;
+    const sabg = `${payloadB64}.${sig}`;
 
     const cookie = serialize("sabg_session", sabg, {
       httpOnly: true,
