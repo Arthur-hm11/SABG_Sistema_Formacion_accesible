@@ -1,4 +1,7 @@
 export default function handler(req, res) {
+  const isProd = (process.env.NODE_ENV === "production" || process.env.RENDER === "true" || !!process.env.RENDER_SERVICE_ID);
+  if (isProd) return res.status(404).send("Not found");
+
   const has = (k) => !!process.env[k] && String(process.env[k]).length > 10;
   return res.json({
     ok: true,
