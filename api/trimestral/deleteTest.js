@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { applyCors } from "../_lib/cors.js";
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -11,8 +12,9 @@ const pool = new Pool({
 const TABLE = "public.registros_trimestral";
 
 function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  const pre = applyCors(req, res);
+  if (pre) return;
+res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 

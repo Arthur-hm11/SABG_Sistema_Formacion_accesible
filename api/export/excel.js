@@ -1,4 +1,5 @@
 import pool from "../_lib/db.js";
+import { applyCors } from "../_lib/cors.js";
 import * as XLSX from "xlsx";
 
 function toCsv(rows) {
@@ -18,7 +19,8 @@ function toCsv(rows) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const pre = applyCors(req, res);
+  if (pre) return;
   // SECURITY: require session cookie
   const cookie = String(req.headers.cookie || "");
   if (!cookie.includes("sabg_session=")) return res.status(401).json({ success:false, error:"Unauthorized" });
