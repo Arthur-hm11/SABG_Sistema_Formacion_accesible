@@ -1,4 +1,5 @@
 import pool from "../_lib/db.js";
+import { applyCors } from "../_lib/cors.js";
 
 function toInt(v, def) {
   const n = parseInt(String(v ?? ""), 10);
@@ -14,15 +15,15 @@ function cleanLike(v) {
 
 export default async function handler(req, res) {
   // CORS
+  const pre = applyCors(req, res);
+  if (pre) return;
   // SECURITY: block public access (PII)
   const cookie = String(req.headers.cookie || "");
   if (!cookie.includes("sabg_session=")) return res.status(401).json({ success:false, error:"Unauthorized" });
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
-  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
