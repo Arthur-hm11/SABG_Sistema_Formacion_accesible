@@ -1,12 +1,31 @@
 import "dotenv/config";
 import path from "path";
 import express from "express";
+import helmet from "helmet";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+app.disable("x-powered-by");
+
+// Security headers (Helmet)
+app.use(helmet({
+  contentSecurityPolicy: false, // CSP fino después
+  crossOriginEmbedderPolicy: false
+}));
+
+// No-store para APIs (evitar cache de respuestas con datos)
+app.use((req, res, next) => {
+  if ((req.path || "").startsWith("/api/")) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+  next();
+});
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "25mb" }));
