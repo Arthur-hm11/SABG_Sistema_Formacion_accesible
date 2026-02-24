@@ -14,6 +14,10 @@ function cleanLike(v) {
 
 export default async function handler(req, res) {
   // CORS
+  // SECURITY: block public access (PII)
+  const cookie = String(req.headers.cookie || "");
+  if (!cookie.includes("sabg_session=")) return res.status(401).json({ success:false, error:"Unauthorized" });
+
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
