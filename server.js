@@ -2,6 +2,7 @@ import "dotenv/config";
 import path from "path";
 import express from "express";
 import helmet from "helmet";
+import { uploadLimiter } from "./api/_lib/limiters.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,6 +11,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 app.disable("x-powered-by");
+
+// Trust proxy (Render/Cloudflare) so req.ip works for rate limiting
+app.set("trust proxy", 1);
+
+// Rate limit (only upload)
+app.use("/api/evidencias/upload", uploadLimiter);
 
 // Security headers (Helmet)
 app.use(helmet({
