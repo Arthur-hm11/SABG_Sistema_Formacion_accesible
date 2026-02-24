@@ -19,6 +19,10 @@ function toCsv(rows) {
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
+  // SECURITY: require session cookie
+  const cookie = String(req.headers.cookie || "");
+  if (!cookie.includes("sabg_session=")) return res.status(401).json({ success:false, error:"Unauthorized" });
+
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
