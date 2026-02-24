@@ -96,6 +96,10 @@ app.get(/\.*/, (req, res, next) => {
   const accept = req.headers.accept || "";
   if (!accept.includes("text/html")) return next();
 
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+
   return res.sendFile(path.join(__dirname, "index.html"));
 });
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
