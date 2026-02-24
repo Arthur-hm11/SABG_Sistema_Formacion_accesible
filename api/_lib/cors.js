@@ -3,13 +3,20 @@ const ALLOWED = new Set([
   "http://localhost:3000",
 ]);
 
+const FALLBACK_ORIGIN = "https://sabg-sistema-formacion.onrender.com";
+
 export function applyCors(req, res) {
-  const origin = String(req.headers.origin || "");
+  const originRaw = String(req.headers.origin || "");
+  const origin = originRaw.replace(/\/$/, ""); // normalize trailing slash
+
+  // If Origin is allowed, reflect it (strict allowlist).
   if (ALLOWED.has(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
-    // Si usas cookies cross-site, necesitarías Allow-Credentials y SameSite=None en la cookie.
-    // Por ahora NO lo activamos para no abrir más de lo necesario.
+  } else if (!origin && req.method === "OPTIONS") {
+    // Some proxies strip Origin on OPTIONS; allow known prod origin for preflight only.
+    res.setHeader("Access-Control-Allow-Origin", FALLBACK_ORIGIN);
+    res.setHeader("Vary", "Origin");
   }
 
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -19,7 +26,6 @@ export function applyCors(req, res) {
   );
 
   if (req.method === "OPTIONS") {
-    // Si origin no está permitido, responde igualmente pero sin Allow-Origin
     return res.status(200).end();
   }
   return null;
