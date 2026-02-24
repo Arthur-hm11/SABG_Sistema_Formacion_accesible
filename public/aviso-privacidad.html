@@ -1,6 +1,36 @@
 <!doctype html>
 <html lang="es">
 <head>
+<!-- SABG_AVISO_NO_BODY_SCROLL_START -->
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: #fff;
+    overflow: hidden;           /* ✅ cancela scroll del body */
+    overscroll-behavior: none;  /* ayuda donde aplica */
+    -webkit-text-size-adjust: 100%;
+  }
+  /* El scroll vive aquí */
+  .sabg-scroll {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    background: #fff;
+    color: #111;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  .sabg-scroll img, .sabg-scroll table { max-width: 100%; height: auto; }
+  .sabg-scroll a { word-break: break-word; }
+  .sabg-scroll pre, .sabg-scroll code { white-space: pre-wrap; word-break: break-word; }
+</style>
+<!-- SABG_AVISO_NO_BODY_SCROLL_END -->
+
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
@@ -36,6 +66,7 @@
   </style>
 </head>
 <body>
+  <div class="sabg-scroll">
   <div class="wrap">
     <div class="bar">
       Aviso de Privacidad (PDF). Si no se visualiza, <a href="/public/aviso_privacidad.pdf" target="_blank" rel="noopener">ábrelo aquí</a>.
@@ -93,6 +124,6 @@
 })();
 </script>
 <!-- SABG_IOS_BOUNCE_LOCK_END -->
-
+  </div>
 </body>
 </html>
