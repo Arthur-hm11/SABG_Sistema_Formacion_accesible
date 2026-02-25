@@ -127,11 +127,11 @@
         @keyframes slideInUp {
             from {
                 opacity: 0;
-                transform: translateY(100px) scale(0.8);
+                
             }
             to {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                
             }
         }
 
@@ -240,8 +240,8 @@
         }
 
         @keyframes bounceIcon {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+            0%, 100% {  }
+            50% {  }
         }
 
         .login-input {
@@ -259,7 +259,7 @@
             border-color: var(--guinda);
             box-shadow: 0 10px 30px rgba(107, 44, 64, 0.15),
                         0 0 0 4px rgba(107, 44, 64, 0.1);
-            transform: translateY(-2px);
+            
         }
 
         .login-input:focus + .input-icon {
@@ -305,7 +305,7 @@
 
         .role-card:hover {
             border-color: var(--guinda);
-            transform: translateY(-5px) scale(1.05);
+            
             box-shadow: 0 15px 40px rgba(107, 44, 64, 0.2);
         }
 
@@ -379,12 +379,12 @@
         }
 
         .login-btn:hover {
-            transform: translateY(-3px);
+            
             box-shadow: 0 15px 40px rgba(107, 44, 64, 0.4);
         }
 
         .login-btn:active {
-            transform: translateY(0);
+            
         }
 
         .login-btn span {
@@ -500,8 +500,8 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-100px) rotate(180deg); }
+            0%, 100% {  }
+            50% {  }
         }
 
         /* Header */
@@ -591,8 +591,8 @@
         }
 
         @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {  opacity: 0; }
+            to {  opacity: 1; }
         }
 
         h1 {
@@ -710,7 +710,7 @@
         }
 
         .main-nav-btn:hover {
-            transform: translateY(-5px) scale(1.05);
+            
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
         }
 
@@ -829,8 +829,8 @@
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0;  }
+            to { opacity: 1;  }
         }
 
         /* Card */
@@ -845,12 +845,12 @@
         }
 
         @keyframes cardFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+            0%, 100% {  }
+            50% {  }
         }
 
         .card:hover {
-            transform: translateY(-15px);
+            
             box-shadow: 0 30px 80px rgba(0,0,0,0.4);
         }
 
@@ -910,7 +910,7 @@
         }
 
         .feature-card:hover {
-            transform: translateY(-10px);
+            
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
@@ -959,7 +959,7 @@
         }
 
         .stat-card:hover {
-            transform: translateY(-10px) scale(1.05);
+            
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
@@ -974,8 +974,8 @@
         }
 
         @keyframes countUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0;  }
+            to { opacity: 1;  }
         }
 
         .stat-label {
@@ -1007,7 +1007,7 @@
 
         .tab:hover {
             background: rgba(107, 44, 64, 0.3);
-            transform: translateY(-3px);
+            
         }
 
         .tab.active {
@@ -1135,7 +1135,7 @@
         }
 
         .btn:hover {
-            transform: translateY(-3px) scale(1.05);
+            
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
         }
 
@@ -1309,7 +1309,7 @@
         }
 
         .month-card:hover {
-            transform: translateY(-10px) rotate(2deg);
+            
             box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
 
@@ -1655,7 +1655,7 @@
         }
         
         #restaurarPasswordModal .modal-actions button:hover {
-            transform: translateY(-2px);
+            
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         #registroModal.hidden {
@@ -1755,12 +1755,12 @@
         }
 
         #registroModal .modal-actions button:hover {
-            transform: translateY(-2px);
+            
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         #registroModal .modal-actions button:active {
-            transform: translateY(0);
+            
         }
 
         .register-btn {
@@ -1779,15 +1779,15 @@
         }
 
         .register-btn:hover {
-            transform: translateY(-3px);
+            
             box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
         }
 
         .register-btn:active {
-            transform: translateY(0);
+            
         }
         .header-logo-escudo{
-  height: 56px;          /* ajusta: 40–72px típico en headers */
+  height: 52px;          /* ajusta: 40–72px típico en headers */
   width: auto;           /* respeta proporción */
   max-width: 100%;
   object-fit: contain;   /* evita recortes */
@@ -1992,7 +1992,7 @@
 /* ===== FIN FIX TABS UNIFORMES v2 ===== */
 
 /* FIX header */
-header .header-top{display:flex !important;align-items:center !important;justify-content:space-between !important;}
+header .header-top{display:flex;align-items:center;justify-content:space-between;}
 header .header-left{flex:0 0 auto !important;display:flex !important;align-items:center !important;}
 header .header-right{margin-left:auto !important;display:flex !important;align-items:center !important;justify-content:flex-end !important;gap:10px !important;}
 header .header-right{transform: translateY(-4px) !important;}
