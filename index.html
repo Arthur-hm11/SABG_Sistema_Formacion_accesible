@@ -1988,6 +1988,24 @@
 }
 /* ===== FIN FIX TABS UNIFORMES v2 ===== */
 
+
+/* LOGO PFA junto al título (NO altera layout existente fuera del header-bottom) */
+.header-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:30px;
+}
+.header-title-text{
+  text-align:center;
+}
+.logo-pfa{
+  height:75px;
+  width:auto;
+  object-fit:contain;
+  display:block;
+}
+
 /* ONLY MOVE USER BLOCK */
 header{position:relative;}
 header .user-info{position:absolute; right:18px; top:12px; margin:0;}
@@ -2078,8 +2096,14 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
             </div>
         </div>
         <div class="header-bottom">
-            <h1>Sistema de Promoción de la Formación Académica</h1>
-            <p class="subtitle">Dirección de Capacitación y Evaluación del Desempeño</p>
+            <div class="header-title-row">
+                <div class="header-title-text">
+                    <h1>Sistema de Promoción de la Formación Académica</h1>
+                    <p class="subtitle">Dirección de Capacitación y Evaluación del Desempeño</p>
+                </div>
+
+                <img src="/public/Logo PFA.jpeg" class="logo-pfa" alt="Promoción de la Formación Académica">
+            </div>
         </div>
     </header>
 
