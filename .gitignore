@@ -24,3 +24,6 @@ RESPALDOS_SEGURIDAD/
 # local scratch
 /generate_refresh.mjs
 /test.txt
+
+# no subir zips
+*.zip
