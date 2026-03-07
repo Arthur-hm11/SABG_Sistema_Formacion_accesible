@@ -1,13 +1,59 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 
+function norm(v) {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
+}
+
+function upperOrNull(v) {
+  const s = norm(v);
+  return s ? s.toUpperCase() : null;
+}
+
+function clip(v, max) {
+  const s = norm(v);
+  if (!s) return null;
+  return s.length > max ? s.slice(0, max) : s;
+}
+
+// CURP seguro (varchar 18)
+function normalizeCurpForDb(curpVal) {
+  const s = upperOrNull(curpVal);
+  if (!s) return null;
+
+  const bad = new Set([
+    "SIN CURP",
+    "S/CURP",
+    "SIN INFORMACION",
+    "SIN INFORMACIÓN",
+    "NO CUENTA CON CURP",
+    "N/A",
+    "NO APLICA",
+    "NA",
+    "NULL",
+    "-",
+    "0",
+  ]);
+  if (bad.has(s)) return null;
+
+  const compact = s.replace(/[^A-Z0-9]/g, "");
+  if (compact.length !== 18) return null;
+  if (!/^[A-Z0-9]{18}$/.test(compact)) return null;
+
+  return compact;
+}
+
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
-res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
+
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
@@ -15,10 +61,58 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   try {
     const data = req.body || {};
 
-    // Validar datos requeridos (mínimos)
-    if (!data.enlace_nombre || !data.trimestre || !data.nombre) {
+    // Validar datos requeridos mínimos
+    if (!norm(data.enlace_nombre) || !norm(data.trimestre) || !norm(data.nombre)) {
       return res.status(400).json({ success: false, error: "Faltan datos requeridos" });
     }
+
+    const curpClean = normalizeCurpForDb(data.curp);
+
+    // Si viene CURP válida, revisar si ya existe
+    if (curpClean) {
+      const existe = await pool.query(
+        `
+          SELECT id
+          FROM registros_trimestral
+          WHERE UPPER(BTRIM(curp)) = $1
+          LIMIT 1
+        `,
+        [curpClean]
+      );
+
+      if (existe.rows.length > 0) {
+        return res.status(409).json({
+          success: false,
+          error: "La persona ya está registrada."
+        });
+      }
+    }
+
+    const values = [
+      clip(data.enlace_nombre, 200),
+      clip(data.enlace_primer_apellido, 100),
+      clip(data.enlace_segundo_apellido, 100),
+      clip(data.enlace_correo, 200),
+      clip(data.enlace_telefono, 50),
+      clip(data.trimestre, 50),
+      clip(data.id_rusp, 100),
+      clip(data.primer_apellido, 100),
+      clip(data.segundo_apellido, 100),
+      clip(data.nombre, 200),
+      curpClean,
+      clip(data.nivel_puesto, 200),
+      clip(data.nivel_tabular, 50),
+      clip(data.ramo_ur, 50),
+      norm(data.dependencia),
+      clip(data.correo_institucional, 200),
+      clip(data.telefono_institucional, 50),
+      clip(data.nivel_educativo, 100),
+      norm(data.institucion_educativa),
+      norm(data.modalidad),
+      norm(data.estado_avance),
+      norm(data.observaciones),
+      clip(data.usuario_registro, 100),
+    ];
 
     const result = await pool.query(
       `INSERT INTO registros_trimestral (
@@ -31,36 +125,27 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
         estado_avance, observaciones, usuario_registro
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
       RETURNING *`,
-      [
-        data.enlace_nombre ?? null,
-        data.enlace_primer_apellido ?? null,
-        data.enlace_segundo_apellido ?? null,
-        data.enlace_correo ?? null,
-        data.enlace_telefono ?? null,
-        data.trimestre ?? null,
-        data.id_rusp ?? null,
-        data.primer_apellido ?? null,
-        data.segundo_apellido ?? null,
-        data.nombre ?? null,
-        data.curp ?? null,
-        data.nivel_puesto ?? null,
-        data.nivel_tabular ?? null,
-        data.ramo_ur ?? null,
-        data.dependencia ?? null,
-        data.correo_institucional ?? null,
-        data.telefono_institucional ?? null,
-        data.nivel_educativo ?? null,
-        data.institucion_educativa ?? null,
-        data.modalidad ?? null,
-        data.estado_avance ?? null,
-        data.observaciones ?? null,
-        data.usuario_registro ?? null,
-      ]
+      values
     );
 
-    return res.status(201).json({ success: true, data: result.rows[0] });
+    return res.status(201).json({
+      success: true,
+      message: "Registro guardado correctamente.",
+      data: result.rows[0]
+    });
   } catch (error) {
+    // Respaldo por si entra el índice único y llega un duplicado simultáneo
+    if (error?.code === "23505") {
+      return res.status(409).json({
+        success: false,
+        error: "La persona ya está registrada."
+      });
+    }
+
     console.error("Error /api/trimestral/create:", error);
-    return res.status(500).json({ success: false, error: error?.message || String(error) });
+    return res.status(500).json({
+      success: false,
+      error: error?.message || String(error)
+    });
   }
 }
