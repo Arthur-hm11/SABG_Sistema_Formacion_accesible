@@ -19,56 +19,82 @@ export default async function handler(req, res) {
 
   try {
     const page = Math.max(toInt(req.query?.page, 1), 1);
-    const limit = Math.min(Math.max(toInt(req.query?.limit, 50), 1), 200);
+    const limit = Math.min(Math.max(toInt(req.query?.limit, 200), 1), 500);
     const offset = (page - 1) * limit;
 
     const q = cleanLike(req.query?.q);
-    const mes = cleanLike(req.query?.mes);
-    const anio = cleanLike(req.query?.anio);
     const dependencia = cleanLike(req.query?.dependencia);
+    const anio = cleanLike(req.query?.anio);
+    const mes = cleanLike(req.query?.mes);
 
     const where = [];
     const params = [];
 
-    if (mes) {
-      params.push(`%${mes}%`);
-      where.push(`mes ILIKE $${params.length}`);
-    }
-
-    if (anio) {
-      params.push(String(anio));
-      where.push(`CAST(anio AS TEXT) = $${params.length}`);
-    }
-
     if (dependencia) {
       params.push(`%${dependencia}%`);
-      where.push(`dependencia ILIKE $${params.length}`);
+      where.push(`r.dependencia ILIKE $${params.length}`);
     }
 
     if (q) {
       params.push(`%${q}%`);
       const p = `$${params.length}`;
       where.push(`(
-        mes ILIKE ${p}
-        OR CAST(anio AS TEXT) ILIKE ${p}
-        OR enlace_nombre ILIKE ${p}
-        OR enlace_primer_apellido ILIKE ${p}
-        OR enlace_segundo_apellido ILIKE ${p}
-        OR enlace_correo ILIKE ${p}
-        OR dependencia ILIKE ${p}
-        OR archivo_pdf_nombre ILIKE ${p}
-        OR estado_revision ILIKE ${p}
-        OR observaciones_dceve ILIKE ${p}
-        OR CONCAT_WS(' ', enlace_nombre, enlace_primer_apellido, enlace_segundo_apellido) ILIKE ${p}
-        OR CONCAT_WS(' ', enlace_primer_apellido, enlace_segundo_apellido, enlace_nombre) ILIKE ${p}
+        r.nombre ILIKE ${p}
+        OR r.primer_apellido ILIKE ${p}
+        OR r.segundo_apellido ILIKE ${p}
+        OR r.curp ILIKE ${p}
+        OR r.id_rusp ILIKE ${p}
+        OR r.dependencia ILIKE ${p}
+        OR r.enlace_nombre ILIKE ${p}
+        OR r.enlace_primer_apellido ILIKE ${p}
+        OR r.enlace_segundo_apellido ILIKE ${p}
+        OR r.enlace_correo ILIKE ${p}
+        OR CONCAT_WS(' ', r.nombre, r.primer_apellido, r.segundo_apellido) ILIKE ${p}
+        OR CONCAT_WS(' ', r.primer_apellido, r.segundo_apellido, r.nombre) ILIKE ${p}
+        OR ev.archivo_pdf_nombre ILIKE ${p}
+        OR ev.estado_revision ILIKE ${p}
+        OR ev.observaciones_dceve ILIKE ${p}
+        OR CAST(ev.anio AS TEXT) ILIKE ${p}
+        OR ev.mes ILIKE ${p}
       )`);
+    }
+
+    if (anio) {
+      params.push(String(anio));
+      where.push(`CAST(ev.anio AS TEXT) = $${params.length}`);
+    }
+
+    if (mes) {
+      params.push(`%${mes}%`);
+      where.push(`ev.mes ILIKE $${params.length}`);
     }
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
+    const fromSql = `
+      FROM public.registros_trimestral r
+      LEFT JOIN LATERAL (
+        SELECT
+          e.id,
+          e.mes,
+          e.anio,
+          e.archivo_pdf_url,
+          e.archivo_pdf_nombre,
+          e.estado_revision,
+          e.observaciones_dceve,
+          e.created_at,
+          e.updated_at
+        FROM public.evidencias_mensuales e
+        WHERE
+          LOWER(BTRIM(COALESCE(e.dependencia, ''))) = LOWER(BTRIM(COALESCE(r.dependencia, '')))
+        ORDER BY e.created_at DESC
+        LIMIT 1
+      ) ev ON TRUE
+    `;
+
     const totalRes = await pool.query(
       `SELECT COUNT(*)::int AS total
-       FROM public.evidencias_mensuales
+       ${fromSql}
        ${whereSql}`,
       params
     );
@@ -80,24 +106,23 @@ export default async function handler(req, res) {
 
     const dataSql = `
       SELECT
-        id,
-        mes,
-        anio,
-        enlace_nombre,
-        enlace_primer_apellido,
-        enlace_segundo_apellido,
-        enlace_correo,
-        archivo_pdf_url,
-        archivo_pdf_nombre,
-        dependencia,
-        usuario_registro,
-        estado_revision,
-        observaciones_dceve,
-        created_at,
-        updated_at
-      FROM public.evidencias_mensuales
+        r.id,
+        ev.mes,
+        ev.anio,
+        r.enlace_nombre,
+        r.enlace_primer_apellido,
+        r.enlace_segundo_apellido,
+        r.enlace_correo,
+        r.dependencia,
+        ev.archivo_pdf_url,
+        ev.archivo_pdf_nombre,
+        ev.estado_revision,
+        ev.observaciones_dceve,
+        r.created_at AS created_at_registro,
+        ev.created_at AS created_at_evidencia
+      ${fromSql}
       ${whereSql}
-      ORDER BY created_at DESC
+      ORDER BY r.created_at DESC
       LIMIT $${params.length - 1}
       OFFSET $${params.length}
     `;
@@ -115,7 +140,7 @@ export default async function handler(req, res) {
     console.error("Error /api/evidencias/list:", error);
     return res.status(500).json({
       ok: false,
-      error: "Error al consultar evidencias mensuales"
+      error: "Error al consultar panel maestro de evidencias"
     });
   }
 }

@@ -3350,7 +3350,7 @@ async function loadEvidenciasRevision() {
                     <td>${pdfCell}</td>
                     <td>${escapeHtml(row.estado_revision || '')}</td>
                     <td>${escapeHtml(row.observaciones_dceve || '')}</td>
-                    <td>${escapeHtml(formatFechaMx(row.created_at))}</td>
+                    <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
                 </tr>
             `;
         }).join('');
