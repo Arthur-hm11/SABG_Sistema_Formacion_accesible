@@ -2618,6 +2618,15 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         
                         <div class="form-grid">
                             <div class="form-group">
+                                <label for="anio">Año <span class="required">*</span></label>
+                                <select name="anio" required id="anio">
+                                    <option value="">Seleccione...</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                    <option value="2027">2027</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label for="trimestre">Trimestre <span class="required">*</span></label>
                                 <select name="trimestre" required id="trimestre">
                                     <option value="">Seleccione...</option>
@@ -5320,6 +5329,7 @@ async function guardarRegistroTrimestral() {
         enlace_segundo_apellido: formData.get('enlace_apellido2'),
         enlace_correo: formData.get('enlace_correo'),
         enlace_telefono: formData.get('enlace_telefono'),
+        anio: formData.get('anio'),
         trimestre: formData.get('trimestre'),
         id_rusp: formData.get('id_rusp'),
         primer_apellido: formData.get('primer_apellido'),
