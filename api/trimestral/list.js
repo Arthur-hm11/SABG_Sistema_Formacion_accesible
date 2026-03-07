@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         OR nombre ILIKE ${p}
         OR primer_apellido ILIKE ${p}
         OR segundo_apellido ILIKE ${p}
-        OR institucion_educativa ILIKE ${p}
+        OR dependencia ILIKE ${p}
         OR CONCAT_WS(' ', nombre, primer_apellido, segundo_apellido) ILIKE ${p}
         OR CONCAT_WS(' ', primer_apellido, segundo_apellido, nombre) ILIKE ${p}
       )`);
