@@ -3024,6 +3024,47 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                             <li>Marque como "Completado" o "Sin completar" según la revisión</li>
                         </ul>
                     </div>
+
+                    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap; margin:1.5rem 0;">
+                        <input
+                            type="text"
+                            id="busquedaEvidenciasDceve"
+                            placeholder="Buscar por nombre del enlace, dependencia, mes, año o archivo PDF..."
+                            style="flex:1; min-width:280px; padding:1rem 1.2rem; border:2px solid rgba(107,44,64,.25); border-radius:12px; font-size:1rem;"
+                            oninput="debouncedLoadEvidenciasRevision()"
+                        />
+                        <button class="btn" type="button" onclick="loadEvidenciasRevision()">🔄 Actualizar</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="evidenciasRevisionTable">
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>MES</th>
+                                    <th>AÑO</th>
+                                    <th>ENLACE NOMBRE(S)</th>
+                                    <th>ENLACE PRIMER APELLIDO</th>
+                                    <th>ENLACE SEGUNDO APELLIDO</th>
+                                    <th>ENLACE CORREO</th>
+                                    <th>DEPENDENCIA</th>
+                                    <th>ARCHIVO PDF</th>
+                                    <th>ESTADO REVISIÓN</th>
+                                    <th>OBSERVACIONES DCEVE</th>
+                                    <th>FECHA REGISTRO</th>
+                                </tr>
+                            </thead>
+                            <tbody id="evidenciasRevisionBody">
+                                <tr>
+                                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+                                        Cargando evidencias...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="evidenciasRevisionMeta" style="margin-top:1rem; color:#64748b; font-weight:600;"></div>
                 </div>
             </div>
         </div>
@@ -3225,6 +3266,138 @@ if (typeof window.updateStatsFromRegistros !== 'function') {
    - Bloquea acciones críticas si no es superadmin
    - Registra acciones en localStorage y (opcional) envía a /api/audit/log
 ========================================================= */
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatFechaMx(value) {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return d.toLocaleString('es-MX');
+}
+
+let __evidenciasRevisionTimer = null;
+
+function debouncedLoadEvidenciasRevision() {
+    clearTimeout(__evidenciasRevisionTimer);
+    __evidenciasRevisionTimer = setTimeout(() => {
+        loadEvidenciasRevision();
+    }, 300);
+}
+
+async function loadEvidenciasRevision() {
+    const tbody = document.getElementById('evidenciasRevisionBody');
+    const meta = document.getElementById('evidenciasRevisionMeta');
+    const input = document.getElementById('busquedaEvidenciasDceve');
+
+    if (!tbody) return;
+
+    const q = (input?.value || '').trim();
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+                Cargando evidencias...
+            </td>
+        </tr>
+    `;
+
+    try {
+        const url = '/api/evidencias/list?limit=200&q=' + encodeURIComponent(q) + '&cb=' + Date.now();
+        const resp = await fetch(url, { cache: 'no-store' });
+        const data = await resp.json();
+
+        if (!resp.ok || !data?.ok) {
+            throw new Error(data?.error || 'No se pudieron cargar las evidencias');
+        }
+
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+
+        if (!rows.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+                        No hay evidencias registradas para mostrar.
+                    </td>
+                </tr>
+            `;
+            if (meta) meta.textContent = 'Total: 0 registros';
+            return;
+        }
+
+        tbody.innerHTML = rows.map((row, idx) => {
+            const pdfCell = row.archivo_pdf_url
+                ? `<a href="${escapeHtml(row.archivo_pdf_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
+                : escapeHtml(row.archivo_pdf_nombre || '');
+
+            return `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td>${escapeHtml(row.mes || '')}</td>
+                    <td>${escapeHtml(row.anio || '')}</td>
+                    <td>${escapeHtml(row.enlace_nombre || '')}</td>
+                    <td>${escapeHtml(row.enlace_primer_apellido || '')}</td>
+                    <td>${escapeHtml(row.enlace_segundo_apellido || '')}</td>
+                    <td>${escapeHtml(row.enlace_correo || '')}</td>
+                    <td>${escapeHtml(row.dependencia || '')}</td>
+                    <td>${pdfCell}</td>
+                    <td>${escapeHtml(row.estado_revision || '')}</td>
+                    <td>${escapeHtml(row.observaciones_dceve || '')}</td>
+                    <td>${escapeHtml(formatFechaMx(row.created_at))}</td>
+                </tr>
+            `;
+        }).join('');
+
+        if (meta) {
+            meta.textContent = `Total: ${Number(data.total || rows.length).toLocaleString('es-MX')} registros`;
+        }
+    } catch (err) {
+        console.error('Error cargando evidencias DCEVE:', err);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="12" style="text-align:center; padding:1.5rem; color:#b91c1c;">
+                    Error al cargar evidencias mensuales.
+                </td>
+            </tr>
+        `;
+        if (meta) meta.textContent = '';
+    }
+}
+
+(function wireEvidenciasRevisionTab(){
+    if (window.__wireEvidenciasRevisionTabDone) return;
+    window.__wireEvidenciasRevisionTabDone = true;
+
+    const original = window.showSectionAndTab;
+    if (typeof original === 'function') {
+        window.showSectionAndTab = function(sectionId, tabId) {
+            const result = original.apply(this, arguments);
+            try {
+                if (sectionId === 'evidencias' && tabId === 'revision') {
+                    setTimeout(loadEvidenciasRevision, 80);
+                }
+            } catch (e) {
+                console.warn('No se pudo refrescar panel DCEVE de evidencias:', e);
+            }
+            return result;
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const panelActivo = document.querySelector('#evidencias #revision.subsection.active');
+        if (panelActivo) {
+            loadEvidenciasRevision();
+        }
+    });
+})();
+
 function isSuperAdmin() {
     return (userRole === 'superadmin');
 }
