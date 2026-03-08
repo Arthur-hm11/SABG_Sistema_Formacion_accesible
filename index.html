@@ -3043,20 +3043,24 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                     <th>N°</th>
                                     <th>MES</th>
                                     <th>AÑO</th>
+                                    <th>NOMBRE(S)</th>
+                                    <th>PRIMER APELLIDO</th>
+                                    <th>SEGUNDO APELLIDO</th>
+                                    <th>CORREO INSTITUCIONAL</th>
+                                    <th>DEPENDENCIA</th>
+                                    <th>ARCHIVO PDF</th>
+                                    <th>ESTADO DE AVANCE</th>
+                                    <th>OBSERVACIONES</th>
+                                    <th>FECHA REGISTRO</th>
                                     <th>ENLACE NOMBRE(S)</th>
                                     <th>ENLACE PRIMER APELLIDO</th>
                                     <th>ENLACE SEGUNDO APELLIDO</th>
                                     <th>ENLACE CORREO</th>
-                                    <th>DEPENDENCIA</th>
-                                    <th>ARCHIVO PDF</th>
-                                    <th>ESTADO REVISIÓN</th>
-                                    <th>OBSERVACIONES DCEVE</th>
-                                    <th>FECHA REGISTRO</th>
                                 </tr>
                             </thead>
                             <tbody id="evidenciasRevisionBody">
                                 <tr>
-                                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+                                    <td colspan="16" style="text-align:center; padding:1.5rem; color:#64748b;">
                                         Cargando evidencias...
                                     </td>
                                 </tr>
@@ -3303,7 +3307,7 @@ async function loadEvidenciasRevision() {
 
     tbody.innerHTML = `
         <tr>
-            <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+            <td colspan="16" style="text-align:center; padding:1.5rem; color:#64748b;">
                 Cargando evidencias...
             </td>
         </tr>
@@ -3323,7 +3327,7 @@ async function loadEvidenciasRevision() {
         if (!rows.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+                    <td colspan="16" style="text-align:center; padding:1.5rem; color:#64748b;">
                         No hay evidencias registradas para mostrar.
                     </td>
                 </tr>
@@ -3342,15 +3346,19 @@ async function loadEvidenciasRevision() {
                     <td>${idx + 1}</td>
                     <td>${escapeHtml(row.mes || '')}</td>
                     <td>${escapeHtml(row.anio || '')}</td>
-                    <td>${escapeHtml(row.enlace_nombre || '')}</td>
-                    <td>${escapeHtml(row.enlace_primer_apellido || '')}</td>
-                    <td>${escapeHtml(row.enlace_segundo_apellido || '')}</td>
-                    <td>${escapeHtml(row.enlace_correo || '')}</td>
+                    <td>${escapeHtml(row.nombre || '')}</td>
+                    <td>${escapeHtml(row.primer_apellido || '')}</td>
+                    <td>${escapeHtml(row.segundo_apellido || '')}</td>
+                    <td>${escapeHtml(row.correo_institucional || '')}</td>
                     <td>${escapeHtml(row.dependencia || '')}</td>
                     <td>${pdfCell}</td>
                     <td>${escapeHtml(row.estado_revision || '')}</td>
                     <td>${escapeHtml(row.observaciones_dceve || '')}</td>
                     <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
+                    <td>${escapeHtml(row.enlace_nombre || '')}</td>
+                    <td>${escapeHtml(row.enlace_primer_apellido || '')}</td>
+                    <td>${escapeHtml(row.enlace_segundo_apellido || '')}</td>
+                    <td>${escapeHtml(row.enlace_correo || '')}</td>
                 </tr>
             `;
         }).join('');
@@ -3362,7 +3370,7 @@ async function loadEvidenciasRevision() {
         console.error('Error cargando evidencias DCEVE:', err);
         tbody.innerHTML = `
             <tr>
-                <td colspan="12" style="text-align:center; padding:1.5rem; color:#b91c1c;">
+                <td colspan="16" style="text-align:center; padding:1.5rem; color:#b91c1c;">
                     Error al cargar evidencias mensuales.
                 </td>
             </tr>
