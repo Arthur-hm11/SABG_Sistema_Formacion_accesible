@@ -107,6 +107,7 @@ export default async function handler(req, res) {
     const dataSql = `
       SELECT
         r.id,
+        ev.id AS evidencia_id,
         ev.mes,
         ev.anio,
         r.nombre,

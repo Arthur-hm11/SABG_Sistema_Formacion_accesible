@@ -3296,6 +3296,43 @@ function debouncedLoadEvidenciasRevision() {
     }, 300);
 }
 
+
+function getEstadoRevisionOptions(selectedValue) {
+    const estados = ['Pendiente', 'En revisión', 'Con observaciones', 'Validada', 'Rechazada'];
+    const current = String(selectedValue || '').trim();
+    return estados.map(v => `<option value="${escapeHtml(v)}" ${current === v ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
+}
+
+async function guardarRevisionEvidencia(evidenciaId) {
+    try {
+        const estadoEl = document.getElementById('ev_estado_' + evidenciaId);
+        const obsEl = document.getElementById('ev_obs_' + evidenciaId);
+        if (!estadoEl || !obsEl) throw new Error('No se encontraron controles de edición');
+
+        const resp = await fetch('/api/evidencias/update?cb=' + Date.now(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                evidencia_id: evidenciaId,
+                estado_revision: estadoEl.value || 'Pendiente',
+                observaciones_dceve: obsEl.value || ''
+            })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || !data?.ok) {
+            throw new Error(data?.error || 'No se pudo guardar la revisión');
+        }
+
+        alert('✅ Revisión actualizada');
+        loadEvidenciasRevision();
+    } catch (err) {
+        console.error('Error guardando revisión DCEVE:', err);
+        alert('❌ ' + (err?.message || err));
+    }
+}
+
 async function loadEvidenciasRevision() {
     const tbody = document.getElementById('evidenciasRevisionBody');
     const meta = document.getElementById('evidenciasRevisionMeta');
@@ -3341,6 +3378,25 @@ async function loadEvidenciasRevision() {
                 ? `<a href="${escapeHtml(row.archivo_pdf_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
                 : escapeHtml(row.archivo_pdf_nombre || '');
 
+            const canEditRevision = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
+
+            const estadoCell = canEditRevision
+                ? `
+                    <div style="display:flex; flex-direction:column; gap:.45rem; min-width:180px;">
+                        <select id="ev_estado_${row.evidencia_id}" style="padding:.45rem; border:1px solid #cbd5e1; border-radius:8px;">
+                            ${getEstadoRevisionOptions(row.estado_revision || 'Pendiente')}
+                        </select>
+                        <button class="btn btn-success" type="button" onclick="guardarRevisionEvidencia(${row.evidencia_id})">💾 Guardar</button>
+                    </div>
+                  `
+                : escapeHtml(row.estado_revision || '');
+
+            const observacionesCell = canEditRevision
+                ? `
+                    <textarea id="ev_obs_${row.evidencia_id}" rows="3" style="width:100%; min-width:220px; padding:.55rem; border:1px solid #cbd5e1; border-radius:8px;">${escapeHtml(row.observaciones_dceve || '')}</textarea>
+                  `
+                : escapeHtml(row.observaciones_dceve || '');
+
             return `
                 <tr>
                     <td>${idx + 1}</td>
@@ -3352,8 +3408,8 @@ async function loadEvidenciasRevision() {
                     <td>${escapeHtml(row.correo_institucional || '')}</td>
                     <td>${escapeHtml(row.dependencia || '')}</td>
                     <td>${pdfCell}</td>
-                    <td>${escapeHtml(row.estado_revision || '')}</td>
-                    <td>${escapeHtml(row.observaciones_dceve || '')}</td>
+                    <td>${estadoCell}</td>
+                    <td>${observacionesCell}</td>
                     <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
                     <td>${escapeHtml(row.enlace_nombre || '')}</td>
                     <td>${escapeHtml(row.enlace_primer_apellido || '')}</td>

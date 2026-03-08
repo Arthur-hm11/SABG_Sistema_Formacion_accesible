@@ -68,6 +68,7 @@ async function mount(method, route, handlerPath) {
 await mount("post", "/api/evidencias/upload",      "./api/evidencias/upload.js");
 await mount("get",  "/api/evidencias/envcheck",   "./api/evidencias/envcheck.js");
 await mount("get",  "/api/evidencias/list",       "./api/evidencias/list.js");
+await mount("post", "/api/evidencias/update",     "./api/evidencias/update.js");
 await mount("get",  "/api/trimestral/list",        "./api/trimestral/list.js");
 await mount("post", "/api/trimestral/create",      "./api/trimestral/create.js");
 await mount("post", "/api/trimestral/bulkCreate",  "./api/trimestral/bulkCreate.js");
