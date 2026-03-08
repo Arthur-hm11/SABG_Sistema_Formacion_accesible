@@ -3033,6 +3033,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                             style="flex:1; min-width:280px; padding:1rem 1.2rem; border:2px solid rgba(107,44,64,.25); border-radius:12px; font-size:1rem;"
                             oninput="debouncedLoadEvidenciasRevision()"
                         />
+                        <button class="btn btn-danger" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <button class="btn btn-success" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;">💾 Guardar cambios</button>
                         <button class="btn" type="button" onclick="loadEvidenciasRevision()">🔄 Actualizar</button>
                     </div>
@@ -3041,6 +3042,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         <table id="evidenciasRevisionTable">
                             <thead>
                                 <tr>
+                                    <th style="width:48px;">SEL</th>
                                     <th>N°</th>
                                     <th>MES</th>
                                     <th>AÑO</th>
@@ -3061,7 +3063,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                             </thead>
                             <tbody id="evidenciasRevisionBody">
                                 <tr>
-                                    <td colspan="16" style="text-align:center; padding:1.5rem; color:#64748b;">
+                                    <td colspan="17" style="text-align:center; padding:1.5rem; color:#64748b;">
                                         Cargando evidencias...
                                     </td>
                                 </tr>
@@ -3299,11 +3301,29 @@ function debouncedLoadEvidenciasRevision() {
 
 
 const __dceveDirty = new Set();
+const __dceveSelected = new Set();
 
 function getEstadoRevisionOptions(selectedValue) {
     const estados = ['Pendiente', 'En revisión', 'Con observaciones', 'Validada', 'Rechazada'];
     const current = String(selectedValue || '').trim();
     return estados.map(v => `<option value="${escapeHtml(v)}" ${current === v ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
+}
+
+function updateEliminarDceveButton() {
+    const btn = document.getElementById('btnEliminarRevisionDceve');
+    if (!btn) return;
+    const canEdit = (typeof isAdminUser === 'function' ? isAdminUser() : false);
+    if (!canEdit) {
+        btn.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = '🗑️ Eliminar seleccionados';
+        return;
+    }
+    btn.style.display = 'inline-block';
+    btn.disabled = (__dceveSelected.size === 0);
+    btn.textContent = __dceveSelected.size > 0
+        ? `🗑️ Eliminar seleccionados (${__dceveSelected.size})`
+        : '🗑️ Eliminar seleccionados';
 }
 
 function updateGuardarDceveButton() {
@@ -3314,6 +3334,7 @@ function updateGuardarDceveButton() {
         btn.style.display = 'none';
         btn.disabled = true;
         btn.textContent = '💾 Guardar cambios';
+        updateEliminarDceveButton();
         return;
     }
     btn.style.display = 'inline-block';
@@ -3321,6 +3342,15 @@ function updateGuardarDceveButton() {
     btn.textContent = __dceveDirty.size > 0
         ? `💾 Guardar cambios (${__dceveDirty.size})`
         : '💾 Guardar cambios';
+    updateEliminarDceveButton();
+}
+
+function toggleRevisionSelected(evidenciaId, checked) {
+    const id = String(evidenciaId || '').trim();
+    if (!id) return;
+    if (checked) __dceveSelected.add(id);
+    else __dceveSelected.delete(id);
+    updateEliminarDceveButton();
 }
 
 function markRevisionDirty(evidenciaId) {
@@ -3394,6 +3424,45 @@ async function guardarRevisionesPendientes() {
     }
 }
 
+async function eliminarRevisionesSeleccionadas() {
+    try {
+        const ids = Array.from(__dceveSelected);
+        if (!ids.length) {
+            alert('ℹ️ No hay registros seleccionados para eliminar.');
+            return;
+        }
+
+        const ok = confirm(`¿Deseas eliminar ${ids.length} evidencia(s) seleccionada(s)? Esta acción no se puede deshacer.`);
+        if (!ok) return;
+
+        const btn = document.getElementById('btnEliminarRevisionDceve');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '🗑️ Eliminando...';
+        }
+
+        const resp = await fetch('/api/evidencias/delete?cb=' + Date.now(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ evidencia_ids: ids.map(Number) })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || !data?.ok) {
+            throw new Error(data?.error || 'No se pudieron eliminar las evidencias');
+        }
+
+        __dceveSelected.clear();
+        alert(`✅ Se eliminaron ${Number(data.total || 0)} evidencia(s).`);
+        await loadEvidenciasRevision();
+    } catch (err) {
+        console.error('Error eliminando evidencias DCEVE:', err);
+        alert('❌ ' + (err?.message || err));
+        updateEliminarDceveButton();
+    }
+}
+
 async function loadEvidenciasRevision() {
     const tbody = document.getElementById('evidenciasRevisionBody');
     const meta = document.getElementById('evidenciasRevisionMeta');
@@ -3405,7 +3474,7 @@ async function loadEvidenciasRevision() {
 
     tbody.innerHTML = `
         <tr>
-            <td colspan="16" style="text-align:center; padding:1.5rem; color:#64748b;">
+            <td colspan="17" style="text-align:center; padding:1.5rem; color:#64748b;">
                 Cargando evidencias...
             </td>
         </tr>
@@ -3425,7 +3494,7 @@ async function loadEvidenciasRevision() {
         if (!rows.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="16" style="text-align:center; padding:1.5rem; color:#64748b;">
+                    <td colspan="17" style="text-align:center; padding:1.5rem; color:#64748b;">
                         No hay evidencias registradas para mostrar.
                     </td>
                 </tr>
@@ -3435,6 +3504,7 @@ async function loadEvidenciasRevision() {
         }
 
         __dceveDirty.clear();
+        __dceveSelected.clear();
         updateGuardarDceveButton();
 
         tbody.innerHTML = rows.map((row, idx) => {
@@ -3443,6 +3513,10 @@ async function loadEvidenciasRevision() {
                 : escapeHtml(row.archivo_pdf_nombre || '');
 
             const canEditRevision = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
+
+            const selectCell = canEditRevision
+                ? `<input type="checkbox" id="ev_sel_${row.evidencia_id}" onchange="toggleRevisionSelected(${row.evidencia_id}, this.checked)">`
+                : '';
 
             const estadoCell = canEditRevision
                 ? `
@@ -3460,6 +3534,7 @@ async function loadEvidenciasRevision() {
 
             return `
                 <tr id="ev_row_${row.evidencia_id || ''}">
+                    <td>${selectCell}</td>
                     <td>${idx + 1}</td>
                     <td>${escapeHtml(row.mes || '')}</td>
                     <td>${escapeHtml(row.anio || '')}</td>
@@ -3487,7 +3562,7 @@ async function loadEvidenciasRevision() {
         console.error('Error cargando evidencias DCEVE:', err);
         tbody.innerHTML = `
             <tr>
-                <td colspan="16" style="text-align:center; padding:1.5rem; color:#b91c1c;">
+                <td colspan="17" style="text-align:center; padding:1.5rem; color:#b91c1c;">
                     Error al cargar evidencias mensuales.
                 </td>
             </tr>
