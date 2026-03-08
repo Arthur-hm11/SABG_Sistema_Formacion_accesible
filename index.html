@@ -3033,6 +3033,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                             style="flex:1; min-width:280px; padding:1rem 1.2rem; border:2px solid rgba(107,44,64,.25); border-radius:12px; font-size:1rem;"
                             oninput="debouncedLoadEvidenciasRevision()"
                         />
+                        <button class="btn btn-success" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;">💾 Guardar cambios</button>
                         <button class="btn" type="button" onclick="loadEvidenciasRevision()">🔄 Actualizar</button>
                     </div>
 
@@ -3297,39 +3298,99 @@ function debouncedLoadEvidenciasRevision() {
 }
 
 
+const __dceveDirty = new Set();
+
 function getEstadoRevisionOptions(selectedValue) {
     const estados = ['Pendiente', 'En revisión', 'Con observaciones', 'Validada', 'Rechazada'];
     const current = String(selectedValue || '').trim();
     return estados.map(v => `<option value="${escapeHtml(v)}" ${current === v ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
 }
 
-async function guardarRevisionEvidencia(evidenciaId) {
+function updateGuardarDceveButton() {
+    const btn = document.getElementById('btnGuardarRevisionDceve');
+    if (!btn) return;
+    const canEdit = (typeof isAdminUser === 'function' ? isAdminUser() : false);
+    if (!canEdit) {
+        btn.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = '💾 Guardar cambios';
+        return;
+    }
+    btn.style.display = 'inline-block';
+    btn.disabled = (__dceveDirty.size === 0);
+    btn.textContent = __dceveDirty.size > 0
+        ? `💾 Guardar cambios (${__dceveDirty.size})`
+        : '💾 Guardar cambios';
+}
+
+function markRevisionDirty(evidenciaId) {
+    if (!evidenciaId) return;
+    __dceveDirty.add(String(evidenciaId));
+    const row = document.getElementById('ev_row_' + evidenciaId);
+    if (row) row.style.background = 'rgba(251, 191, 36, 0.10)';
+    updateGuardarDceveButton();
+}
+
+function clearRevisionDirty(evidenciaId) {
+    __dceveDirty.delete(String(evidenciaId));
+    const row = document.getElementById('ev_row_' + evidenciaId);
+    if (row) row.style.background = '';
+    updateGuardarDceveButton();
+}
+
+async function guardarRevisionEvidencia(evidenciaId, silent = false) {
+    const id = String(evidenciaId || '').trim();
+    if (!id) throw new Error('evidencia_id inválido');
+
+    const estadoEl = document.getElementById('ev_estado_' + id);
+    const obsEl = document.getElementById('ev_obs_' + id);
+    if (!estadoEl || !obsEl) throw new Error('No se encontraron controles de edición');
+
+    const resp = await fetch('/api/evidencias/update?cb=' + Date.now(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            evidencia_id: Number(id),
+            estado_revision: estadoEl.value || 'Pendiente',
+            observaciones_dceve: obsEl.value || ''
+        })
+    });
+
+    const data = await resp.json();
+    if (!resp.ok || !data?.ok) {
+        throw new Error(data?.error || 'No se pudo guardar la revisión');
+    }
+
+    clearRevisionDirty(id);
+    if (!silent) alert('✅ Revisión actualizada');
+    return data;
+}
+
+async function guardarRevisionesPendientes() {
     try {
-        const estadoEl = document.getElementById('ev_estado_' + evidenciaId);
-        const obsEl = document.getElementById('ev_obs_' + evidenciaId);
-        if (!estadoEl || !obsEl) throw new Error('No se encontraron controles de edición');
-
-        const resp = await fetch('/api/evidencias/update?cb=' + Date.now(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-                evidencia_id: evidenciaId,
-                estado_revision: estadoEl.value || 'Pendiente',
-                observaciones_dceve: obsEl.value || ''
-            })
-        });
-
-        const data = await resp.json();
-        if (!resp.ok || !data?.ok) {
-            throw new Error(data?.error || 'No se pudo guardar la revisión');
+        const ids = Array.from(__dceveDirty);
+        if (!ids.length) {
+            alert('ℹ️ No hay cambios pendientes por guardar.');
+            return;
         }
 
-        alert('✅ Revisión actualizada');
-        loadEvidenciasRevision();
+        const btn = document.getElementById('btnGuardarRevisionDceve');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '💾 Guardando...';
+        }
+
+        for (const id of ids) {
+            await guardarRevisionEvidencia(id, true);
+        }
+
+        alert('✅ Cambios guardados correctamente');
+        await loadEvidenciasRevision();
     } catch (err) {
-        console.error('Error guardando revisión DCEVE:', err);
+        console.error('Error guardando revisiones DCEVE:', err);
         alert('❌ ' + (err?.message || err));
+        updateGuardarDceveButton();
     }
 }
 
@@ -3373,6 +3434,9 @@ async function loadEvidenciasRevision() {
             return;
         }
 
+        __dceveDirty.clear();
+        updateGuardarDceveButton();
+
         tbody.innerHTML = rows.map((row, idx) => {
             const pdfCell = row.archivo_pdf_url
                 ? `<a href="${escapeHtml(row.archivo_pdf_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
@@ -3382,23 +3446,20 @@ async function loadEvidenciasRevision() {
 
             const estadoCell = canEditRevision
                 ? `
-                    <div style="display:flex; flex-direction:column; gap:.45rem; min-width:180px;">
-                        <select id="ev_estado_${row.evidencia_id}" style="padding:.45rem; border:1px solid #cbd5e1; border-radius:8px;">
-                            ${getEstadoRevisionOptions(row.estado_revision || 'Pendiente')}
-                        </select>
-                        <button class="btn btn-success" type="button" onclick="guardarRevisionEvidencia(${row.evidencia_id})">💾 Guardar</button>
-                    </div>
+                    <select id="ev_estado_${row.evidencia_id}" onchange="markRevisionDirty(${row.evidencia_id})" style="padding:.45rem; border:1px solid #cbd5e1; border-radius:8px; min-width:180px;">
+                        ${getEstadoRevisionOptions(row.estado_revision || 'Pendiente')}
+                    </select>
                   `
                 : escapeHtml(row.estado_revision || '');
 
             const observacionesCell = canEditRevision
                 ? `
-                    <textarea id="ev_obs_${row.evidencia_id}" rows="3" style="width:100%; min-width:220px; padding:.55rem; border:1px solid #cbd5e1; border-radius:8px;">${escapeHtml(row.observaciones_dceve || '')}</textarea>
+                    <textarea id="ev_obs_${row.evidencia_id}" rows="3" oninput="markRevisionDirty(${row.evidencia_id})" style="width:100%; min-width:220px; padding:.55rem; border:1px solid #cbd5e1; border-radius:8px;">${escapeHtml(row.observaciones_dceve || '')}</textarea>
                   `
                 : escapeHtml(row.observaciones_dceve || '');
 
             return `
-                <tr>
+                <tr id="ev_row_${row.evidencia_id || ''}">
                     <td>${idx + 1}</td>
                     <td>${escapeHtml(row.mes || '')}</td>
                     <td>${escapeHtml(row.anio || '')}</td>
