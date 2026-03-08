@@ -23,9 +23,7 @@ export default async function handler(req, res) {
 
   try {
     const idsRaw = Array.isArray(req.body?.evidencia_ids) ? req.body.evidencia_ids : [];
-    const ids = idsRaw
-      .map(v => parseInt(String(v), 10))
-      .filter(v => Number.isFinite(v) && v > 0);
+    const ids = idsRaw.map(v => parseInt(String(v), 10)).filter(v => Number.isFinite(v) && v > 0);
 
     if (!ids.length) {
       return res.status(400).json({ ok: false, error: "No se recibieron evidencias válidas para eliminar." });
@@ -42,8 +40,8 @@ export default async function handler(req, res) {
 
     return res.json({
       ok: true,
-      deleted: r.rows.map(x => x.id),
-      total: r.rowCount || 0
+      total: r.rowCount || 0,
+      deleted: r.rows.map(x => x.id)
     });
   } catch (e) {
     console.error("Error /api/evidencias/delete:", e);

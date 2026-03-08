@@ -3035,13 +3035,15 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         />
                         <button class="btn btn-danger" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <button class="btn btn-success" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;">💾 Guardar cambios</button>
+                        <button class="btn btn-danger" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <button class="btn" type="button" onclick="loadEvidenciasRevision()">🔄 Actualizar</button>
                     </div>
 
                     <div class="table-container">
                         <table id="evidenciasRevisionTable">
                             <thead>
-                                <tr><th>N°</th>
+                                <tr><th style="width:48px;">SEL</th>
+                                    <th>N°</th>
                                     <th>MES</th>
                                     <th>AÑO</th>
                                     <th>ENLACE NOMBRE(S)</th>
@@ -3056,7 +3058,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                             </thead>
                             <tbody id="evidenciasRevisionBody">
                                 <tr>
-                                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+                                    <td colspan="13" style="text-align:center; padding:1.5rem; color:#64748b;">
                                         Cargando evidencias...
                                     </td>
                                 </tr>
@@ -3467,7 +3469,7 @@ async function loadEvidenciasRevision() {
 
     tbody.innerHTML = `
         <tr>
-            <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+            <td colspan="13" style="text-align:center; padding:1.5rem; color:#64748b;">
                 Cargando evidencias...
             </td>
         </tr>
@@ -3487,7 +3489,7 @@ async function loadEvidenciasRevision() {
         if (!rows.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
+                    <td colspan="13" style="text-align:center; padding:1.5rem; color:#64748b;">
                         No hay evidencias registradas para mostrar.
                     </td>
                 </tr>
@@ -3500,18 +3502,23 @@ async function loadEvidenciasRevision() {
         __dceveSelected.clear();
         updateGuardarDceveButton();
 
+        __dceveSelected.clear();
+        updateEliminarDceveButton();
+
         tbody.innerHTML = rows.map((row, idx) => {
-            const canOpenPdf = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
+            const canDelete = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
+
+            const selectCell = canDelete
+                ? `<input type="checkbox" id="ev_sel_${row.evidencia_id}" onchange="toggleRevisionSelected(${row.evidencia_id}, this.checked)">`
+                : '';
+
             const pdfCell = row.archivo_pdf_url
-                ? (
-                    canOpenPdf
-                      ? `<a href="/api/evidencias/pdf?id=${encodeURIComponent(row.evidencia_id)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
-                      : `<span title="Solo administradores pueden abrir el PDF">${escapeHtml(row.archivo_pdf_nombre || 'PDF restringido')}</span>`
-                  )
+                ? `<a href="${escapeHtml(row.archivo_pdf_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
                 : escapeHtml(row.archivo_pdf_nombre || '');
 
             return `
-                <tr>
+                <tr id="ev_row_${row.evidencia_id || ''}">
+                    <td>${selectCell}</td>
                     <td>${idx + 1}</td>
                     <td>${escapeHtml(row.mes || '')}</td>
                     <td>${escapeHtml(row.anio || '')}</td>
@@ -3535,7 +3542,7 @@ async function loadEvidenciasRevision() {
         console.error('Error cargando evidencias DCEVE:', err);
         tbody.innerHTML = `
             <tr>
-                <td colspan="12" style="text-align:center; padding:1.5rem; color:#b91c1c;">
+                <td colspan="13" style="text-align:center; padding:1.5rem; color:#b91c1c;">
                     Error al cargar evidencias mensuales.
                 </td>
             </tr>
