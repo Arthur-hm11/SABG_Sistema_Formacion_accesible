@@ -3,6 +3,7 @@ import { google } from "googleapis";
 import stream from "stream";
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession } from "../_lib/session.js";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
@@ -95,8 +96,8 @@ export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
 
-  const cookie = String(req.headers.cookie || "");
-  if (!cookie.includes("sabg_session=")) {
+  const session = readSabgSession(req);
+  if (!session) {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
@@ -151,26 +152,30 @@ export default async function handler(req, res) {
       return res.status(500).json({ ok: false, error: "DRIVE_FOLDER_ID missing" });
     }
 
-    const depRes = await pool.query(
-      `
-      SELECT
-        r.dependencia
-      FROM public.registros_trimestral r
-      WHERE LOWER(BTRIM(COALESCE(r.enlace_correo, ''))) = LOWER(BTRIM($1))
-      ORDER BY r.created_at DESC NULLS LAST, r.id DESC
-      LIMIT 1
-      `,
-      [correo]
-    );
+    let dependencia = String(session?.dependencia || "").trim();
 
-    const dependencia = depRes.rows?.[0]?.dependencia
-      ? String(depRes.rows[0].dependencia).trim()
-      : "";
+    if (!dependencia) {
+      const depRes = await pool.query(
+        `
+        SELECT
+          r.dependencia
+        FROM public.registros_trimestral r
+        WHERE LOWER(BTRIM(COALESCE(r.enlace_correo, ''))) = LOWER(BTRIM($1))
+        ORDER BY r.created_at DESC NULLS LAST, r.id DESC
+        LIMIT 1
+        `,
+        [correo]
+      );
+
+      dependencia = depRes.rows?.[0]?.dependencia
+        ? String(depRes.rows[0].dependencia).trim()
+        : "";
+    }
 
     if (!dependencia) {
       return res.status(400).json({
         ok: false,
-        error: "No se encontró una dependencia vinculada al correo institucional del enlace",
+        error: "No se encontró una dependencia vinculada al usuario o al correo institucional del enlace",
       });
     }
 
@@ -233,7 +238,7 @@ export default async function handler(req, res) {
         pdfUrl || null,
         safeName,
         dependencia,
-        correo,
+        String(session?.usuario || correo || ""),
         "Pendiente",
       ]
     );
