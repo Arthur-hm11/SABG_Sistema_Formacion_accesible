@@ -3512,8 +3512,13 @@ async function loadEvidenciasRevision() {
         updateGuardarDceveButton();
 
         tbody.innerHTML = rows.map((row, idx) => {
+            const canOpenPdf = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
             const pdfCell = row.archivo_pdf_url
-                ? `<a href="${escapeHtml(row.archivo_pdf_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
+                ? (
+                    canOpenPdf
+                      ? `<a href="/api/evidencias/pdf?id=${encodeURIComponent(row.evidencia_id)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
+                      : `<span title="Solo administradores pueden abrir el PDF">${escapeHtml(row.archivo_pdf_nombre || 'PDF restringido')}</span>`
+                  )
                 : escapeHtml(row.archivo_pdf_nombre || '');
 
             const canEditRevision = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
