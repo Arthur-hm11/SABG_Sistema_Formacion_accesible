@@ -3041,29 +3041,22 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                     <div class="table-container">
                         <table id="evidenciasRevisionTable">
                             <thead>
-                                <tr>
-                                    <th style="width:48px;">SEL</th>
-                                    <th>N°</th>
+                                <tr><th>N°</th>
                                     <th>MES</th>
                                     <th>AÑO</th>
-                                    <th>NOMBRE(S)</th>
-                                    <th>PRIMER APELLIDO</th>
-                                    <th>SEGUNDO APELLIDO</th>
-                                    <th>CORREO INSTITUCIONAL</th>
-                                    <th>DEPENDENCIA</th>
-                                    <th>ARCHIVO PDF</th>
-                                    <th>ESTADO DE AVANCE</th>
-                                    <th>OBSERVACIONES</th>
-                                    <th>FECHA REGISTRO</th>
                                     <th>ENLACE NOMBRE(S)</th>
                                     <th>ENLACE PRIMER APELLIDO</th>
                                     <th>ENLACE SEGUNDO APELLIDO</th>
                                     <th>ENLACE CORREO</th>
-                                </tr>
+                                    <th>DEPENDENCIA</th>
+                                    <th>ARCHIVO PDF</th>
+                                    <th>ESTADO DE AVANCE</th>
+                                    <th>OBSERVACIONES</th>
+                                    <th>FECHA REGISTRO</th></tr>
                             </thead>
                             <tbody id="evidenciasRevisionBody">
                                 <tr>
-                                    <td colspan="17" style="text-align:center; padding:1.5rem; color:#64748b;">
+                                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
                                         Cargando evidencias...
                                     </td>
                                 </tr>
@@ -3474,7 +3467,7 @@ async function loadEvidenciasRevision() {
 
     tbody.innerHTML = `
         <tr>
-            <td colspan="17" style="text-align:center; padding:1.5rem; color:#64748b;">
+            <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
                 Cargando evidencias...
             </td>
         </tr>
@@ -3494,7 +3487,7 @@ async function loadEvidenciasRevision() {
         if (!rows.length) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="17" style="text-align:center; padding:1.5rem; color:#64748b;">
+                    <td colspan="12" style="text-align:center; padding:1.5rem; color:#64748b;">
                         No hay evidencias registradas para mostrar.
                     </td>
                 </tr>
@@ -3512,45 +3505,20 @@ async function loadEvidenciasRevision() {
                 ? `<a href="${escapeHtml(row.archivo_pdf_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
                 : escapeHtml(row.archivo_pdf_nombre || '');
 
-            const canEditRevision = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
-
-            const selectCell = canEditRevision
-                ? `<input type="checkbox" id="ev_sel_${row.evidencia_id}" onchange="toggleRevisionSelected(${row.evidencia_id}, this.checked)">`
-                : '';
-
-            const estadoCell = canEditRevision
-                ? `
-                    <select id="ev_estado_${row.evidencia_id}" onchange="markRevisionDirty(${row.evidencia_id})" style="padding:.45rem; border:1px solid #cbd5e1; border-radius:8px; min-width:180px;">
-                        ${getEstadoRevisionOptions(row.estado_revision || 'Pendiente')}
-                    </select>
-                  `
-                : escapeHtml(row.estado_revision || '');
-
-            const observacionesCell = canEditRevision
-                ? `
-                    <textarea id="ev_obs_${row.evidencia_id}" rows="3" oninput="markRevisionDirty(${row.evidencia_id})" style="width:100%; min-width:220px; padding:.55rem; border:1px solid #cbd5e1; border-radius:8px;">${escapeHtml(row.observaciones_dceve || '')}</textarea>
-                  `
-                : escapeHtml(row.observaciones_dceve || '');
-
             return `
-                <tr id="ev_row_${row.evidencia_id || ''}">
-                    <td>${selectCell}</td>
+                <tr>
                     <td>${idx + 1}</td>
                     <td>${escapeHtml(row.mes || '')}</td>
                     <td>${escapeHtml(row.anio || '')}</td>
-                    <td>${escapeHtml(row.nombre || '')}</td>
-                    <td>${escapeHtml(row.primer_apellido || '')}</td>
-                    <td>${escapeHtml(row.segundo_apellido || '')}</td>
-                    <td>${escapeHtml(row.correo_institucional || '')}</td>
-                    <td>${escapeHtml(row.dependencia || '')}</td>
-                    <td>${pdfCell}</td>
-                    <td>${estadoCell}</td>
-                    <td>${observacionesCell}</td>
-                    <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
                     <td>${escapeHtml(row.enlace_nombre || '')}</td>
                     <td>${escapeHtml(row.enlace_primer_apellido || '')}</td>
                     <td>${escapeHtml(row.enlace_segundo_apellido || '')}</td>
                     <td>${escapeHtml(row.enlace_correo || '')}</td>
+                    <td>${escapeHtml(row.dependencia || '')}</td>
+                    <td>${pdfCell}</td>
+                    <td>${escapeHtml(row.estado_revision || '')}</td>
+                    <td>${escapeHtml(row.observaciones_dceve || '')}</td>
+                    <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
                 </tr>
             `;
         }).join('');
@@ -3562,7 +3530,7 @@ async function loadEvidenciasRevision() {
         console.error('Error cargando evidencias DCEVE:', err);
         tbody.innerHTML = `
             <tr>
-                <td colspan="17" style="text-align:center; padding:1.5rem; color:#b91c1c;">
+                <td colspan="12" style="text-align:center; padding:1.5rem; color:#b91c1c;">
                     Error al cargar evidencias mensuales.
                 </td>
             </tr>
