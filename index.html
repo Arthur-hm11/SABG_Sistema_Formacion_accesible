@@ -8,7 +8,7 @@
 
     <style>
         * {
-            margin: 0;
+            margin: 0 0 0 2px;
             padding: 0;
             box-sizing: border-box;
         }
@@ -104,7 +104,7 @@
 
         .no-suggestions {
             padding: 1rem;
-            text-align: center;
+            text-align: left;
             color: #64748b;
             font-style: italic;
         }
@@ -2010,6 +2010,13 @@
 header{position:relative;}
 header .user-info{position:absolute; right:18px; top:12px; margin:0;}
 </style>
+
+    <style id="ocultar-stats-grid-sabg">
+        #inicio .stats-grid{
+            display: none !important;
+        }
+    </style>
+
 </head>
 <body>
 <!-- LOGIN SCREEN -->
@@ -2145,7 +2152,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                     <span class="icon">📅</span>
                     <span>Registrar Evidencias</span>
                 </div>
-                <div class="dropdown-item admin-only" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
+                <div class="dropdown-item" id="dropdownItemRevision" onclick="showSectionAndTab('evidencias', 'revision')" role="button" tabindex="0">
                     <span class="icon">🔍</span>
                     <span>Panel Revisión DCEVE</span>
 </div>
@@ -2789,6 +2796,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
                         <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
                         <button id="btnGuardarNeon" type="button" class="btn btn-success admin-only" onclick="guardarCambiosNeon(event)" style="display:inline-block;" disabled>💾 Guardar cambios</button>
+                        <button class="btn btn-danger admin-only" id="btnEliminarRegistrosTrimestral" type="button" onclick="eliminarRegistrosTrimestralSeleccionados()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
 
                         <!-- Solo administradores: carga masiva vía Excel -->
@@ -2802,6 +2810,8 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         <table id="registrosTable">
                             <thead>
                                 <tr>
+                                    <th class="no-export">SEL</th>
+
                                     <th>N°</th>
                                     <th>TRIMESTRE</th>
                                     <th>ID RUSP</th>
@@ -2825,6 +2835,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                     <th>ENLACE SEGUNDO APELLIDO</th>
                                     <th>ENLACE CORREO</th>
                                     <th>ENLACE TELÉFONO</th>
+                                    
                                 </tr>
                             </thead>
                             <tbody>
@@ -3238,7 +3249,9 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
         <p>Sistema de Promoción de la Formación Académica</p>
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
-        <script>
+        
+        
+<script>
 // ===================== FIX: Evitar ReferenceError si falta updateStatsFromRegistros =====================
 if (typeof window.updateStatsFromRegistros !== 'function') {
   window.updateStatsFromRegistros = function(registros) {
@@ -5585,6 +5598,143 @@ function renderPagerTrimestral(meta = {}) {
   el.appendChild(mkBtn(">", Math.min(pages, page + 1), page >= pages));
 }
 
+let __trimSelected = new Set();
+
+function getSelectedRegistrosTrimestralIds() {
+  return Array.from(document.querySelectorAll('.chk-registro-trimestral:checked'))
+    .map(el => Number(el.value))
+    .filter(n => Number.isFinite(n) && n > 0);
+}
+
+function syncSelectedRegistrosTrimestralFromDom() {
+  __trimSelected = new Set(getSelectedRegistrosTrimestralIds());
+  console.log('SYNC_SELECTED_IDS', Array.from(__trimSelected));
+  updateEliminarRegistrosTrimestralButton();
+}
+
+function updateEliminarRegistrosTrimestralButton() {
+  const btn = document.getElementById('btnEliminarRegistrosTrimestral');
+  if (!btn) return;
+
+  const isAdminOrSuper =
+    document.body.classList.contains('role-superadmin') ||
+    document.body.classList.contains('role-admin');
+
+  const total = getSelectedRegistrosTrimestralIds().length;
+
+  if (!isAdminOrSuper) {
+    btn.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = '🗑️ Eliminar seleccionados';
+    return;
+  }
+
+  btn.style.display = 'inline-block';
+  btn.disabled = (total === 0);
+  btn.textContent = total > 0
+    ? `🗑️ Eliminar seleccionados (${total})`
+    : '🗑️ Eliminar seleccionados';
+}
+
+function toggleSelectRegistroTrimestral(id, checked) {
+  const rid = Number(id);
+  if (!Number.isFinite(rid) || rid <= 0) return;
+
+  const box = document.querySelector('.chk-registro-trimestral[value="' + rid + '"]');
+  if (box) box.checked = !!checked;
+
+  syncSelectedRegistrosTrimestralFromDom();
+}
+
+function toggleSelectAllRegistrosTrimestral(master) {
+  const checked = !!(master && master.checked);
+  document.querySelectorAll('.chk-registro-trimestral').forEach(box => {
+    box.checked = checked;
+  });
+  syncSelectedRegistrosTrimestralFromDom();
+}
+
+document.addEventListener('click', function(e) {
+  const td = e.target.closest('.td-select-registro');
+  if (td) {
+    const box = td.querySelector('.chk-registro-trimestral');
+    if (box && e.target !== box) {
+      box.checked = !box.checked;
+    }
+    syncSelectedRegistrosTrimestralFromDom();
+    console.log('CLICK_TD_SELECT', {checked: box ? box.checked : null, value: box ? box.value : null});
+    return;
+  }
+});
+
+document.addEventListener('change', function(e) {
+  const t = e.target;
+  if (t && (t.matches('.chk-registro-trimestral') || t.id === 'chkAllRegistrosTrimestral')) {
+    if (t.id === 'chkAllRegistrosTrimestral') {
+      toggleSelectAllRegistrosTrimestral(t);
+    } else {
+      syncSelectedRegistrosTrimestralFromDom();
+    }
+  }
+});
+
+window.updateEliminarRegistrosTrimestralButton = updateEliminarRegistrosTrimestralButton;
+window.toggleSelectRegistroTrimestral = toggleSelectRegistroTrimestral;
+window.toggleSelectAllRegistrosTrimestral = toggleSelectAllRegistrosTrimestral;
+
+async function eliminarRegistrosTrimestralSeleccionados() {
+  const ids = getSelectedRegistrosTrimestralIds();
+
+  if (!ids.length) {
+    alert('ℹ️ No hay registros seleccionados para eliminar.');
+    return;
+  }
+
+  const ok = confirm(`¿Deseas eliminar ${ids.length} registro(s) seleccionado(s)? Esta acción no se puede deshacer.`);
+  if (!ok) return;
+
+  const btn = document.getElementById('btnEliminarRegistrosTrimestral');
+  const original = btn ? btn.innerHTML : '';
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Eliminando...';
+    }
+
+    const resp = await fetch('/api/trimestral/delete?cb=' + Date.now(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+
+    const data = await resp.json().catch(() => ({}));
+
+    if (!resp.ok || !data.ok) {
+      throw new Error(data?.error || 'No se pudieron eliminar los registros');
+    }
+
+    const total = Number(data.total || data.deleted || 0);
+    alert(`✅ Se eliminaron ${total} registro(s).`);
+
+    const master = document.getElementById('chkAllRegistrosTrimestral');
+    if (master) master.checked = false;
+    __trimSelected.clear();
+    updateEliminarRegistrosTrimestralButton();
+
+    await cargarRegistrosTrimestral(TRIM_PAGE, TRIM_LIMIT, TRIM_Q);
+  } catch (e) {
+    console.error('eliminarRegistrosTrimestralSeleccionados error:', e);
+    alert(e?.message || 'Error al eliminar registros.');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = original || '🗑️ Eliminar seleccionados';
+    }
+  }
+}
+
+window.eliminarRegistrosTrimestralSeleccionados = eliminarRegistrosTrimestralSeleccionados;
+
 async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q = TRIM_Q) {
   TRIM_PAGE = Math.max(1, Number(page) || 1);
   TRIM_LIMIT = Math.max(1, Number(limit) || 50);
@@ -5612,6 +5762,11 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
       const tbody = document.querySelector("#registrosTable tbody");
       tbody.innerHTML = "";
 
+      __trimSelected.clear();
+      const master = document.getElementById('chkAllRegistrosTrimestral');
+      if (master) master.checked = false;
+      updateEliminarRegistrosTrimestralButton();
+
       result.data.forEach((registro, index) => {
         const row = tbody.insertRow();
         row.dataset.id = registro.id;
@@ -5619,8 +5774,16 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
 
         const estadosRojos = ["CAMBIO LA INSTITUCION ACADEMICA DE INTERES", "PERSONA QUE DESERTO"];
         const claseEstadoRojo = estadosRojos.includes(registro.estado_avance) ? "estado-rojo" : "";
+        const canDelete = (typeof isAdminUser === 'function')
+          ? !!isAdminUser()
+          : (document.body.classList.contains('role-superadmin') || document.body.classList.contains('role-admin'));
 
         row.innerHTML = `
+          ${canDelete
+            ? `<td class="no-export td-select-registro" data-id="${registro.id}" style="text-align:center; cursor:pointer; user-select:none;">
+                <input type="checkbox" class="chk-registro-trimestral" value="${registro.id}" onclick="event.stopPropagation();">
+              </td>`
+            : `<td class="no-export">-</td>`}
           <td>${globalIndex}</td>
           <td>${registro.trimestre || ""}</td>
           <td>${registro.id_rusp || ""}</td>
