@@ -2813,6 +2813,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                     <th class="no-export">SEL</th>
 
                                     <th>N°</th>
+                                    <th>AÑO</th>
                                     <th>TRIMESTRE</th>
                                     <th>ID RUSP</th>
                                     <th>PRIMER APELLIDO</th>
@@ -5785,6 +5786,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
               </td>`
             : `<td class="no-export">-</td>`}
           <td>${globalIndex}</td>
+          <td>${registro.anio || ""}</td>
           <td>${registro.trimestre || ""}</td>
           <td>${registro.id_rusp || ""}</td>
           <td>${registro.primer_apellido || ""}</td>
