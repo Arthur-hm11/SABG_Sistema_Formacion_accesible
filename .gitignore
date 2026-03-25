@@ -27,3 +27,12 @@ RESPALDOS_SEGURIDAD/
 
 # no subir zips
 *.zip
+
+# ===== SABG CLEAN =====
+node_modules/
+*.log
+*.bak
+*.BACKUP_*
+*.tmp
+.DS_Store
+.env
