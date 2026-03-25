@@ -2017,6 +2017,113 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
         }
     </style>
 
+
+<style id="sabg-cambio-03-legibilidad">
+  /* Mejora segura de legibilidad en pantallas informativas/bienvenida */
+  .welcome-card,
+  .welcome-panel,
+  .welcome-content,
+  .dashboard-welcome,
+  .hero-card,
+  .hero-panel,
+  .info-card,
+  .main-card,
+  .login-card,
+  .intro-card,
+  .intro-panel,
+  .panel-bienvenida,
+  .card-bienvenida,
+  .bienvenida-card,
+  .bienvenida-panel,
+  section,
+  .card {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .welcome-card p,
+  .welcome-panel p,
+  .welcome-content p,
+  .dashboard-welcome p,
+  .hero-card p,
+  .hero-panel p,
+  .info-card p,
+  .main-card p,
+  .intro-card p,
+  .intro-panel p,
+  .panel-bienvenida p,
+  .card-bienvenida p,
+  .bienvenida-card p,
+  .bienvenida-panel p,
+  section p {
+    color: #4f647f !important;
+    font-size: 18px !important;
+    line-height: 1.65 !important;
+    letter-spacing: 0.01em !important;
+    font-weight: 500 !important;
+    max-width: 92% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: center !important;
+    word-break: break-word !important;
+  }
+
+  .welcome-card h1,
+  .welcome-panel h1,
+  .welcome-content h1,
+  .dashboard-welcome h1,
+  .hero-card h1,
+  .hero-panel h1,
+  .info-card h1,
+  .main-card h1,
+  .intro-card h1,
+  .intro-panel h1,
+  .panel-bienvenida h1,
+  .card-bienvenida h1,
+  .bienvenida-card h1,
+  .bienvenida-panel h1,
+  section h1 {
+    color: #7a1c2f !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.01em !important;
+    text-wrap: balance;
+  }
+
+  .welcome-card h2,
+  .welcome-panel h2,
+  .welcome-content h2,
+  .dashboard-welcome h2,
+  .hero-card h2,
+  .hero-panel h2,
+  .info-card h2,
+  .main-card h2,
+  .intro-card h2,
+  .intro-panel h2,
+  .panel-bienvenida h2,
+  .card-bienvenida h2,
+  .bienvenida-card h2,
+  .bienvenida-panel h2,
+  section h2 {
+    color: #7a1c2f !important;
+    line-height: 1.2 !important;
+    text-wrap: balance;
+  }
+
+  /* Ajuste especial a bloques grandes de bienvenida */
+  .welcome-card,
+  .welcome-panel,
+  .dashboard-welcome,
+  .hero-card,
+  .hero-panel,
+  .panel-bienvenida,
+  .card-bienvenida,
+  .bienvenida-card,
+  .bienvenida-panel {
+    padding-top: 28px !important;
+    padding-bottom: 28px !important;
+  }
+</style>
+
 </head>
 <body>
 <!-- LOGIN SCREEN -->
@@ -2032,7 +2139,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
             <div class="login-logo"></div>
             
             <div class="login-title">
-                <h2>SISTEMA DE FORMACIÓN</h2>
+                <h2>SISTEMA DE PROMOCIÓN DE FORMACIÓN ACADÉMICA</h2>
                 <p>Secretaría Anticorrupción y Buen Gobierno</p>
             </div>
 
@@ -2106,7 +2213,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
             <div class="header-title-row">
                 <div class="header-title-text">
                     <h1>Sistema de Promoción de la Formación Académica</h1>
-                    <p class="subtitle">Dirección de Capacitación y Evaluación del Desempeño</p>
+                    <p class="subtitle">Dirección de Capacitación Específica y Vinculación Estratégica (DCEVE)</p>
                 </div>
 
                 <img src="/public/Logo PFA.jpeg" class="logo-pfa" alt="Promoción de la Formación Académica">
@@ -2165,7 +2272,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
         <!-- PÁGINA DE INICIO -->
         <div id="inicio" class="main-section active">
             <div class="welcome-hero">
-                <h2>🎓 Bienvenido al Sistema de Promoción de la Formación Académica</h2>
+                <h2>🎓 Se da la más cordial bienvenida al <br> Sistema de Promoción de la Formación Académica</h2>
                 <p>
                     Este sistema integral permite a las dependencias e instituciones de la Administración Pública Federal 
                     gestionar, registrar y dar seguimiento a los procesos de formación académica de las personas servidoras públicas.
@@ -2223,7 +2330,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                     <div class="icon">📈</div>
                     <h3>Seguimiento en Tiempo Real</h3>
                     <p>
-                        Visualice el estado de avance de cada registro. Los usuariostados desactualizados se marcan automáticamente 
+                        Visualice el estado de avance de cada registro. Los usuarios desactualizados se marcan automáticamente 
                         para facilitar su identificación.
                     </p>
                 </div>
@@ -2487,6 +2594,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                 <thead>
                                     <tr style="background: var(--gradient1); color: white;">
                                         <th style="padding: 1rem; border: 1px solid #e2e8f0;">N°</th>
+                                        <th style="padding: 1rem; border: 1px solid #e2e8f0;">AÑO</th>
                                         <th style="padding: 1rem; border: 1px solid #e2e8f0;">TRIMESTRE</th>
                                         <th style="padding: 1rem; border: 1px solid #e2e8f0;">ID RUSP</th>
                                         <th style="padding: 1rem; border: 1px solid #e2e8f0;">PRIMER APELLIDO</th>
@@ -2508,6 +2616,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                 <tbody>
                                     <tr style="background: #f8fafc;">
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0; text-align: center;">1</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">2026</td>
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0;">ABRIL_JUNIO</td>
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0;">123456</td>
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0;">RODRÍGUEZ</td>
@@ -2565,7 +2674,9 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                     </tr>
                                 </tbody>
                             </table>
-                        </div>
+                        
+
+</div>
 
                         <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-left: 5px solid #3b82f6; border-radius: 10px;">
                             <h4 style="color: #1e40af; margin-bottom: 0.5rem;">💡 Observaciones del Ejemplo:</h4>
@@ -2637,11 +2748,10 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                 <label for="trimestre">Trimestre <span class="required">*</span></label>
                                 <select name="trimestre" required id="trimestre">
                                     <option value="">Seleccione...</option>
+                                    <option value="ENERO_MARZO">ENERO - MARZO</option>
                                     <option value="ABRIL_JUNIO">ABRIL - JUNIO</option>
                                     <option value="JULIO_SEPTIEMBRE">JULIO - SEPTIEMBRE</option>
-                                    <option value="OCTUBRE_DICIEMBRE">OCTUBRE - DICIEMBRE</option>
-                                    <option value="ENERO_MARZO">ENERO - MARZO</option>
-                                </select>
+                                    <option value="OCTUBRE_DICIEMBRE">OCTUBRE - DICIEMBRE</option></select>
                             </div>
                             <div class="form-group">
                                 <label for="id_rusp">ID RUSP <span class="required">*</span></label>
@@ -2791,6 +2901,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                         <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>                    </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
+                    <div style="font-size:12px; margin:8px 0 12px 0; color:#555; background:#fff7ed; border:1px solid #fdba74; padding:8px 12px; border-radius:8px;">👉 Para revisar el registro completo, favor de arrastrar a la derecha la barra de desplazamiento o utilizar la barra de desplazamiento horizontal del equipo.</div>
                    <div id="exportButtonsTrimestral" class="hidden" style="margin-bottom: 1rem;">
                     <div class="actions-bar">
                         <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
@@ -2813,6 +2924,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                     <th class="no-export">SEL</th>
 
                                     <th>N°</th>
+                                    <th>AÑO</th>
                                     <th>TRIMESTRE</th>
                                     <th>ID RUSP</th>
                                     <th>PRIMER APELLIDO</th>
@@ -2841,6 +2953,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                             <tbody>
                                 <tr>
                                     <td>1</td>
+                                    <td>2026</td>
                                     <td>ABRIL_JUNIO</td>
                                     <td>123456</td>
                                     <td>RODRÍGUEZ</td>
@@ -2920,12 +3033,14 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                                     <td>55-6666-6666</td>
                                 </tr>
                             </tbody>
-                        </table>                    </div>
+                        </table>
+                    </div>
+                    
 
                     <div id="notasTablaTrimestral" class="info-box hidden" style="margin-top: 2rem;">
                         <h3>⚠️ Notas Importantes sobre la Tabla</h3>
                         <ul>
-                            <li>Los usuariostados de avance desactualizados se visualizan en color ROJO</li>
+                            <li>Los usuarios de avance desactualizados se visualizan en color ROJO</li>
                             <li>Las celdas editables muestran un icono de lápiz ✏️ al pasar el mouse</li>
                             <li>Haga clic en una celda editable para modificar su contenido</li>
                             <li>Los cambios se guardan automáticamente al presionar Enter o al salir del campo</li>
@@ -4987,7 +5102,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         rows.forEach(row => {
             const cells = row.cells;
             if (cells && cells.length > 10) {
-                const dependenciaCell = cells[10].textContent.trim();
+                const dependenciaCell = cells[11].textContent.trim();
                 
                 if (dependenciaCell.toUpperCase().includes(userDependencia.toUpperCase()) ||
                     userDependencia.toUpperCase().includes(dependenciaCell.toUpperCase())) {

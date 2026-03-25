@@ -12,6 +12,26 @@ function pickUploadedFile(files) {
   return Array.isArray(f) ? f[0] : f;
 }
 
+
+function normalizarEncabezado(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\uFFFD/g, "N")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizarFila(row) {
+  const out = {};
+  for (const [k, v] of Object.entries(row || {})) {
+    let nk = normalizarEncabezado(k);
+    if (nk === "año" || nk == "ano" || nk == "a o" || nk == "a�o" || nk == "a?o") nk = "anio";
+    out[nk] = typeof v === "string" ? v.trim() : v;
+  }
+  return out;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Método no permitido' });

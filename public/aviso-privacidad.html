@@ -1,98 +1,73 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light">
+<!-- SABG_IOS_OVERSCROLL_FIX_START -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: #fff; /* fondo sólido */
+    overscroll-behavior: none; /* iOS lo ignora parcial, pero no estorba */
+  }
+
+  /* iOS Safari: evitar “bleed” del fondo moviendo el scroll a un contenedor interno */
+  body {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .page {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    background: #fff;
+    color: #111;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  .page a { word-break: break-word; }
+  .page img, .page table { max-width: 100%; height: auto; }
+  .page pre, .page code { white-space: pre-wrap; word-break: break-word; }
+</style>
+<!-- SABG_IOS_OVERSCROLL_FIX_END -->
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Aviso de Privacidad</title>
   <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: #fff;
-      overscroll-behavior: none;
-      -webkit-text-size-adjust: 100%;
-    }
-    .wrap{
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-    }
-    .bar{
-      padding: 10px 12px;
-      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      font-size: 14px;
-      color: #111;
-      border-bottom: 1px solid #eee;
-      background: #fff;
-    }
-    .bar a{ color:#0b57d0; text-decoration: underline; }
-    .viewer{
-      flex: 1;
-      width: 100%;
-      border: 0;
-    }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; margin:0; background:#f7f7f7;}
+    header{padding:16px 20px; background:#fff; border-bottom:1px solid #e5e5e5;}
+    main{padding:16px 20px;}
+    .card{background:#fff; border:1px solid #e5e5e5; border-radius:12px; padding:14px; margin-bottom:14px;}
+    .btn{display:inline-block; padding:10px 12px; border-radius:10px; border:1px solid #ddd; text-decoration:none; color:#111; background:#fff;}
+    .pdf{width:100%; height:85vh; border:1px solid #e5e5e5; border-radius:12px; background:#fff;}
+    small{color:#555}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="bar">
-      Aviso de Privacidad (PDF). Si no se visualiza, <a href="/public/aviso_privacidad.pdf" target="_blank" rel="noopener">ábrelo aquí</a>.
+  <div class="page">
+  <header>
+    <strong>Aviso de Privacidad</strong>
+    <div><small>Formación Académica para Personas Servidoras Públicas de la APF</small></div>
+  </header>
+
+  <main>
+    <div class="card">
+      <p style="margin:0 0 10px 0;">
+        Consulte el <strong>Aviso de Privacidad Integral</strong> en el siguiente documento:
+      </p>
+      <a class="btn" href="aviso_privacidad.pdf" target="_blank" rel="noopener">Abrir PDF</a>
     </div>
 
-    <iframe class="viewer" src="/public/aviso_privacidad.pdf"></iframe>
+    <iframe class="pdf" src="aviso_privacidad.pdf"></iframe>
+  </main>
   </div>
-<!-- SABG_IOS_BOUNCE_LOCK_START -->
-<script>
-(function () {
-  // Solo iOS (Safari/Chrome iOS usan WebKit)
-  var isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
-  if (!isIOS) return;
-
-  // Si hay contenedor scroll, lo usamos; si no, usamos body
-  var scroller = document.querySelector('.viewer') || document.querySelector('.page') || document.body;
-
-  // Evitar rubber-band: bloquear touchmove cuando estás en top/bottom
-  var startY = 0;
-
-  document.addEventListener('touchstart', function(e) {
-    if (!e.touches || !e.touches.length) return;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', function(e) {
-    if (!e.touches || !e.touches.length) return;
-
-    var y = e.touches[0].clientY;
-    var dy = y - startY;
-
-    // Determina scrollTop/Height del contenedor scroll real
-    var el = scroller;
-
-    // Si es iframe (PDF), no podemos leer su scroll; bloqueamos el rebote general del viewport:
-    // (esto es lo que evita que "se vea atrás")
-    if (el && el.tagName === 'IFRAME') {
-      // Si jalas hacia abajo estando arriba, o hacia arriba estando abajo, cancela.
-      // Como no podemos medir, cancelamos cualquier intento de overscroll del viewport.
-      e.preventDefault();
-      return;
-    }
-
-    var st = el.scrollTop || 0;
-    var sh = el.scrollHeight || 0;
-    var ch = el.clientHeight || 0;
-
-    var atTop = st <= 0;
-    var atBottom = (st + ch) >= (sh - 1);
-
-    if ((atTop && dy > 0) || (atBottom && dy < 0)) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-})();
-</script>
-<!-- SABG_IOS_BOUNCE_LOCK_END -->
-
 </body>
 </html>

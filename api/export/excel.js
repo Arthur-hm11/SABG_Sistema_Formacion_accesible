@@ -1,65 +1,76 @@
-import pool from "../_lib/db.js";
-import { applyCors } from "../_lib/cors.js";
-import * as XLSX from "xlsx";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pool = require('../_lib/db.cjs');
+export default async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-function toCsv(rows) {
-  const headers = Object.keys(rows[0] || {});
-  const esc = (v) => {
-    if (v === undefined || v === null) return "";
-    const s = String(v).replace(/"/g, '""');
-    return /[",\n]/.test(s) ? '"' + s + '"' : s;
-  };
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
 
-  const lines = [];
-  lines.push(headers.map(esc).join(","));
-  for (const row of rows) {
-    lines.push(headers.map((h) => esc(row[h])).join(","));
-  }
-  return lines.join("\n");
-}
-
-export default async function handler(req, res) {
-  const pre = applyCors(req, res);
-  if (pre) return;
-  // SECURITY: require session cookie
-  const cookie = String(req.headers.cookie || "");
-  if (!cookie.includes("sabg_session=")) return res.status(401).json({ success:false, error:"Unauthorized" });
-
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "GET") return res.status(405).json({ success: false, error: "Método no permitido" });
-
-  const format = String(req.query?.format || "xlsx").toLowerCase();
+  const { format } = req.query;
 
   try {
-    const result = await pool.query(
-      "SELECT * FROM registros_trimestral ORDER BY created_at DESC"
-    );
-    const rows = result.rows || [];
+    const result = await pool.query(`
+      SELECT * FROM trimestral_registros 
+      ORDER BY created_at DESC
+    `);
 
-    if (format === "csv") {
-      const csv = toCsv(rows);
-      res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader("Content-Disposition", "attachment; filename=registros_trimestral.csv");
+    if (format === 'csv') {
+      // Generar CSV
+      const headers = Object.keys(result.rows[0] || {});
+      let csv = headers.join(',') + '\n';
+      
+      result.rows.forEach(row => {
+        const values = headers.map(header => {
+          const value = row[header];
+          if (value === null || value === undefined) return '';
+          const stringValue = String(value).replace(/"/g, '""');
+          return `"${stringValue}"`;
+        });
+        csv += values.join(',') + '\n';
+      });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=registros_sabg_${new Date().toISOString().split('T')[0]}.csv`);
       return res.status(200).send(csv);
+    } else {
+      // Generar JSON para Excel (formato compatible)
+      const data = result.rows.map((row, index) => ({
+        'N°': index + 1,
+        'TRIMESTRE': row.trimestre || '',
+        'ID RUSP': row.id_rusp || '',
+        'PRIMER APELLIDO': row.primer_apellido || '',
+        'SEGUNDO APELLIDO': row.segundo_apellido || '',
+        'NOMBRE(S)': row.nombre || '',
+        'CURP': row.curp || '',
+        'NIVEL DE PUESTO': row.nivel_puesto || '',
+        'NIVEL TABULAR': row.nivel_tabular || '',
+        'RAMO - UR': row.ramo_ur || '',
+        'DEPENDENCIA': row.dependencia || '',
+        'CORREO INSTITUCIONAL': row.correo_institucional || '',
+        'TELÉFONO': row.telefono_institucional || '',
+        'NIVEL EDUCATIVO': row.nivel_educativo || '',
+        'INSTITUCIÓN EDUCATIVA': row.institucion_educativa || '',
+        'MODALIDAD': row.modalidad || '',
+        'ESTADO DE AVANCE': row.estado_avance || '',
+        'OBSERVACIONES': row.observaciones || '',
+        'ENLACE NOMBRE(S)': row.enlace_nombre || '',
+        'ENLACE PRIMER APELLIDO': row.enlace_primer_apellido || '',
+        'ENLACE SEGUNDO APELLIDO': row.enlace_segundo_apellido || '',
+        'ENLACE CORREO': row.enlace_correo || '',
+        'ENLACE TELÉFONO': row.enlace_telefono || '',
+        'FECHA REGISTRO': row.created_at || ''
+      }));
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename=registros_sabg_${new Date().toISOString().split('T')[0]}.json`);
+      return res.status(200).json(data);
     }
 
-    // xlsx por defecto
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "registros_trimestral");
-    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", "attachment; filename=registros_trimestral.xlsx");
-    return res.status(200).send(buf);
   } catch (error) {
-    console.error("Error /api/export/excel:", error);
-    return res.status(500).json({ success: false, error: error?.message || String(error) });
+    console.error('Error al exportar:', error);
+    return res.status(500).json({ error: 'Error al exportar: ' + error.message });
   }
-}
+};

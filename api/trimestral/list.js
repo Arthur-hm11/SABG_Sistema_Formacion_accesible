@@ -57,14 +57,12 @@ export default async function handler(req, res) {
       params.push(`%${q}%`);
       const p = `$${params.length}`;
       where.push(`(
-        curp ILIKE ${p}
-        OR id_rusp ILIKE ${p}
-        OR nombre ILIKE ${p}
+        nombre ILIKE ${p}
         OR primer_apellido ILIKE ${p}
         OR segundo_apellido ILIKE ${p}
-        OR dependencia ILIKE ${p}
-        OR CONCAT_WS(' ', nombre, primer_apellido, segundo_apellido) ILIKE ${p}
-        OR CONCAT_WS(' ', primer_apellido, segundo_apellido, nombre) ILIKE ${p}
+        OR curp ILIKE ${p}
+        OR id_rusp ILIKE ${p}
+        OR correo_institucional ILIKE ${p}
       )`);
     }
 
