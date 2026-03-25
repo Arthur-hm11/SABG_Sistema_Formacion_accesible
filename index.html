@@ -2366,7 +2366,7 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         <li>Notificaciones de estados desactualizados</li>
                         <li>Integración con Google Drive para almacenamiento</li>
                         <li>Búsqueda y filtrado avanzado en tablas</li>
-                    </ul>
+                        </ul>
                 </div>
             </div>
         </div>
@@ -2902,19 +2902,14 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>                    </div>
                     <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
                     <div style="font-size:12px; margin:8px 0 12px 0; color:#555; background:#fff7ed; border:1px solid #fdba74; padding:8px 12px; border-radius:8px;">👉 Para revisar el registro completo, favor de arrastrar a la derecha la barra de desplazamiento o utilizar la barra de desplazamiento horizontal del equipo.</div>
-                   <div id="exportButtonsTrimestral" class="hidden" style="margin-bottom: 1rem;">
-                    <div class="actions-bar">
-                        <button class="btn btn-success" onclick="exportData('excel')">📥 Exportar a Excel</button>
-                        <button class="btn btn-success" onclick="exportData('csv')">📥 Exportar a CSV</button>
+                   <div id="exportButtonsTrimestral" style="margin: 0 0 1rem 0 !important; display:block !important; visibility:visible !important; opacity:1 !important;">
+                    <div style="display:flex !important; align-items:center !important; gap:12px !important; flex-wrap:wrap !important; margin-bottom:10px !important;">
+                        <button type="button" id="btnExportExcelEnlaceVisible" class="btn btn-success" onclick="exportData('excel')" style="display:inline-flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+                            📥 Descargar información en Excel
+                        </button>
                         <button id="btnGuardarNeon" type="button" class="btn btn-success admin-only" onclick="guardarCambiosNeon(event)" style="display:inline-block;" disabled>💾 Guardar cambios</button>
                         <button class="btn btn-danger admin-only" id="btnEliminarRegistrosTrimestral" type="button" onclick="eliminarRegistrosTrimestralSeleccionados()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
-
-                        <!-- Solo administradores: carga masiva vía Excel -->
-                        <input type="file" id="excelFile" accept=".csv,.xlsx,.xls" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
-                        <div id="excelUploadBox" class="hidden" style="display:inline-flex; gap:14px; align-items:center;">
-                            <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">📎 Seleccionar carga de Excel</label>
-                        </div>
                     </div>
                 </div>
                     <div class="table-container">
@@ -3073,10 +3068,12 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         <h3>📝 Instrucciones</h3>
                         <ul>
                             <li>Seleccione el mes para registrar las evidencias correspondientes</li>
-                            <li>Las evidencias serán almacenadas en una carpeta de Google Drive correspondiente al mes de entrega</li>
+                            <li><strong>Las evidencias serán almacenadas en una carpeta de Google Drive correspondientes al mes de entrega</strong>, por lo que los meses que no estén activos, no tendrán acceso para subir archivos.</li>
+                            <li><strong>Recuerden que el periodo para subir las evidencias mensuales serán los últimos tres días hábiles de cada mes y los tres primeros días hábiles del mes siguiente.</strong></li>
                             <li>El archivo debe ser en formato PDF únicamente</li>
                             <li>Nombrar el archivo con las siglas de la dependencia y el mes (Ejemplo: INALI_noviembre, IMSS_noviembre)</li>
                             <li>Complete todos los datos del Enlace de Formación Académica</li>
+                            <li><strong>En caso de no subir las evidencias en el plazo establecido, se registrará como incumplimiento.</strong></li>
                         </ul>
                     </div>
                     
@@ -5362,7 +5359,12 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     }
 
         async function exportData(format) {
-        if (!requireSuperAdmin('EXPORT_' + String(format).toUpperCase())) return;
+        const fmt = String(format).toLowerCase();
+        if (fmt !== 'excel' && fmt !== 'xls') {
+        if (fmt !== 'excel' && fmt !== 'xls') {
+            if (!requireSuperAdmin('EXPORT_' + String(format).toUpperCase())) return;
+        }
+        }
 
         const overlay = document.getElementById('loadingOverlay');
         const loadingText = document.querySelector('.loading-text');
