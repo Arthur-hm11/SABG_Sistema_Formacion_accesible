@@ -5902,6 +5902,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
               </td>`
             : `<td class="no-export">-</td>`}
           <td>${globalIndex}</td>
+          <td>${registro.anio || registro['año'] || ''}</td>
           <td>${registro.trimestre || ""}</td>
           <td>${registro.id_rusp || ""}</td>
           <td>${registro.primer_apellido || ""}</td>
