@@ -2009,6 +2009,13 @@
 /* ONLY MOVE USER BLOCK */
 header{position:relative;}
 header .user-info{position:absolute; right:18px; top:12px; margin:0;}
+
+/* Solo admin y superadmin pueden ver la carga masiva Excel */
+#excelUploadBox { display: none !important; }
+body.role-admin #excelUploadBox,
+body.role-superadmin #excelUploadBox { display: inline-flex !important; }
+body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !important; }
+
 </style>
 
     <style id="ocultar-stats-grid-sabg">
@@ -2911,6 +2918,16 @@ header .user-info{position:absolute; right:18px; top:12px; margin:0;}
                         <button class="btn btn-danger admin-only" id="btnEliminarRegistrosTrimestral" type="button" onclick="eliminarRegistrosTrimestralSeleccionados()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
                     </div>
+
+<!-- Solo administradores: carga masiva vía Excel -->
+<input type="file" id="excelFile" accept=".csv,.xlsx,.xls" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
+<div id="excelUploadBox" class="admin-only" style="display:none; gap:14px; align-items:center;">
+    <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">
+        📎 Seleccionar carga de Excel
+    </label>
+</div>
+
+
                 </div>
                     <div class="table-container">
                         <table id="registrosTable">
@@ -3734,8 +3751,13 @@ function isAdminUser() {
 function applyRoleVisibility() {
     const excelBox = document.getElementById('excelUploadBox');
     if (excelBox) {
-        if (isAdminUser()) excelBox.classList.remove('hidden');
-        else excelBox.classList.add('hidden');
+        if (isAdminUser()) {
+            excelBox.classList.remove('hidden');
+            excelBox.style.display = 'inline-flex';
+        } else {
+            excelBox.classList.add('hidden');
+            excelBox.style.display = 'none';
+        }
     }
 
 }
@@ -5819,7 +5841,7 @@ async function eliminarRegistrosTrimestralSeleccionados() {
       btn.innerHTML = 'Eliminando...';
     }
 
-    const resp = await fetch('/api/trimestral/delete?cb=' + Date.now(), {
+    const resp = await fetch('/api/trimestral/deleteTest?cb=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids })
