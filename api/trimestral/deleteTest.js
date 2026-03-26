@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -24,7 +25,17 @@ function readJsonBody(req) {
     req.on("data", (c) => (data += c));
     req.on("end", () => {
       if (!data) return resolve({});
-      try { resolve(JSON.parse(data)); } catch { reject(new Error("Body JSON inválido")); }
+      try {
+    // 🔐 Validación de sesión SABG
+    const session = readSabgSession(req);
+    if (!session) {
+      return res.status(401).json({ ok:false, error:"No autenticado" });
+    }
+
+    if (!isAdminSession(session)) {
+      return res.status(403).json({ ok:false, error:"No autorizado" });
+    }
+ resolve(JSON.parse(data)); } catch { reject(new Error("Body JSON inválido")); }
     });
     req.on("error", reject);
   });
