@@ -27,3 +27,7 @@ RESPALDOS_SEGURIDAD/
 
 # no subir zips
 *.zip
+.env.*
+.npmrc
+*.log
+backups_locales/
