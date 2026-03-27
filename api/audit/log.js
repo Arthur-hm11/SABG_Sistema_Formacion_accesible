@@ -1,8 +1,12 @@
-import pool from "../_lib/db.js";
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "https://sabg-sistema-formacion.onrender.com");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Vary", "Origin");
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   // incluye Authorization por si luego mandas token, y Accept por compatibilidad
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');

@@ -1,5 +1,10 @@
-import pool from "../_lib/db.js";
-import { applyCors } from "../_lib/cors.js";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
 function norm(v) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
@@ -77,9 +82,8 @@ function isTrulyEmptyRow(r) {
 }
 
 export default async function handler(req, res) {
-  const pre = applyCors(req, res);
-  if (pre) return;
-res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
   if (req.method === "OPTIONS") return res.status(200).end();
@@ -113,6 +117,7 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       "enlace_correo",            // varchar(200)
       "enlace_telefono",          // varchar(50)
 
+      "anio",                     // varchar(4)
       "trimestre",                // varchar(50)
       "id_rusp",                  // varchar(100)
       "primer_apellido",          // varchar(100)
@@ -150,6 +155,9 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       const curpClean = normalizeCurpForDb(curpRaw);
       if (norm(curpRaw) !== null && curpClean === null) report.curp_invalid_to_null += 1;
 
+      const anioSeguro =
+        raw?.anio ?? raw?.ano ?? raw?.año ?? raw?.AÑO ?? raw?.ANIO ?? raw?.Ano ?? null;
+
       cleaned.push({
         enlace_nombre: clip(raw.enlace_nombre, 200),
         enlace_primer_apellido: clip(raw.enlace_primer_apellido, 100),
@@ -157,6 +165,7 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
         enlace_correo: clip(raw.enlace_correo, 200),
         enlace_telefono: clip(raw.enlace_telefono, 50),
 
+        anio: clip(String(anioSeguro ?? raw.anio ?? ""), 4),
         trimestre: clip(raw.trimestre, 50),
         id_rusp: clip(raw.id_rusp, 100),
         primer_apellido: clip(raw.primer_apellido, 100),

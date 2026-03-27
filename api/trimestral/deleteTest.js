@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -11,10 +12,10 @@ const pool = new Pool({
 
 const TABLE = "public.registros_trimestral";
 
-function setCors(res) {
+function setCors(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
-res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
@@ -24,34 +25,48 @@ function readJsonBody(req) {
     req.on("data", (c) => (data += c));
     req.on("end", () => {
       if (!data) return resolve({});
-      try { resolve(JSON.parse(data)); } catch { reject(new Error("Body JSON inválido")); }
+      try {
+    // 🔐 Validación de sesión SABG
+    const session = readSabgSession(req);
+    if (!session) {
+      return res.status(401).json({ ok:false, error:"No autenticado" });
+    }
+
+    if (!isAdminSession(session)) {
+      return res.status(403).json({ ok:false, error:"No autorizado" });
+    }
+ resolve(JSON.parse(data)); } catch { reject(new Error("Body JSON inválido")); }
     });
     req.on("error", reject);
   });
 }
 
 export default async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Método no permitido" });
 
   try {
     const body = (req.body && typeof req.body === "object") ? req.body : await readJsonBody(req);
-    const id = Number(body?.id);
-    if (!id) return res.status(400).json({ ok:false, error:"Falta id numérico" });
+
+    const ids = Array.isArray(body?.ids) ? body.ids.map(Number).filter(Boolean) : [];
+    if (!ids.length) {
+      return res.status(400).json({ ok:false, error:"Faltan ids válidos" });
+    }
 
     const r = await pool.query(
       `DELETE FROM ${TABLE}
-       WHERE id = $1
-         AND trimestre = 'TEST_TERMINAL'
-         AND primer_apellido = 'PRUEBA'
-         AND nombre = 'TERMINAL'
-         AND usuario_registro = 'Terminal'
+       WHERE id = ANY($1::int[])
        RETURNING id;`,
-      [id]
+      [ids]
     );
 
-    return res.status(200).json({ ok:true, deleted: r.rowCount, id: (r.rows?.[0]?.id ?? null) });
+    return res.status(200).json({
+      ok: true,
+      deleted: r.rowCount,
+      ids: r.rows.map(x => x.id)
+    });
+
   } catch (e) {
     return res.status(500).json({ ok:false, error: e?.message || "Error interno" });
   }
