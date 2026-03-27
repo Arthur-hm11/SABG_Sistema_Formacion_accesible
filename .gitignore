@@ -36,3 +36,12 @@ node_modules/
 *.tmp
 .DS_Store
 .env
+.env.*
+.npmrc
+*.sql
+*.pem
+*.key
+*.p12
+*.crt
+backups_locales/
+.ssh/
