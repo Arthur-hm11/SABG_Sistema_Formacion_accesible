@@ -45,3 +45,4 @@ node_modules/
 *.crt
 backups_locales/
 .ssh/
+api/auth_BACKUP_FIX_LOGIN_20260324_183157/
