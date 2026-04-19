@@ -896,6 +896,18 @@
             margin-top: 3rem;
         }
 
+        .features-section-title {
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 0 0 2rem;
+        }
+
+        .features-section-title + .features-grid {
+            margin-top: 0;
+        }
+
         .feature-card {
             background: white;
             padding: 2rem;
@@ -1202,6 +1214,34 @@
         .estado-rojo {
             color: #ef4444;
             font-weight: bold;
+        }
+
+        .revision-select,
+        .revision-observaciones {
+            width: 100%;
+            min-width: 180px;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid rgba(107, 44, 64, 0.28);
+            border-radius: 8px;
+            background: #fff;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+
+        .revision-observaciones {
+            min-width: 220px;
+            resize: vertical;
+        }
+
+        .revision-download-select {
+            min-width: 260px;
+            flex: 0 1 320px;
+            padding: 1rem 1.2rem;
+            border: 2px solid rgba(107,44,64,.25);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: #fff;
+            color: #334155;
         }
 
         /* Celdas editables */
@@ -1871,7 +1911,7 @@
             opacity: 0.9;
         }
 
-        /* Barra de acciones (Exportar + Cargar Excel) en una sola línea */
+        /* Barra de acciones (Exportar + Cargar sistema SABG) en una sola línea */
         .actions-bar{
             display:flex;
             align-items:center;
@@ -2010,7 +2050,7 @@
 header{position:relative;}
 header .user-info{position:absolute; right:18px; top:12px; margin:0;}
 
-/* Solo admin y superadmin pueden ver la carga masiva Excel */
+/* Solo admin y superadmin pueden ver la carga masiva sistema SABG */
 #excelUploadBox { display: none !important; }
 body.role-admin #excelUploadBox,
 body.role-superadmin #excelUploadBox { display: inline-flex !important; }
@@ -2146,7 +2186,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
             <div class="login-logo"></div>
             
             <div class="login-title">
-                <h2>SISTEMA DE PROMOCIÓN DE FORMACIÓN ACADÉMICA</h2>
+                <h2>SISTEMA DE PROMOCIÓN PARA LA FORMACIÓN ACADÉMICA</h2>
                 <p>Secretaría Anticorrupción y Buen Gobierno</p>
             </div>
 
@@ -2219,7 +2259,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
         <div class="header-bottom">
             <div class="header-title-row">
                 <div class="header-title-text">
-                    <h1>Sistema de Promoción de la Formación Académica</h1>
+                    <h1>Sistema de Promoción para la Formación Académica</h1>
                     <p class="subtitle">Dirección de Capacitación Específica y Vinculación Estratégica (DCEVE)</p>
                 </div>
 
@@ -2279,13 +2319,13 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
         <!-- PÁGINA DE INICIO -->
         <div id="inicio" class="main-section active">
             <div class="welcome-hero">
-                <h2>🎓 Se da la más cordial bienvenida al <br> Sistema de Promoción de la Formación Académica</h2>
+                <h2>Te damos la bienvenida al Sistema de Promoción de la Formación Académica</h2>
                 <p>
                     Este sistema integral permite a las dependencias e instituciones de la Administración Pública Federal 
-                    gestionar, registrar y dar seguimiento a los procesos de formación académica de las personas servidoras públicas.
+                    registrar, gestionar y dar seguimiento a los procesos de Formación Académica de las personas servidoras públicas.
                 </p>
                 <p style="font-size: 1.1rem; color: var(--guinda); font-weight: bold; margin-top: 1rem;">
-                    Seleccione una opción del menú superior para comenzar
+                    A continuación, seleccione una opción del menú superior para comenzar.
                 </p>
             </div>
 
@@ -2308,12 +2348,14 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                 </div>
             </div>
 
+            <h2 class="features-section-title">Información General</h2>
+
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="icon">📊</div>
                     <h3>Reporte Trimestral</h3>
                     <p>
-                        Registre y dé seguimiento al avance académico de las personas servidoras públicas de su dependencia. 
+                        Registre y de seguimiento al avance académico de las personas servidoras públicas de su dependencia. 
                         Incluye formulario completo con todos los campos requeridos.
                     </p>
                 </div>
@@ -2321,8 +2363,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     <div class="icon">📄</div>
                     <h3>Evidencias Mensuales</h3>
                     <p>
-                        Cargue y gestione las evidencias documentales mes con mes. El sistema permite adjuntar archivos PDF 
-                        que serán almacenados automáticamente en Google Drive.
+                        Cargue y gestione las evidencias documentales mes con mes. El sistema permite adjuntar archivos PDF.
                     </p>
                 </div>
                 <div class="feature-card">
@@ -2345,7 +2386,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     <div class="icon">📥</div>
                     <h3>Exportación de Datos</h3>
                     <p>
-                        Descargue la información en múltiples formatos: Excel, CSV y SQL. Ideal para generar reportes 
+                        Descargue la información en formato Excel. Ideal para generar reportes 
                         y análisis personalizados.
                     </p>
                 </div>
@@ -2443,7 +2484,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">SEGUNDO APELLIDO</h4>
-                            <p style="color: #64748b;">Corresponde al segundo apellido de la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">Corresponde al segundo apellido de la persona servidora pública interesada. (en caso de que no aplique, se podrá escribir no aplica). en caso de no tener algún dato, favor de colocar no aplica y colocar el dato correcto en el apartado de observaciones</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
@@ -2912,18 +2953,18 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                    <div id="exportButtonsTrimestral" style="margin: 0 0 1rem 0 !important; display:block !important; visibility:visible !important; opacity:1 !important;">
                     <div style="display:flex !important; align-items:center !important; gap:12px !important; flex-wrap:wrap !important; margin-bottom:10px !important;">
                         <button type="button" id="btnExportExcelEnlaceVisible" class="btn btn-success" onclick="exportData('excel')" style="display:inline-flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
-                            📥 Descargar información en Excel
+                            📥 Descargar información en sistema SABG
                         </button>
                         <button id="btnGuardarNeon" type="button" class="btn btn-success admin-only" onclick="guardarCambiosNeon(event)" style="display:inline-block;" disabled>💾 Guardar cambios</button>
                         <button class="btn btn-danger admin-only" id="btnEliminarRegistrosTrimestral" type="button" onclick="eliminarRegistrosTrimestralSeleccionados()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
                     </div>
 
-<!-- Solo administradores: carga masiva vía Excel -->
+<!-- Solo administradores: carga masiva vía sistema SABG -->
 <input type="file" id="excelFile" accept=".csv,.xlsx,.xls" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
 <div id="excelUploadBox" class="admin-only" style="display:none; gap:14px; align-items:center;">
     <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">
-        📎 Seleccionar carga de Excel
+        📎 Seleccionar carga de sistema SABG
     </label>
 </div>
 
@@ -3161,7 +3202,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         <ul>
                             <li>Visualice las evidencias registradas por las dependencias</li>
                             <li>Descargue los archivos PDF adjuntos</li>
-                            <li>Marque como "Completado" o "Sin completar" según la revisión</li>
+                            <li>Seleccione el estado de avance: OK, PENDIENTE, SIN ENTREGA o DEPENDENCIA QUE NO DEBE ENTREGAR</li>
                         </ul>
                     </div>
 
@@ -3173,9 +3214,12 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             style="flex:1; min-width:280px; padding:1rem 1.2rem; border:2px solid rgba(107,44,64,.25); border-radius:12px; font-size:1rem;"
                             oninput="debouncedLoadEvidenciasRevision()"
                         />
+                        <select id="selectDescargaRevisionDceve" class="revision-download-select" onchange="updateDescargarDceveButton()" style="display:none;">
+                            <option value="">Seleccionar PDF para descargar...</option>
+                        </select>
                         <button class="btn btn-danger" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
+                        <button class="btn btn-warning" id="btnDescargarRevisionDceve" type="button" onclick="descargarRevisionesSeleccionadas()" style="display:none;">📥 Descargar PDF</button>
                         <button class="btn btn-success" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;">💾 Guardar cambios</button>
-                        <button class="btn btn-danger" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
                         <button class="btn" type="button" onclick="loadEvidenciasRevision()">🔄 Actualizar</button>
                     </div>
 
@@ -3440,10 +3484,81 @@ function debouncedLoadEvidenciasRevision() {
 const __dceveDirty = new Set();
 const __dceveSelected = new Set();
 
+function getRevisionRowId(row) {
+    return String((row && (row.evidencia_id || row.id)) || '').trim();
+}
+
 function getEstadoRevisionOptions(selectedValue) {
-    const estados = ['Pendiente', 'En revisión', 'Con observaciones', 'Validada', 'Rechazada'];
-    const current = String(selectedValue || '').trim();
+    const estados = ['OK', 'PENDIENTE', 'SIN ENTREGA', 'DEPENDENCIA QUE NO DEBE ENTREGAR'];
+    const aliases = {
+        'PENDIENTE': 'PENDIENTE',
+        'EN REVISIÓN': 'PENDIENTE',
+        'EN REVISION': 'PENDIENTE',
+        'CON OBSERVACIONES': 'PENDIENTE',
+        'VALIDADA': 'OK',
+        'COMPLETADO': 'OK',
+        'OK': 'OK',
+        'RECHAZADA': 'SIN ENTREGA',
+        'SIN COMPLETAR': 'SIN ENTREGA',
+        'SIN ENTREGA': 'SIN ENTREGA',
+        'DEPENDENCIA QUE NO DEBE ENTREGAR': 'DEPENDENCIA QUE NO DEBE ENTREGAR'
+    };
+    const normalized = String(selectedValue || 'PENDIENTE').trim().toUpperCase();
+    const current = aliases[normalized] || 'PENDIENTE';
     return estados.map(v => `<option value="${escapeHtml(v)}" ${current === v ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
+}
+
+function updateDescargarDceveButton() {
+    const btn = document.getElementById('btnDescargarRevisionDceve');
+    const selector = document.getElementById('selectDescargaRevisionDceve');
+    if (!btn) return;
+    const canDownload = (typeof isAdminUser === 'function' ? isAdminUser() : false);
+    if (!canDownload) {
+        btn.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = '📥 Descargar PDF';
+        if (selector) selector.style.display = 'none';
+        return;
+    }
+    if (selector) selector.style.display = 'inline-block';
+    const selectedPdfId = String(selector?.value || '').trim();
+    btn.style.display = 'inline-block';
+    btn.disabled = (!selectedPdfId && __dceveSelected.size === 0);
+    btn.textContent = selectedPdfId
+        ? '📥 Descargar PDF'
+        : (__dceveSelected.size > 0
+        ? `📥 Descargar PDF (${__dceveSelected.size})`
+        : '📥 Descargar PDF');
+}
+
+function updateDescargaPdfOptions(rows) {
+    const selector = document.getElementById('selectDescargaRevisionDceve');
+    if (!selector) return;
+
+    const canDownload = (typeof isAdminUser === 'function' ? isAdminUser() : false);
+    if (!canDownload) {
+        selector.innerHTML = '<option value="">Seleccionar PDF para descargar...</option>';
+        selector.style.display = 'none';
+        updateDescargarDceveButton();
+        return;
+    }
+
+    const options = (Array.isArray(rows) ? rows : [])
+        .filter(row => getRevisionRowId(row) && (row.archivo_pdf_url || row.archivo_pdf_nombre))
+        .map(row => {
+            const id = getRevisionRowId(row);
+            const labelParts = [
+                row.archivo_pdf_nombre || 'PDF',
+                row.mes,
+                row.anio,
+                row.dependencia
+            ].filter(Boolean);
+            return `<option value="${escapeHtml(id)}">${escapeHtml(labelParts.join(' - '))}</option>`;
+        });
+
+    selector.innerHTML = '<option value="">Seleccionar PDF para descargar...</option>' + options.join('');
+    selector.style.display = options.length ? 'inline-block' : 'none';
+    updateDescargarDceveButton();
 }
 
 function updateEliminarDceveButton() {
@@ -3472,6 +3587,7 @@ function updateGuardarDceveButton() {
         btn.disabled = true;
         btn.textContent = '💾 Guardar cambios';
         updateEliminarDceveButton();
+        updateDescargarDceveButton();
         return;
     }
     btn.style.display = 'inline-block';
@@ -3488,6 +3604,7 @@ function toggleRevisionSelected(evidenciaId, checked) {
     if (checked) __dceveSelected.add(id);
     else __dceveSelected.delete(id);
     updateEliminarDceveButton();
+    updateDescargarDceveButton();
 }
 
 function markRevisionDirty(evidenciaId) {
@@ -3519,7 +3636,7 @@ async function guardarRevisionEvidencia(evidenciaId, silent = false) {
         credentials: 'include',
         body: JSON.stringify({
             evidencia_id: Number(id),
-            estado_revision: estadoEl.value || 'Pendiente',
+            estado_revision: estadoEl.value || 'PENDIENTE',
             observaciones_dceve: obsEl.value || ''
         })
     });
@@ -3600,6 +3717,19 @@ async function eliminarRevisionesSeleccionadas() {
     }
 }
 
+function descargarRevisionesSeleccionadas() {
+    const selectedPdfId = String(document.getElementById('selectDescargaRevisionDceve')?.value || '').trim();
+    const ids = selectedPdfId ? [selectedPdfId] : Array.from(__dceveSelected);
+    if (!ids.length) {
+        alert('ℹ️ Selecciona un PDF en el combo para descargarlo.');
+        return;
+    }
+
+    ids.forEach((id) => {
+        window.open('/api/evidencias/pdf?id=' + encodeURIComponent(id), '_blank', 'noopener,noreferrer');
+    });
+}
+
 async function loadEvidenciasRevision() {
     const tbody = document.getElementById('evidenciasRevisionBody');
     const meta = document.getElementById('evidenciasRevisionMeta');
@@ -3629,6 +3759,12 @@ async function loadEvidenciasRevision() {
         const rows = Array.isArray(data.rows) ? data.rows : [];
 
         if (!rows.length) {
+            __dceveDirty.clear();
+            __dceveSelected.clear();
+            updateGuardarDceveButton();
+            updateEliminarDceveButton();
+            updateDescargaPdfOptions([]);
+            updateDescargarDceveButton();
             tbody.innerHTML = `
                 <tr>
                     <td colspan="13" style="text-align:center; padding:1.5rem; color:#64748b;">
@@ -3643,23 +3779,34 @@ async function loadEvidenciasRevision() {
         __dceveDirty.clear();
         __dceveSelected.clear();
         updateGuardarDceveButton();
+        updateDescargaPdfOptions(rows);
 
         __dceveSelected.clear();
         updateEliminarDceveButton();
+        updateDescargarDceveButton();
 
         tbody.innerHTML = rows.map((row, idx) => {
-            const canDelete = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!row.evidencia_id;
+            const id = getRevisionRowId(row);
+            const canEditRevision = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!id;
 
-            const selectCell = canDelete
-                ? `<input type="checkbox" id="ev_sel_${row.evidencia_id}" onchange="toggleRevisionSelected(${row.evidencia_id}, this.checked)">`
+            const selectCell = canEditRevision
+                ? `<input type="checkbox" id="ev_sel_${escapeHtml(id)}" onchange="toggleRevisionSelected(${Number(id)}, this.checked)">`
                 : '';
 
             const pdfCell = row.archivo_pdf_url
-                ? `<a href="${escapeHtml(row.archivo_pdf_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
+                ? `<a href="/api/evidencias/pdf?id=${encodeURIComponent(id)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.archivo_pdf_nombre || 'Descargar PDF')}</a>`
                 : escapeHtml(row.archivo_pdf_nombre || '');
 
+            const estadoCell = canEditRevision
+                ? `<select id="ev_estado_${id}" class="revision-select" onchange="markRevisionDirty(${id})">${getEstadoRevisionOptions(row.estado_revision)}</select>`
+                : escapeHtml(row.estado_revision || '');
+
+            const observacionesCell = canEditRevision
+                ? `<textarea id="ev_obs_${id}" class="revision-observaciones" rows="2" maxlength="500" oninput="markRevisionDirty(${id})">${escapeHtml(row.observaciones_dceve || '')}</textarea>`
+                : escapeHtml(row.observaciones_dceve || '');
+
             return `
-                <tr id="ev_row_${row.evidencia_id || ''}">
+                <tr id="ev_row_${escapeHtml(id)}">
                     <td>${selectCell}</td>
                     <td>${idx + 1}</td>
                     <td>${escapeHtml(row.mes || '')}</td>
@@ -3670,8 +3817,8 @@ async function loadEvidenciasRevision() {
                     <td>${escapeHtml(row.enlace_correo || '')}</td>
                     <td>${escapeHtml(row.dependencia || '')}</td>
                     <td>${pdfCell}</td>
-                    <td>${escapeHtml(row.estado_revision || '')}</td>
-                    <td>${escapeHtml(row.observaciones_dceve || '')}</td>
+                    <td>${estadoCell}</td>
+                    <td>${observacionesCell}</td>
                     <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
                 </tr>
             `;
@@ -3736,7 +3883,7 @@ function requireSuperAdmin(actionLabel) {
 
 // ========================================
 // VISIBILIDAD POR ROL (sin exponer roles)
-// - "Cargar Excel" solo para administradores
+// - "Cargar sistema SABG" solo para administradores
 // ========================================
 function isAdminUser() {
     // Evita ReferenceError si 'userRole' no existe en el scope global
@@ -3762,8 +3909,8 @@ function applyRoleVisibility() {
 
 }
 // ========================================
-// Carga masiva (Admin): CSV exportado desde Excel
-// Nota: Para evitar dependencias extra en el frontend, el cargador soporta CSV.
+// Carga masiva (Admin): usuarios exportado desde sistema SABG
+// Nota: Para evitar dependencias extra en el frontend, el cargador soporta usuarios.
 // Si necesitas XLSX directo, se implementa del lado del servidor o con SheetJS.
 // ========================================
 function normalizeHeaderKey(h) {
@@ -3776,7 +3923,7 @@ function normalizeHeaderKey(h) {
 }
 
 function parseCSV(text) {
-    // Parser CSV simple con soporte de comillas dobles
+    // Parser usuarios simple con soporte de comillas dobles
     const rows = [];
     let row = [];
     let cur = '';
@@ -4114,12 +4261,12 @@ async function uploadExcel() {
             const rows = parseCSV(text);
 
             if (!rows || rows.length < 2) {
-                alert('⚠️ El CSV no tiene registros (o está vacío).');
+                alert('⚠️ El usuarios no tiene registros (o está vacío).');
                 return;
             }
 
             
-            // Detectar fila de encabezados (algunos CSV traen filas extra antes del header)
+            // Detectar fila de encabezados (algunos usuarios traen filas extra antes del header)
             const normRows = rows.map(r => (r || []).map(c => normalizeHeaderKey(c)));
             const expectedCandidates = [
                 'trimestre','trim','periodo',
@@ -4159,7 +4306,7 @@ async function uploadExcel() {
             if (bestScore < 2) {
                 // No encontramos encabezados válidos: evita "0 guardados" engañoso
                 const preview = (rows[0] || []).slice(0, 12).join(' | ');
-                alert('⚠️ No se detectaron encabezados válidos en el CSV.\n\n' + 'Asegúrate de exportar como CSV desde la pestaña correcta y que la primera fila contenga columnas como TRIMESTRE, ID_RUSP, CURP, etc.\n\n' + 'Vista previa de la primera fila:\n' + preview);
+                alert('⚠️ No se detectaron encabezados válidos en el usuarios.\n\n' + 'Asegúrate de exportar como usuarios desde la pestaña correcta y que la primera fila contenga columnas como TRIMESTRE, ID_RUSP, CURP, etc.\n\n' + 'Vista previa de la primera fila:\n' + preview);
                 return;
             }
 
@@ -4417,7 +4564,7 @@ try { localStorage.removeItem(RESUME_KEY); } catch (_) {}
                 console.warn(`⚠️ Carga parcial: ${ok} insertados / ${fail} con error.`);
             }
         } else {
-            alert('ℹ️ Por ahora, la carga masiva soporta CSV (exportado desde Excel).\n\n1) En Excel: Archivo → Guardar como → CSV\n2) Súbelo aquí y se registrará fila por fila.');
+            alert('ℹ️ Por ahora, la carga masiva soporta usuarios (exportado desde sistema SABG).\n\n1) En sistema SABG: Archivo → Guardar como → usuarios\n2) Súbelo aquí y se registrará fila por fila.');
         }
     } finally {
         
@@ -5484,9 +5631,9 @@ const tabs = document.querySelectorAll('#trimestral .tab');
                 const filename = `registros_sabg_${today}.csv`;
                 downloadBlob(blob, filename);
                 auditLog('EXPORT_CSV', 'OK', { total: rowsCells.length });
-                alert(`✅ Datos exportados exitosamente!\n\nFormato: CSV\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
+                alert(`✅ Datos exportados exitosamente!\n\nFormato: usuarios\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
             } else if (format === 'excel' || format === 'xls') {
-                // Exportación "Excel" sin librerías: HTML .xls (Excel lo abre perfecto)
+                // Exportación "sistema SABG" sin librerías: HTML .xls (sistema SABG lo abre perfecto)
                 const html = toXlsHtml(headers, rowsCells);
                 const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
                 const filename = `registros_sabg_${today}.xls`;

@@ -6,6 +6,32 @@ function clean(v) {
   return String(v ?? "").trim();
 }
 
+function normalizeEstadoRevision(v) {
+  const raw = clean(v);
+  const key = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
+  if (key === "OK" || key === "VALIDADA" || key === "VALIDADO" || key === "COMPLETADO" || key === "COMPLETADA") {
+    return "OK";
+  }
+
+  if (key === "PENDIENTE" || key === "EN REVISION" || key === "CON OBSERVACIONES") {
+    return "PENDIENTE";
+  }
+
+  if (key === "SIN ENTREGA" || key === "SIN COMPLETAR" || key === "RECHAZADA" || key === "RECHAZADO") {
+    return "SIN ENTREGA";
+  }
+
+  if (key === "DEPENDENCIA QUE NO DEBE ENTREGAR" || key.startsWith("DEPENDENCIA QUE NO")) {
+    return "DEPENDENCIA QUE NO DEBE ENTREGAR";
+  }
+
+  return "";
+}
+
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
@@ -27,22 +53,14 @@ export default async function handler(req, res) {
 
   try {
     const evidenciaId = parseInt(String(req.body?.evidencia_id || ""), 10);
-    const estadoRevision = clean(req.body?.estado_revision);
+    const estadoRevision = normalizeEstadoRevision(req.body?.estado_revision);
     const observaciones = clean(req.body?.observaciones_dceve);
 
     if (!Number.isFinite(evidenciaId) || evidenciaId <= 0) {
       return res.status(400).json({ ok: false, error: "evidencia_id inválido" });
     }
 
-    const allowed = [
-      "Pendiente",
-      "En revisión",
-      "Con observaciones",
-      "Validada",
-      "Rechazada"
-    ];
-
-    if (!allowed.includes(estadoRevision)) {
+    if (!estadoRevision) {
       return res.status(400).json({ ok: false, error: "estado_revision inválido" });
     }
 
