@@ -1275,6 +1275,11 @@
             color: #334155;
         }
 
+        body:not(.role-admin):not(.role-superadmin) .revision-admin-control,
+        body:not(.role-admin):not(.role-superadmin) .revision-admin-col {
+            display: none !important;
+        }
+
         /* Celdas editables */
         .editable-cell {
             position: relative;
@@ -3231,19 +3236,19 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             style="flex:1; min-width:280px; padding:1rem 1.2rem; border:2px solid rgba(107,44,64,.25); border-radius:12px; font-size:1rem;"
                             oninput="debouncedLoadEvidenciasRevision()"
                         />
-                        <select id="selectDescargaRevisionDceve" class="revision-download-select" onchange="updateDescargarDceveButton()" style="display:none;">
+                        <select id="selectDescargaRevisionDceve" class="revision-download-select revision-admin-control" onchange="updateDescargarDceveButton()" style="display:none;">
                             <option value="">Seleccionar PDF para descargar...</option>
                         </select>
-                        <button class="btn btn-danger" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
-                        <button class="btn btn-warning" id="btnDescargarRevisionDceve" type="button" onclick="descargarRevisionesSeleccionadas()" style="display:none;">📥 Descargar PDF</button>
-                        <button class="btn btn-success" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;">💾 Guardar cambios</button>
+                        <button class="btn btn-danger revision-admin-control" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
+                        <button class="btn btn-warning revision-admin-control" id="btnDescargarRevisionDceve" type="button" onclick="descargarRevisionesSeleccionadas()" style="display:none;">📥 Descargar PDF</button>
+                        <button class="btn btn-success revision-admin-control" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;">💾 Guardar cambios</button>
                         <button class="btn" type="button" onclick="loadEvidenciasRevision()">🔄 Actualizar</button>
                     </div>
 
                     <div class="table-container">
                         <table id="evidenciasRevisionTable">
                             <thead>
-                                <tr><th style="width:48px;">SEL</th>
+                                <tr><th class="revision-admin-col" style="width:48px;">SEL</th>
                                     <th>N°</th>
                                     <th>MES</th>
                                     <th>AÑO</th>
@@ -3615,6 +3620,20 @@ function updateGuardarDceveButton() {
     updateEliminarDceveButton();
 }
 
+function updateRevisionDceveVisibility() {
+    try { syncRoleBodyClasses(); } catch (_) {}
+
+    const canEdit = (typeof isAdminUser === 'function' ? isAdminUser() : false);
+    if (!canEdit) {
+        __dceveDirty.clear();
+        __dceveSelected.clear();
+    }
+
+    updateGuardarDceveButton();
+    updateEliminarDceveButton();
+    updateDescargarDceveButton();
+}
+
 function toggleRevisionSelected(evidenciaId, checked) {
     const id = String(evidenciaId || '').trim();
     if (!id) return;
@@ -3748,6 +3767,8 @@ function descargarRevisionesSeleccionadas() {
 }
 
 async function loadEvidenciasRevision() {
+    try { syncRoleBodyClasses(); } catch (_) {}
+
     const tbody = document.getElementById('evidenciasRevisionBody');
     const meta = document.getElementById('evidenciasRevisionMeta');
     const input = document.getElementById('busquedaEvidenciasDceve');
@@ -3824,7 +3845,7 @@ async function loadEvidenciasRevision() {
 
             return `
                 <tr id="ev_row_${escapeHtml(id)}">
-                    <td>${selectCell}</td>
+                    <td class="revision-admin-col">${selectCell}</td>
                     <td>${idx + 1}</td>
                     <td>${escapeHtml(row.mes || '')}</td>
                     <td>${escapeHtml(row.anio || '')}</td>
@@ -3911,8 +3932,18 @@ function isAdminUser() {
     return role === 'admin' || role === 'superadmin' || role.includes('admin');
 }
 
+function syncRoleBodyClasses() {
+    const roleRaw =
+        (typeof userRole !== 'undefined' && userRole) ? userRole :
+        (localStorage.getItem('SABG_ROL') || '');
+    const role = String(roleRaw || '').toLowerCase().trim();
+    document.body.classList.toggle('role-superadmin', role === 'superadmin');
+    document.body.classList.toggle('role-admin', role === 'admin' || role.includes('admin'));
+}
 
 function applyRoleVisibility() {
+    syncRoleBodyClasses();
+
     const excelBox = document.getElementById('excelUploadBox');
     if (excelBox) {
         if (isAdminUser()) {
@@ -3924,6 +3955,7 @@ function applyRoleVisibility() {
         }
     }
 
+    updateRevisionDceveVisibility();
 }
 // ========================================
 // Carga masiva (Admin): usuarios exportado desde sistema SABG
@@ -5059,6 +5091,12 @@ async function loginUsuario() {
             localStorage.removeItem('SABG_NOMBRE');
             localStorage.removeItem('SABG_ROL');
             localStorage.removeItem('SABG_DEPENDENCIA');
+            document.body.classList.remove('role-admin', 'role-superadmin');
+            try {
+                __dceveDirty.clear();
+                __dceveSelected.clear();
+                updateRevisionDceveVisibility();
+            } catch (_) {}
             document.getElementById('loginScreen').classList.remove('hidden');
             
             document.querySelectorAll('#registrosTable tbody tr').forEach(row => {
