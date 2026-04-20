@@ -46,5 +46,5 @@ export function readSabgSession(req) {
 
 export function isAdminSession(session) {
   const rol = String(session?.rol || "").toLowerCase().trim();
-  return rol === "admin" || rol === "superadmin" || rol.includes("admin");
+  return rol === "admin" || rol === "superadmin" || rol === "administrador";
 }

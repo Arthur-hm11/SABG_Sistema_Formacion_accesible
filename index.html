@@ -3236,12 +3236,12 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             style="flex:1; min-width:280px; padding:1rem 1.2rem; border:2px solid rgba(107,44,64,.25); border-radius:12px; font-size:1rem;"
                             oninput="debouncedLoadEvidenciasRevision()"
                         />
-                        <select id="selectDescargaRevisionDceve" class="revision-download-select revision-admin-control" onchange="updateDescargarDceveButton()" style="display:none;">
+                        <select id="selectDescargaRevisionDceve" class="revision-download-select revision-admin-control" onchange="updateDescargarDceveButton()" style="display:none;" hidden aria-hidden="true" disabled>
                             <option value="">Seleccionar PDF para descargar...</option>
                         </select>
-                        <button class="btn btn-danger revision-admin-control" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;">🗑️ Eliminar seleccionados</button>
-                        <button class="btn btn-warning revision-admin-control" id="btnDescargarRevisionDceve" type="button" onclick="descargarRevisionesSeleccionadas()" style="display:none;">📥 Descargar PDF</button>
-                        <button class="btn btn-success revision-admin-control" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;">💾 Guardar cambios</button>
+                        <button class="btn btn-danger revision-admin-control" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;" hidden aria-hidden="true" disabled>🗑️ Eliminar seleccionados</button>
+                        <button class="btn btn-warning revision-admin-control" id="btnDescargarRevisionDceve" type="button" onclick="descargarRevisionesSeleccionadas()" style="display:none;" hidden aria-hidden="true" disabled>📥 Descargar PDF</button>
+                        <button class="btn btn-success revision-admin-control" id="btnGuardarRevisionDceve" type="button" onclick="guardarRevisionesPendientes()" style="display:none;" hidden aria-hidden="true" disabled>💾 Guardar cambios</button>
                         <button class="btn" type="button" onclick="loadEvidenciasRevision()">🔄 Actualizar</button>
                     </div>
 
@@ -3530,21 +3530,47 @@ function getEstadoRevisionOptions(selectedValue) {
     return estados.map(v => `<option value="${escapeHtml(v)}" ${current === v ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
 }
 
+function setRevisionAdminControlVisible(el, visible, displayValue = 'inline-block') {
+    if (!el) return;
+    el.hidden = !visible;
+    el.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    el.style.display = visible ? displayValue : 'none';
+    if ('disabled' in el) el.disabled = !visible;
+}
+
+function stripRevisionAdminInputsForNonAdmin() {
+    if (typeof isAdminUser === 'function' && isAdminUser()) return;
+
+    document.querySelectorAll('#evidenciasRevisionBody .revision-select').forEach((select) => {
+        select.replaceWith(document.createTextNode(select.value || ''));
+    });
+
+    document.querySelectorAll('#evidenciasRevisionBody .revision-observaciones').forEach((textarea) => {
+        textarea.replaceWith(document.createTextNode(textarea.value || ''));
+    });
+
+    document.querySelectorAll('#evidenciasRevisionBody input[type="checkbox"]').forEach((checkbox) => {
+        const cell = checkbox.closest('td');
+        if (cell) cell.textContent = '';
+        else checkbox.remove();
+    });
+}
+
 function updateDescargarDceveButton() {
     const btn = document.getElementById('btnDescargarRevisionDceve');
     const selector = document.getElementById('selectDescargaRevisionDceve');
     if (!btn) return;
     const canDownload = (typeof isAdminUser === 'function' ? isAdminUser() : false);
     if (!canDownload) {
-        btn.style.display = 'none';
-        btn.disabled = true;
+        setRevisionAdminControlVisible(btn, false);
         btn.textContent = '📥 Descargar PDF';
-        if (selector) selector.style.display = 'none';
+        setRevisionAdminControlVisible(selector, false);
         return;
     }
-    if (selector) selector.style.display = 'inline-block';
+    const hasDownloadOptions = !!(selector && selector.options && selector.options.length > 1);
+    setRevisionAdminControlVisible(selector, hasDownloadOptions);
     const selectedPdfId = String(selector?.value || '').trim();
-    btn.style.display = 'inline-block';
+    setRevisionAdminControlVisible(btn, true);
     btn.disabled = (!selectedPdfId && __dceveSelected.size === 0);
     btn.textContent = selectedPdfId
         ? '📥 Descargar PDF'
@@ -3560,7 +3586,7 @@ function updateDescargaPdfOptions(rows) {
     const canDownload = (typeof isAdminUser === 'function' ? isAdminUser() : false);
     if (!canDownload) {
         selector.innerHTML = '<option value="">Seleccionar PDF para descargar...</option>';
-        selector.style.display = 'none';
+        setRevisionAdminControlVisible(selector, false);
         updateDescargarDceveButton();
         return;
     }
@@ -3579,7 +3605,7 @@ function updateDescargaPdfOptions(rows) {
         });
 
     selector.innerHTML = '<option value="">Seleccionar PDF para descargar...</option>' + options.join('');
-    selector.style.display = options.length ? 'inline-block' : 'none';
+    setRevisionAdminControlVisible(selector, options.length > 0);
     updateDescargarDceveButton();
 }
 
@@ -3588,12 +3614,11 @@ function updateEliminarDceveButton() {
     if (!btn) return;
     const canEdit = (typeof isAdminUser === 'function' ? isAdminUser() : false);
     if (!canEdit) {
-        btn.style.display = 'none';
-        btn.disabled = true;
+        setRevisionAdminControlVisible(btn, false);
         btn.textContent = '🗑️ Eliminar seleccionados';
         return;
     }
-    btn.style.display = 'inline-block';
+    setRevisionAdminControlVisible(btn, true);
     btn.disabled = (__dceveSelected.size === 0);
     btn.textContent = __dceveSelected.size > 0
         ? `🗑️ Eliminar seleccionados (${__dceveSelected.size})`
@@ -3605,14 +3630,13 @@ function updateGuardarDceveButton() {
     if (!btn) return;
     const canEdit = (typeof isAdminUser === 'function' ? isAdminUser() : false);
     if (!canEdit) {
-        btn.style.display = 'none';
-        btn.disabled = true;
+        setRevisionAdminControlVisible(btn, false);
         btn.textContent = '💾 Guardar cambios';
         updateEliminarDceveButton();
         updateDescargarDceveButton();
         return;
     }
-    btn.style.display = 'inline-block';
+    setRevisionAdminControlVisible(btn, true);
     btn.disabled = (__dceveDirty.size === 0);
     btn.textContent = __dceveDirty.size > 0
         ? `💾 Guardar cambios (${__dceveDirty.size})`
@@ -3627,6 +3651,7 @@ function updateRevisionDceveVisibility() {
     if (!canEdit) {
         __dceveDirty.clear();
         __dceveSelected.clear();
+        stripRevisionAdminInputsForNonAdmin();
     }
 
     updateGuardarDceveButton();
@@ -3635,6 +3660,11 @@ function updateRevisionDceveVisibility() {
 }
 
 function toggleRevisionSelected(evidenciaId, checked) {
+    if (typeof isAdminUser === 'function' && !isAdminUser()) {
+        __dceveSelected.clear();
+        updateRevisionDceveVisibility();
+        return;
+    }
     const id = String(evidenciaId || '').trim();
     if (!id) return;
     if (checked) __dceveSelected.add(id);
@@ -3644,6 +3674,11 @@ function toggleRevisionSelected(evidenciaId, checked) {
 }
 
 function markRevisionDirty(evidenciaId) {
+    if (typeof isAdminUser === 'function' && !isAdminUser()) {
+        __dceveDirty.clear();
+        updateRevisionDceveVisibility();
+        return;
+    }
     if (!evidenciaId) return;
     __dceveDirty.add(String(evidenciaId));
     const row = document.getElementById('ev_row_' + evidenciaId);
@@ -3659,6 +3694,11 @@ function clearRevisionDirty(evidenciaId) {
 }
 
 async function guardarRevisionEvidencia(evidenciaId, silent = false) {
+    if (typeof isAdminUser === 'function' && !isAdminUser()) {
+        updateRevisionDceveVisibility();
+        throw new Error('Acceso restringido');
+    }
+
     const id = String(evidenciaId || '').trim();
     if (!id) throw new Error('evidencia_id inválido');
 
@@ -3689,6 +3729,12 @@ async function guardarRevisionEvidencia(evidenciaId, silent = false) {
 
 async function guardarRevisionesPendientes() {
     try {
+        if (typeof isAdminUser === 'function' && !isAdminUser()) {
+            updateRevisionDceveVisibility();
+            alert('⚠️ Acceso restringido.');
+            return;
+        }
+
         const ids = Array.from(__dceveDirty);
         if (!ids.length) {
             alert('ℹ️ No hay cambios pendientes por guardar.');
@@ -3716,6 +3762,12 @@ async function guardarRevisionesPendientes() {
 
 async function eliminarRevisionesSeleccionadas() {
     try {
+        if (typeof isAdminUser === 'function' && !isAdminUser()) {
+            updateRevisionDceveVisibility();
+            alert('⚠️ Acceso restringido.');
+            return;
+        }
+
         const ids = Array.from(__dceveSelected);
         if (!ids.length) {
             alert('ℹ️ No hay registros seleccionados para eliminar.');
@@ -3754,6 +3806,12 @@ async function eliminarRevisionesSeleccionadas() {
 }
 
 function descargarRevisionesSeleccionadas() {
+    if (typeof isAdminUser === 'function' && !isAdminUser()) {
+        updateRevisionDceveVisibility();
+        alert('⚠️ Acceso restringido.');
+        return;
+    }
+
     const selectedPdfId = String(document.getElementById('selectDescargaRevisionDceve')?.value || '').trim();
     const ids = selectedPdfId ? [selectedPdfId] : Array.from(__dceveSelected);
     if (!ids.length) {
@@ -3823,9 +3881,11 @@ async function loadEvidenciasRevision() {
         updateEliminarDceveButton();
         updateDescargarDceveButton();
 
+        const canEditRevisionRows = (typeof isAdminUser === 'function' ? isAdminUser() : false);
+
         tbody.innerHTML = rows.map((row, idx) => {
             const id = getRevisionRowId(row);
-            const canEditRevision = (typeof isAdminUser === 'function' ? isAdminUser() : false) && !!id;
+            const canEditRevision = canEditRevisionRows && !!id;
 
             const selectCell = canEditRevision
                 ? `<input type="checkbox" id="ev_sel_${escapeHtml(id)}" onchange="toggleRevisionSelected(${Number(id)}, this.checked)">`
@@ -3860,7 +3920,8 @@ async function loadEvidenciasRevision() {
                     <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
                 </tr>
             `;
-        }).join('');
+	        }).join('');
+        stripRevisionAdminInputsForNonAdmin();
 
         if (meta) {
             meta.textContent = `Total: ${Number(data.total || rows.length).toLocaleString('es-MX')} registros`;
@@ -3923,13 +3984,17 @@ function requireSuperAdmin(actionLabel) {
 // VISIBILIDAD POR ROL (sin exponer roles)
 // - "Cargar sistema SABG" solo para administradores
 // ========================================
+function isAdminRoleValue(roleRaw) {
+    const role = String(roleRaw).toLowerCase().trim();
+    return role === 'admin' || role === 'superadmin' || role === 'administrador';
+}
+
 function isAdminUser() {
     // Evita ReferenceError si 'userRole' no existe en el scope global
     const roleRaw =
         (typeof userRole !== 'undefined' && userRole) ? userRole :
         (localStorage.getItem('SABG_ROL') || '');
-    const role = String(roleRaw).toLowerCase().trim();
-    return role === 'admin' || role === 'superadmin' || role.includes('admin');
+    return isAdminRoleValue(roleRaw);
 }
 
 function syncRoleBodyClasses() {
@@ -3938,7 +4003,7 @@ function syncRoleBodyClasses() {
         (localStorage.getItem('SABG_ROL') || '');
     const role = String(roleRaw || '').toLowerCase().trim();
     document.body.classList.toggle('role-superadmin', role === 'superadmin');
-    document.body.classList.toggle('role-admin', role === 'admin' || role.includes('admin'));
+    document.body.classList.toggle('role-admin', isAdminRoleValue(role));
 }
 
 function applyRoleVisibility() {
@@ -4896,7 +4961,7 @@ async function loginUsuario() {
             // ✅ Clases de rol en <body> (necesario para edición)
             try {
                 document.body.classList.toggle("role-superadmin", userRole === "superadmin");
-                document.body.classList.toggle("role-admin", (userRole === "admin") || String(userRole).includes("admin"));
+                document.body.classList.toggle("role-admin", isAdminRoleValue(userRole));
             } catch (_) {}
 
         });
