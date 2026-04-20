@@ -2871,24 +2871,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             </div>
                             <div class="form-group">
                                 <label for="nivel_tabular">Nivel Tabular <span class="required">*</span></label>
-                                <select name="nivel_tabular" required id="nivel_tabular">
-                                    <option value="">Seleccione...</option>
-                                    <option value="P11">P11</option>
-                                    <option value="P12">P12</option>
-                                    <option value="P13">P13</option>
-                                    <option value="P21">P21</option>
-                                    <option value="P23">P23</option>
-                                    <option value="P31">P31</option>
-                                    <option value="P32">P32</option>
-                                    <option value="P33">P33</option>
-                                    <option value="O11">O11</option>
-                                    <option value="O21">O21</option>
-                                    <option value="O23">O23</option>
-                                    <option value="O31">O31</option>
-                                    <option value="O32">O32</option>
-                                    <option value="O33">O33</option>
-                                    <option value="N11">N11</option>
-                                    <option value="N21">N21</option>
+                                <select name="nivel_tabular" required id="nivel_tabular" disabled>
+                                    <option value="">Primero seleccione Nivel de Puesto</option>
                                 </select>
                             </div>
                             <div class="form-group" style="position: relative;">
@@ -6198,6 +6182,7 @@ async function guardarRegistroTrimestral() {
         if (result.success) {
             alert('✅ Registro guardado exitosamente!');
             form.reset();
+            llenarNivelTabular('');
             await cargarRegistrosTrimestral();
         } else {
             alert('❌ Error: ' + result.error);
@@ -6385,10 +6370,55 @@ function initDependenciaAutocomplete() {
         });
     }
 
+const NIVELES_TABULARES_POR_PUESTO = {
+    'PUESTO_OPERATIVO_U_HOMÓLOGO': ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+    'ENLACE_U_HOMÓLOGO': ['P11', 'P12', 'P13', 'P21', 'P23', 'P31', 'P32', 'P33'],
+    'JEFE_DE_DEPARTAMENTO_U_HOMÓLOGO': ['O11', 'O21', 'O23', 'O31', 'O32', 'O33'],
+    'SUBDIRECTOR_DE_ÁREA_U_HOMÓLOGO': ['N11', 'N21', 'N22', 'N23', 'N31', 'N32', 'N33'],
+    'DIRECTOR_DE_ÁREA_U_HOMÓLOGO': ['M11', 'M21', 'M22', 'M23', 'M31', 'M33', 'M41', 'M42', 'M43'],
+    'COORDINADOR': ['M41', 'M42', 'M43'],
+    'DIRECTOR_GENERAL_U_HOMÓLOGO': ['K12', 'K21', 'K22'],
+    'TITULAR_DE_UNIDAD_O_SUPERIOR': ['J11', 'J21', 'J31'],
+    'OTRO': ['NO APLICA']
+};
+
+function llenarNivelTabular(nivelPuesto, valorActual = '') {
+    const nivelTabular = document.getElementById('nivel_tabular');
+    if (!nivelTabular) return;
+
+    const opciones = NIVELES_TABULARES_POR_PUESTO[nivelPuesto] || [];
+    nivelTabular.innerHTML = '';
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = opciones.length ? 'Seleccione...' : 'Primero seleccione Nivel de Puesto';
+    nivelTabular.appendChild(placeholder);
+
+    opciones.forEach((codigo) => {
+        const option = document.createElement('option');
+        option.value = codigo;
+        option.textContent = codigo;
+        nivelTabular.appendChild(option);
+    });
+
+    nivelTabular.disabled = opciones.length === 0;
+    nivelTabular.value = opciones.includes(valorActual) ? valorActual : '';
+}
+
+function initNivelPuestoTabularVinculado() {
+    const nivelPuesto = document.getElementById('nivel_puesto');
+    const nivelTabular = document.getElementById('nivel_tabular');
+    if (!nivelPuesto || !nivelTabular) return;
+
+    llenarNivelTabular(nivelPuesto.value, nivelTabular.value);
+    nivelPuesto.addEventListener('change', () => llenarNivelTabular(nivelPuesto.value));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Restaurar rol si existe
     try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
     initDependenciaAutocomplete();
+    initNivelPuestoTabularVinculado();
     applyRoleVisibility();
 
     // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
