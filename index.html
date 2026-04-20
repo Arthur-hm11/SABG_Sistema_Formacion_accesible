@@ -1107,6 +1107,37 @@
             box-shadow: 0 5px 15px rgba(107, 44, 64, 0.3);
         }
 
+        .field-help {
+            color: #64748b;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            margin-top: 0.4rem;
+        }
+
+        .field-help-attached {
+            width: 100%;
+            margin-top: 0.75rem;
+            padding: 0.8rem 1rem;
+            background: #fffaf3;
+            border: 1px solid #f1dcc3;
+            border-left: 4px solid var(--guinda);
+            border-radius: 8px;
+            color: #475569;
+            font-weight: 500;
+            box-shadow: 0 6px 16px rgba(99, 45, 71, 0.08);
+        }
+
+        .field-help-attached .help-title {
+            display: block;
+            color: var(--guinda);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .field-help-attached strong {
+            color: var(--guinda);
+        }
+
         /* Buttons */
         .btn {
             background: var(--gradient1);
@@ -2453,8 +2484,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     <!-- TAB: INSTRUCTIVO -->
                 <div id="instructivo" class="tab-content active">
                     <div class="info-box">
-                        <h3>📖 INSTRUCTIVO PARA EL LLENADO DEL FORMATO</h3>
-                        <p style="margin-bottom: 1rem;"><strong>Nota:</strong> Se solicita de la manera más atenta respetar los formatos de cada celda a llenar. En caso de tener duda con el registro de los mismos, favor de contactar a la Subdirectora de Formación y Capacitación Institucional A, al correo areli.angel@buengobierno.gob.mx</p>
+                        <h3>📖 INSTRUCTIVO PARA EL LLENADO DEL FORMULARIO</h3>
+                        <p style="margin-bottom: 1rem;"><strong>Nota:</strong> Se solicita de la manera más atenta capturar la información conforme a los campos y listas disponibles en el sistema. En caso de tener duda con el registro de los mismos, favor de contactar a la Subdirectora de Formación y Capacitación Institucional A, al correo areli.angel@buengobierno.gob.mx</p>
                     </div>
 
                     <div class="card" style="background: white; padding: 2rem; margin: 2rem 0;">
@@ -2467,7 +2498,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">TRIMESTRE</h4>
-                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</p>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: El campo de registro está vinculado; si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</p>
                             <p style="color: #64748b;">Corresponde al trimestre en que se registró a la persona servidora pública interesada.</p>
                         </div>
 
@@ -2484,7 +2515,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">SEGUNDO APELLIDO</h4>
-                            <p style="color: #64748b;">Corresponde al segundo apellido de la persona servidora pública interesada. (en caso de que no aplique, se podrá escribir no aplica). en caso de no tener algún dato, favor de colocar no aplica y colocar el dato correcto en el apartado de observaciones</p>
+                            <p style="color: #64748b;">En caso de que no aplique o no se cuente con el dato, favor de colocar <strong>no aplica</strong> y registrar la información correcta en el apartado de observaciones.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
@@ -2499,24 +2530,24 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">NIVEL DE PUESTO</h4>
-                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles de puestos. Se deberá seleccionar el nivel de puesto que le corresponda a la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">En el campo se visualizará una lista desplegable con los niveles de puestos. Se deberá seleccionar el nivel de puesto que le corresponda a la persona servidora pública interesada.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">NIVEL TABULAR</h4>
-                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el nivel de puesto, no se desplegará la lista para seleccionar el nivel tabular al que corresponde la persona servidora pública interesada.</p>
-                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles tabulares. Se deberá seleccionar el nivel tabular que le corresponda a la persona servidora pública interesada.</p>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: El campo de registro está vinculado; si no selecciona el nivel de puesto, no se desplegará la lista para seleccionar el nivel tabular al que corresponde la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">En el campo se visualizará una lista desplegable con los niveles tabulares. Se deberá seleccionar el nivel tabular que le corresponda a la persona servidora pública interesada.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">RAMO - UR</h4>
-                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el nivel tabular, no se desplegará la lista para seleccionar el Ramo - UR al que corresponde la persona servidora pública interesada.</p>
-                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los ramos. Se deberá seleccionar el ramo que corresponda a la Institución en la cual esté adscrita la persona servidora pública interesada.</p>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: El campo de registro está vinculado; si no selecciona el nivel tabular, no se desplegará la lista para seleccionar el Ramo - UR al que corresponde la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">En el campo se visualizará una lista desplegable con los ramos. Se deberá seleccionar el ramo que corresponda a la Institución en la cual esté adscrita la persona servidora pública interesada.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">DEPENDENCIA</h4>
-                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con las Dependencias e Instituciones de la Administración Pública Federal. Se deberá seleccionar la Dependencia o Institución donde esté adscrita la persona servidora pública interesada.</p>
+                            <p style="color: #64748b;">En el campo se visualizará una lista desplegable con las Dependencias e Instituciones de la Administración Pública Federal. Se deberá seleccionar la Dependencia o Institución donde esté adscrita la persona servidora pública interesada.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
@@ -2532,25 +2563,25 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">NIVEL EDUCATIVO</h4>
-                            <p style="color: #64748b;">En la celda se visualizará una flecha que al seleccionarla desplegará una lista con los niveles educativos. Se deberá seleccionar el nivel educativo que la persona servidora pública esté interesada en continuar y/o concluir.</p>
+                            <p style="color: #64748b;">En el campo se visualizará una lista desplegable con los niveles educativos. Se deberá seleccionar el nivel educativo que la persona servidora pública esté interesada en continuar y/o concluir.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">INSTITUCIÓN EDUCATIVA</h4>
-                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el nivel educativo, no se desplegará la lista para seleccionar la institución educativa que la persona servidora pública esté interesada.</p>
-                            <p style="color: #64748b;">En la celda de registro se visualizará una flecha que al seleccionarla desplegará una lista con las instituciones educativas. Se deberá seleccionar la Institución educativa de interés de la persona servidora pública.</p>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: El campo de registro está vinculado; si no selecciona el nivel educativo, no se desplegará la lista para seleccionar la institución educativa de interés de la persona servidora pública.</p>
+                            <p style="color: #64748b;">En el campo de registro se visualizará una lista desplegable con las instituciones educativas. Se deberá seleccionar la Institución educativa de interés de la persona servidora pública.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">MODALIDAD</h4>
-                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona la institución educativa, no se desplegará la lista para seleccionar la modalidad disponible.</p>
-                            <p style="color: #64748b;">En la celda de registro, se visualizará una flecha que al seleccionarla desplegará una lista con las modalidades disponibles de acuerdo a cada Institución educativa. Se deberá seleccionar la modalidad de interés.</p>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: El campo de registro está vinculado; si no selecciona la institución educativa, no se desplegará la lista para seleccionar la modalidad disponible.</p>
+                            <p style="color: #64748b;">En el campo de registro se visualizará una lista desplegable con las modalidades disponibles de acuerdo a cada Institución educativa. Se deberá seleccionar la modalidad de interés.</p>
                         </div>
 
                         <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-left: 5px solid var(--guinda); border-radius: 10px;">
                             <h4 style="color: var(--guinda); margin-bottom: 0.5rem;">ESTADO DE AVANCE</h4>
-                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: La celda para registro está vinculada, si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</p>
-                            <p style="color: #64748b; margin-bottom: 0.5rem;">En la celda de registro se visualizará una flecha que al seleccionarla desplegará una lista con los estados de avance académico. Se deberá seleccionar el estado de avance académico en que se encuentra la persona servidora pública.</p>
+                            <p style="color: #ef4444; font-weight: bold; margin-bottom: 0.5rem;">*Nota: El campo de registro está vinculado; si no selecciona el trimestre, no se desplegará la lista para seleccionar el Estado de Avance de la persona servidora pública interesada.</p>
+                            <p style="color: #64748b; margin-bottom: 0.5rem;">En el campo de registro se visualizará una lista desplegable con los estados de avance académico. Se deberá seleccionar el estado de avance académico en que se encuentra la persona servidora pública.</p>
                             <p style="color: #f59e0b; font-weight: bold; background: #fef3c7; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
                                 ⚠️ Poner especial atención en la opción que dice: "Cambió la institución académica de interés" (únicamente aplicará para aquellas personas servidoras públicas que cambiaron de parecer al elegir Institución educativa de interés en el trimestre abril-junio y deberán reportar la nueva elección en las casillas: Nivel Educativo, Institución Educativa y Modalidad).
                             </p>
@@ -2743,7 +2774,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <li>El Enlace de Formación Académica tendrá que actualizar el estado de avance, de lo contrario no podrá cerrar el apartado de Ver Tabla de Registro</li>
                             <li>Los estados desactualizados se visualizarán en color rojo en la tabla</li>
                             <li>La DCEVE tiene control para bloquear/desbloquear la edición de datos</li>
-                            <li>Respete el orden de llenado en campos vinculados (cascada de opciones)</li>
+                            <li>Respete el orden de captura en campos vinculados (cascada de opciones del sistema)</li>
                             <li>Verifique cuidadosamente los datos de contacto (correo y teléfono)</li>
                         </ul>
                     </div>
@@ -2769,6 +2800,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="enlace_apellido2">Segundo Apellido <span class="required">*</span></label>
                                 <input type="text" name="enlace_apellido2" required id="enlace_apellido2">
+                                <p class="field-help">Si no aplica, se podrá colocar un guion o escribir no aplica.</p>
                             </div>
                             <div class="form-group">
                                 <label for="enlace_correo">Correo Institucional <span class="required">*</span></label>
@@ -2812,6 +2844,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="segundo_apellido">Segundo Apellido <span class="required">*</span></label>
                                 <input type="text" name="segundo_apellido" required id="segundo_apellido">
+                                <p class="field-help field-help-attached"><span class="help-title">Nota para Segundo Apellido</span>En caso de que no aplique o no se cuente con el dato, favor de colocar <strong>no aplica</strong> y registrar la información correcta en el apartado de observaciones.</p>
                             </div>
                             <div class="form-group">
                                 <label for="nombre">Nombre(s) <span class="required">*</span></label>

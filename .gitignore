@@ -22,6 +22,7 @@ RESPALDOS_SEGURIDAD/
 *.bak_*
 
 # local scratch
+fix_sabg_titulo_real.sh
 /generate_refresh.mjs
 /test.txt
 
