@@ -1,10 +1,15 @@
 import multer from "multer";
 import { google } from "googleapis";
 import stream from "stream";
+import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession } from "../_lib/session.js";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
+const MESES_EVIDENCIA = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+];
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -43,6 +48,90 @@ function isPdfMagic(buf) {
   }
 }
 
+function clean(value, max = 250) {
+  return String(value ?? "").trim().slice(0, max);
+}
+
+function cleanEnv(value) {
+  return String(value ?? "").trim();
+}
+
+function normalizeText(value) {
+  return clean(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getCurrentEvidencePeriod() {
+  const parts = new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    month: "long",
+    year: "numeric",
+  }).formatToParts(new Date());
+
+  const rawMonth = parts.find((part) => part.type === "month")?.value || "";
+  const year = parts.find((part) => part.type === "year")?.value || String(new Date().getFullYear());
+  const month = MESES_EVIDENCIA.find((item) => normalizeText(item) === normalizeText(rawMonth)) || rawMonth;
+
+  return { month, year };
+}
+
+function getSafeUploadError(error) {
+  const reason = String(
+    error?.response?.data?.error ||
+    error?.response?.data?.error_description ||
+    error?.errors?.[0]?.reason ||
+    error?.code ||
+    ""
+  ).toLowerCase();
+
+  const status = Number(error?.response?.status || error?.code || 0);
+
+  if (reason.includes("invalid_grant") || reason.includes("invalid_client")) {
+    return "No se pudo autenticar Google Drive. Revisa el refresh token configurado.";
+  }
+
+  if (status === 401 || reason.includes("unauthorized")) {
+    return "Google Drive rechazó la autenticación. Revisa las credenciales configuradas.";
+  }
+
+  if (status === 403 || reason.includes("insufficient") || reason.includes("forbidden")) {
+    return "La cuenta configurada no tiene permiso para subir archivos a la carpeta de Google Drive.";
+  }
+
+  if (reason.includes("database") || reason.includes("relation") || reason.includes("column")) {
+    return "El PDF se subió, pero no se pudo registrar la evidencia en la base de datos.";
+  }
+
+  return "Error al subir evidencia";
+}
+
+function logUploadError(error) {
+  const status = Number(error?.response?.status || error?.code || 0) || null;
+  const googleError = error?.response?.data?.error || null;
+  const googleDescription = error?.response?.data?.error_description || null;
+
+  console.error("UPLOAD ERROR:", {
+    name: error?.name || "Error",
+    message: error?.message || String(error),
+    status,
+    googleError,
+    googleDescription,
+  });
+}
+
+function isMalformedRefreshToken(value) {
+  const token = cleanEnv(value);
+  return (
+    !token ||
+    token.includes("&") ||
+    token.includes("redirect_uri") ||
+    token.includes("client_id") ||
+    token.includes("googleusercontent.com")
+  );
+}
+
 export default async function handler(req, res) {
   // CORS allowlist
   const pre = applyCors(req, res);
@@ -76,13 +165,45 @@ export default async function handler(req, res) {
       });
     }
 
-    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-    const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
-    const folderId = process.env.DRIVE_FOLDER_ID;
+    const period = getCurrentEvidencePeriod();
+    const requestedMonth = clean(req.body?.mes, 30);
+    const requestedYear = clean(req.body?.anio || period.year, 10);
+
+    if (normalizeText(requestedMonth) !== normalizeText(period.month) || requestedYear !== period.year) {
+      return res.status(403).json({
+        ok: false,
+        error: `Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`,
+      });
+    }
+
+    const nombre = clean(req.body?.nombre, 200);
+    const primerApellido = clean(req.body?.primerApellido, 200);
+    const segundoApellido = clean(req.body?.segundoApellido, 200);
+    const correo = clean(req.body?.correo, 200);
+    const dependencia = clean(session.dependencia, 250);
+    const usuarioRegistro = clean(session.usuario || session.id, 200);
+
+    if (!nombre || !primerApellido || !segundoApellido || !correo) {
+      return res.status(400).json({ ok: false, error: "Completa todos los datos del Enlace." });
+    }
+
+    if (!dependencia) {
+      return res.status(403).json({ ok: false, error: "Dependencia no autorizada para registrar evidencias." });
+    }
+
+    const clientId = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_ID);
+    const clientSecret = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+    const refreshToken = cleanEnv(process.env.GOOGLE_OAUTH_REFRESH_TOKEN);
+    const folderId = cleanEnv(process.env.DRIVE_FOLDER_ID);
 
     if (!clientId || !clientSecret || !refreshToken) {
       return res.status(500).json({ ok: false, error: "OAuth credentials missing" });
+    }
+    if (isMalformedRefreshToken(refreshToken)) {
+      return res.status(500).json({
+        ok: false,
+        error: "El refresh token de Google Drive está mal configurado. Debe pegarse solo el valor de refresh_token, sin redirect_uri ni client_id.",
+      });
     }
     if (!folderId) {
       return res.status(500).json({ ok: false, error: "DRIVE_FOLDER_ID missing" });
@@ -113,11 +234,47 @@ export default async function handler(req, res) {
       fields: "id, webViewLink",
     });
 
+    const insertRes = await pool.query(
+      `
+      INSERT INTO public.evidencias_mensuales (
+        mes,
+        anio,
+        enlace_nombre,
+        enlace_primer_apellido,
+        enlace_segundo_apellido,
+        enlace_correo,
+        archivo_pdf_url,
+        archivo_pdf_nombre,
+        dependencia,
+        usuario_registro,
+        estado_revision
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      RETURNING id
+      `,
+      [
+        period.month,
+        period.year,
+        nombre,
+        primerApellido,
+        segundoApellido,
+        correo,
+        uploadRes.data.webViewLink,
+        safeName,
+        dependencia,
+        usuarioRegistro,
+        "PENDIENTE",
+      ]
+    );
+
     return res.json({
       ok: true,
+      evidencia_id: insertRes.rows?.[0]?.id,
       fileId: uploadRes.data.id,
       link: uploadRes.data.webViewLink,
       name: safeName,
+      mes: period.month,
+      anio: period.year,
     });
   } catch (e) {
     // Multer size limit
@@ -132,7 +289,7 @@ export default async function handler(req, res) {
       return res.status(415).json({ ok: false, error: "Only PDF files are allowed" });
     }
 
-    console.error("UPLOAD ERROR:", e);
-    return res.status(500).json({ ok: false, error: "Error al subir evidencia" });
+    logUploadError(e);
+    return res.status(500).json({ ok: false, error: getSafeUploadError(e) });
   }
 }

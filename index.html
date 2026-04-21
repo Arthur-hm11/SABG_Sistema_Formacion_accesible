@@ -1386,6 +1386,35 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
 
+        .month-card.month-disabled {
+            opacity: 0.42;
+            filter: grayscale(0.9);
+            cursor: not-allowed;
+        }
+
+        .month-card.month-disabled:hover {
+            transform: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .month-card.month-disabled:hover:before {
+            transform: scale(0);
+        }
+
+        .month-card.month-active {
+            outline: 3px solid rgba(255,255,255,0.92);
+            box-shadow: 0 12px 30px rgba(111,45,74,0.45);
+        }
+
+        .month-card .month-status {
+            display: block;
+            margin-top: 0.75rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
         .month-card h3 {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
@@ -5620,8 +5649,12 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     }
 
     function openMonthModal(month) {
+        const currentYear = new Intl.DateTimeFormat('es-MX', {
+            timeZone: 'America/Mexico_City',
+            year: 'numeric'
+        }).format(new Date());
         document.getElementById('monthModal').classList.add('active');
-        document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} 2025`;
+        document.getElementById('modalTitle').textContent = `Registro de Evidencias Mensuales - ${month} ${currentYear}`;
     }
 
     function closeModal() {
@@ -7806,13 +7839,100 @@ setTimeout(__setSaveButtonsState, 800);
 // ✅ Evidencias PDF: selección + UI + submit (PRO)
 // ======================================================
 (function(){
-  // 1) Guardar mes seleccionado sin tocar tu HTML
+  const MESES_EVIDENCIA = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  function normalizeEvidenceMonth(value){
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  function getCurrentEvidencePeriod(){
+    const parts = new Intl.DateTimeFormat("es-MX", {
+      timeZone: "America/Mexico_City",
+      month: "long",
+      year: "numeric"
+    }).formatToParts(new Date());
+
+    const rawMonth = parts.find((part) => part.type === "month")?.value || "";
+    const year = parts.find((part) => part.type === "year")?.value || String(new Date().getFullYear());
+    const normalized = normalizeEvidenceMonth(rawMonth);
+    const month = MESES_EVIDENCIA.find((item) => normalizeEvidenceMonth(item) === normalized) || rawMonth;
+
+    return { month, year };
+  }
+
+  function isCurrentEvidenceMonth(month){
+    return normalizeEvidenceMonth(month) === normalizeEvidenceMonth(getCurrentEvidencePeriod().month);
+  }
+
+  function getMonthFromCard(card, index){
+    const onclick = card.getAttribute("onclick") || "";
+    const match = onclick.match(/openMonthModal\('([^']+)'\)/);
+    return match ? match[1] : MESES_EVIDENCIA[index] || "";
+  }
+
+  function setMonthCardStatus(card, text){
+    let status = card.querySelector(".month-status");
+    if (!status) {
+      status = document.createElement("span");
+      status.className = "month-status";
+      card.appendChild(status);
+    }
+    status.textContent = text;
+  }
+
+  function updateMonthCardsAvailability(){
+    const period = getCurrentEvidencePeriod();
+    const cards = Array.from(document.querySelectorAll(".month-card"));
+
+    cards.forEach((card, index) => {
+      const month = getMonthFromCard(card, index);
+      const isActive = normalizeEvidenceMonth(month) === normalizeEvidenceMonth(period.month);
+      const yearLabel = card.querySelector("p");
+
+      if (yearLabel) yearLabel.textContent = period.year;
+      card.dataset.mes = month;
+      card.dataset.anio = period.year;
+      card.classList.toggle("month-active", isActive);
+      card.classList.toggle("month-disabled", !isActive);
+      card.setAttribute("aria-disabled", isActive ? "false" : "true");
+      card.setAttribute("title", isActive ? "Mes activo para cargar evidencias" : `Bloqueado. Mes activo: ${period.month} ${period.year}`);
+      setMonthCardStatus(card, isActive ? "Mes activo" : "Bloqueado");
+    });
+  }
+
+  // 1) Guardar mes seleccionado y bloquear meses que no sean el actual
   window.__evidenciaMes = window.__evidenciaMes || "";
+  window.__evidenciaAnio = window.__evidenciaAnio || "";
   const _open = window.openMonthModal;
   window.openMonthModal = function(month){
-    try { window.__evidenciaMes = String(month || ""); } catch(e) {}
-    return _open ? _open.apply(this, arguments) : undefined;
+    const period = getCurrentEvidencePeriod();
+    updateMonthCardsAvailability();
+
+    if (!isCurrentEvidenceMonth(month)) {
+      alert(`Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`);
+      return;
+    }
+
+    try {
+      window.__evidenciaMes = period.month;
+      window.__evidenciaAnio = period.year;
+    } catch(e) {}
+
+    const result = _open ? _open.apply(this, [period.month]) : undefined;
+    const title = document.getElementById("modalTitle");
+    if (title) title.textContent = `Registro de Evidencias Mensuales - ${period.month} ${period.year}`;
+    return result;
   };
+
+  document.addEventListener("DOMContentLoaded", updateMonthCardsAvailability);
+  setTimeout(updateMonthCardsAvailability, 0);
 
   // 2) UI: mostrar nombre del PDF seleccionado
   function setFileLabel(file){
@@ -7864,10 +7984,14 @@ setTimeout(__setSaveButtonsState, 800);
       const segundoApellido = (inputs[2]?.value || "").trim();
       const correo = (inputs[3]?.value || "").trim();
       const file = document.getElementById("pdfFile")?.files?.[0] || null;
+      const period = getCurrentEvidencePeriod();
 
       if (!nombre || !primerApellido || !segundoApellido || !correo) throw new Error("Completa todos los datos del Enlace.");
       if (!file) throw new Error("Selecciona un archivo PDF.");
       if (!String(file.name||"").toLowerCase().endsWith(".pdf")) throw new Error("Solo se permiten archivos PDF.");
+      if (!isCurrentEvidenceMonth(window.__evidenciaMes)) {
+        throw new Error(`Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`);
+      }
 
       const overlay = document.getElementById("loadingOverlay");
       const loadingText = document.querySelector(".loading-text");
@@ -7876,7 +8000,8 @@ setTimeout(__setSaveButtonsState, 800);
 
       const fd = new FormData();
       fd.append("pdf", file, file.name);
-      fd.append("mes", window.__evidenciaMes || "");
+      fd.append("mes", period.month);
+      fd.append("anio", period.year);
       fd.append("nombre", nombre);
       fd.append("primerApellido", primerApellido);
       fd.append("segundoApellido", segundoApellido);
