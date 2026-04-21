@@ -92,6 +92,18 @@ function getSafeUploadError(error) {
     return "No se pudo autenticar Google Drive. Revisa el refresh token configurado.";
   }
 
+  if (reason.includes("malformed google drive refresh token")) {
+    return "El refresh token de Google Drive está mal configurado. Debe pegarse solo el valor de refresh_token, sin redirect_uri ni client_id.";
+  }
+
+  if (reason.includes("google_service_account_json")) {
+    return "La llave de cuenta de servicio de Google Drive está mal configurada.";
+  }
+
+  if (reason.includes("oauth credentials missing")) {
+    return "Faltan credenciales de Google Drive. Configura GOOGLE_SERVICE_ACCOUNT_JSON o las variables OAuth.";
+  }
+
   if (status === 401 || reason.includes("unauthorized")) {
     return "Google Drive rechazó la autenticación. Revisa las credenciales configuradas.";
   }
@@ -130,6 +142,61 @@ function isMalformedRefreshToken(value) {
     token.includes("client_id") ||
     token.includes("googleusercontent.com")
   );
+}
+
+function parseServiceAccountJson(value) {
+  const raw = cleanEnv(value);
+  if (!raw) return null;
+
+  try {
+    const text = raw.startsWith("{")
+      ? raw
+      : Buffer.from(raw, "base64").toString("utf8");
+    const credentials = JSON.parse(text);
+
+    if (!credentials.client_email || !credentials.private_key) {
+      throw new Error("Service account JSON missing client_email or private_key");
+    }
+
+    credentials.private_key = String(credentials.private_key).replace(/\\n/g, "\n");
+    return credentials;
+  } catch (error) {
+    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON inválido");
+  }
+}
+
+function getGoogleDriveAuth() {
+  const serviceAccountJson = cleanEnv(
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON ||
+    process.env.GOOGLE_SERVICE_ACCOUNT_KEY
+  );
+
+  if (serviceAccountJson) {
+    const credentials = parseServiceAccountJson(serviceAccountJson);
+    return {
+      auth: new google.auth.GoogleAuth({
+        credentials,
+        scopes: ["https://www.googleapis.com/auth/drive"],
+      }),
+      mode: "service_account",
+    };
+  }
+
+  const clientId = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+  const refreshToken = cleanEnv(process.env.GOOGLE_OAUTH_REFRESH_TOKEN);
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error("OAuth credentials missing");
+  }
+  if (isMalformedRefreshToken(refreshToken)) {
+    throw new Error("Malformed Google Drive refresh token");
+  }
+
+  const auth = new google.auth.OAuth2(clientId, clientSecret, "http://localhost");
+  auth.setCredentials({ refresh_token: refreshToken });
+
+  return { auth, mode: "oauth" };
 }
 
 export default async function handler(req, res) {
@@ -191,27 +258,12 @@ export default async function handler(req, res) {
       return res.status(403).json({ ok: false, error: "Dependencia no autorizada para registrar evidencias." });
     }
 
-    const clientId = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_ID);
-    const clientSecret = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_SECRET);
-    const refreshToken = cleanEnv(process.env.GOOGLE_OAUTH_REFRESH_TOKEN);
     const folderId = cleanEnv(process.env.DRIVE_FOLDER_ID);
-
-    if (!clientId || !clientSecret || !refreshToken) {
-      return res.status(500).json({ ok: false, error: "OAuth credentials missing" });
-    }
-    if (isMalformedRefreshToken(refreshToken)) {
-      return res.status(500).json({
-        ok: false,
-        error: "El refresh token de Google Drive está mal configurado. Debe pegarse solo el valor de refresh_token, sin redirect_uri ni client_id.",
-      });
-    }
     if (!folderId) {
       return res.status(500).json({ ok: false, error: "DRIVE_FOLDER_ID missing" });
     }
 
-    const auth = new google.auth.OAuth2(clientId, clientSecret, "http://localhost");
-    auth.setCredentials({ refresh_token: refreshToken });
-
+    const { auth } = getGoogleDriveAuth();
     const drive = google.drive({ version: "v3", auth });
 
     const safeName = (req.file.originalname || "evidencia.pdf")
