@@ -28,7 +28,14 @@ export function readSabgSession(req) {
       .replace(/\//g, "_")
       .replace(/=+$/g, "");
 
-    if (sig !== expected) return null;
+    const sigBuf = Buffer.from(String(sig || ""), "utf8");
+    const expectedBuf = Buffer.from(expected, "utf8");
+    if (
+      sigBuf.length !== expectedBuf.length ||
+      !crypto.timingSafeEqual(sigBuf, expectedBuf)
+    ) {
+      return null;
+    }
 
     const json = Buffer.from(
       payloadB64.replace(/-/g, "+").replace(/_/g, "/"),

@@ -108,7 +108,7 @@ export default async function handler(req, res) {
         enlace_primer_apellido,
         enlace_segundo_apellido,
         enlace_correo,
-        archivo_pdf_url,
+        ${isAdmin ? "archivo_pdf_url" : "NULL::text AS archivo_pdf_url"},
         archivo_pdf_nombre,
         dependencia,
         usuario_registro,

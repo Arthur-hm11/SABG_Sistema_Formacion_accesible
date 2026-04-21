@@ -1,10 +1,25 @@
 import { Pool } from 'pg';
 import { applyCors } from '../_lib/cors.js';
+import { readSabgSession } from '../_lib/session.js';
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+function clip(value, max) {
+  if (value === undefined || value === null) return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  return s.length > max ? s.slice(0, max) : s;
+}
+
+function safeJson(value, max = 4000) {
+  if (value === undefined || value === null) return null;
+  const raw = JSON.stringify(value);
+  if (raw.length <= max) return raw;
+  return JSON.stringify({ truncated: true, preview: raw.slice(0, max) });
+}
 
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
@@ -18,28 +33,29 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Método no permitido' });
   }
 
+  const session = readSabgSession(req);
+  if (!session) {
+    return res.status(401).json({ success: false, error: 'No autorizado' });
+  }
+
   try {
     const body = req.body || {};
 
     // Acepta varios nombres de campos (por compatibilidad con lo que ya tengas en el HTML)
-    const usuario =
-      (body.usuario || body.username || body.user || null)?.toString().trim() || null;
+    const usuario = clip(session.usuario || body.usuario || body.username || body.user, 120);
 
-    const accion =
-      (body.accion || body.action || body.event || null)?.toString().trim() || null;
+    const accion = clip(body.accion || body.action || body.event, 120);
 
-    const modulo =
-      (body.modulo || body.module || body.entity || null)?.toString().trim() || null;
+    const modulo = clip(body.modulo || body.module || body.entity, 120);
 
     const detalle = body.detalle ?? body.details ?? body.data ?? null;
 
-    const ip =
-      (req.headers['x-forwarded-for']?.toString().split(',')[0].trim()) || null;
+    const ip = clip(req.headers['x-forwarded-for']?.toString().split(',')[0], 80);
 
-    const user_agent = req.headers['user-agent']?.toString() || null;
+    const user_agent = clip(req.headers['user-agent'], 300);
 
     // Si NO mandan nada útil, no rompemos: respondemos OK para evitar ruido en consola
-    if (!usuario && !accion && !modulo && !detalle) {
+    if (!accion && !modulo && !detalle) {
       return res.status(200).json({ success: true, skipped: true });
     }
 
@@ -54,7 +70,7 @@ export default async function handler(req, res) {
           usuario,
           accion,
           modulo,
-          detalle ? JSON.stringify(detalle) : null,
+          safeJson(detalle),
           ip,
           user_agent
         ]

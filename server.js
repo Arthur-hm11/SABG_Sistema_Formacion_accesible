@@ -1,9 +1,14 @@
 import "dotenv/config";
-import "dotenv/config";
 import path from "path";
 import express from "express";
 import helmet from "helmet";
-import { uploadLimiter } from "./api/_lib/limiters.js";
+import {
+  apiLimiter,
+  authLimiter,
+  sensitiveExportLimiter,
+  uploadLimiter,
+} from "./api/_lib/limiters.js";
+import { isAllowedOrigin, normalizeOrigin } from "./api/_lib/cors.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,14 +21,16 @@ app.disable("x-powered-by");
 // Trust proxy (Render/Cloudflare) so req.ip works for rate limiting
 app.set("trust proxy", 1);
 
-// Rate limit (only upload)
-app.use("/api/evidencias/upload", uploadLimiter);
-
 // Security headers (Helmet)
 app.use(helmet({
   contentSecurityPolicy: false, // CSP fino después
   crossOriginEmbedderPolicy: false
 }));
+
+app.use((req, res, next) => {
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  next();
+});
 
 // No-store para APIs (evitar cache de respuestas con datos)
 app.use((req, res, next) => {
@@ -34,6 +41,53 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+function originFromReferer(referer) {
+  try {
+    return referer ? new URL(String(referer)).origin : "";
+  } catch {
+    return "";
+  }
+}
+
+// Bloquea acciones API desde sitios no autorizados sin afectar llamadas same-origin.
+app.use("/api", (req, res, next) => {
+  const method = String(req.method || "").toUpperCase();
+  const origin = normalizeOrigin(req.headers.origin || "");
+
+  if (method === "OPTIONS") {
+    if (origin && !isAllowedOrigin(origin)) {
+      return res.status(403).json({ success: false, ok: false, error: "Origen no autorizado" });
+    }
+
+    if (origin && isAllowedOrigin(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Vary", "Origin");
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
+    return res.status(200).end();
+  }
+
+  if (method === "GET" || method === "HEAD") return next();
+
+  const refererOrigin = normalizeOrigin(originFromReferer(req.headers.referer || ""));
+  const requestOrigin = origin || refererOrigin;
+
+  if (requestOrigin && !isAllowedOrigin(requestOrigin)) {
+    return res.status(403).json({ success: false, ok: false, error: "Origen no autorizado" });
+  }
+
+  return next();
+});
+
+// Rate limits por superficie: general, login, cargas y exportaciones.
+app.use("/api", apiLimiter);
+app.use("/api/auth/login", authLimiter);
+app.use("/api/evidencias/upload", uploadLimiter);
+app.use("/api/export/excel", sensitiveExportLimiter);
+app.use("/api/backup/export", sensitiveExportLimiter);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "25mb" }));

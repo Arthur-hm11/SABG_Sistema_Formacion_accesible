@@ -1,21 +1,31 @@
-const ALLOWED = new Set([
+export const ALLOWED_ORIGINS = new Set([
   "https://sabg-sistema-formacion.onrender.com",
   "http://localhost:3000",
 ]);
 
 const FALLBACK_ORIGIN = "https://sabg-sistema-formacion.onrender.com";
 
+export function normalizeOrigin(value = "") {
+  return String(value || "").trim().replace(/\/$/, "");
+}
+
+export function isAllowedOrigin(value = "") {
+  const origin = normalizeOrigin(value);
+  return Boolean(origin && ALLOWED_ORIGINS.has(origin));
+}
+
 export function applyCors(req, res) {
-  const originRaw = String(req.headers.origin || "");
-  const origin = originRaw.replace(/\/$/, ""); // normalize trailing slash
+  const origin = normalizeOrigin(req.headers.origin || "");
 
   // If Origin is allowed, reflect it (strict allowlist).
-  if (ALLOWED.has(origin)) {
+  if (ALLOWED_ORIGINS.has(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Vary", "Origin");
   } else if (!origin && req.method === "OPTIONS") {
     // Some proxies strip Origin on OPTIONS; allow known prod origin for preflight only.
     res.setHeader("Access-Control-Allow-Origin", FALLBACK_ORIGIN);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Vary", "Origin");
   }
 

@@ -2,16 +2,12 @@ import crypto from "crypto";
 import { serialize } from "cookie";
 import bcrypt from "bcryptjs";
 import pool from "../_lib/db.js";
+import { applyCors } from "../_lib/cors.js";
 
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader("Access-Control-Allow-Origin", "https://sabg-sistema-formacion.onrender.com");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  const pre = applyCors(req, res);
+  if (pre) return;
 
-  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST")
     return res.status(405).json({ success: false, error: "Método no permitido" });
 
@@ -41,7 +37,7 @@ export default async function handler(req, res) {
 
     // Sesión SABG (HMAC stateless) -> cookie sabg_session
     const secret = process.env.SESSION_SECRET || "";
-    if (!secret) return res.status(500).json({ success:false, error:"Falta SESSION_SECRET" });
+    if (!secret) return res.status(500).json({ success:false, error:"Error interno" });
 
     const payload = {
       id: u.id,
