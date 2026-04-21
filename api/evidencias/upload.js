@@ -109,6 +109,9 @@ function getSafeUploadError(error) {
   }
 
   if (status === 403 || reason.includes("insufficient") || reason.includes("forbidden")) {
+    if (reason.includes("service accounts do not have storage quota")) {
+      return "Google Drive rechazó la subida porque la cuenta de servicio no tiene almacenamiento en Mi unidad. Usa un refresh token OAuth válido o mueve la carpeta a una Unidad compartida.";
+    }
     return "La cuenta configurada no tiene permiso para subir archivos a la carpeta de Google Drive.";
   }
 
@@ -166,10 +169,28 @@ function parseServiceAccountJson(value) {
 }
 
 function getGoogleDriveAuth() {
+  const mode = cleanEnv(process.env.GOOGLE_DRIVE_AUTH_MODE).toLowerCase();
+  const clientId = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+  const refreshToken = cleanEnv(process.env.GOOGLE_OAUTH_REFRESH_TOKEN);
   const serviceAccountJson = cleanEnv(
     process.env.GOOGLE_SERVICE_ACCOUNT_JSON ||
     process.env.GOOGLE_SERVICE_ACCOUNT_KEY
   );
+
+  const hasOAuth = clientId && clientSecret && refreshToken;
+  const hasValidLookingOAuth = hasOAuth && !isMalformedRefreshToken(refreshToken);
+
+  if (mode !== "service_account" && hasValidLookingOAuth) {
+    const auth = new google.auth.OAuth2(clientId, clientSecret, "http://localhost");
+    auth.setCredentials({ refresh_token: refreshToken });
+    return { auth, mode: "oauth" };
+  }
+
+  if (mode === "oauth") {
+    if (!hasOAuth) throw new Error("OAuth credentials missing");
+    throw new Error("Malformed Google Drive refresh token");
+  }
 
   if (serviceAccountJson) {
     const credentials = parseServiceAccountJson(serviceAccountJson);
@@ -181,10 +202,6 @@ function getGoogleDriveAuth() {
       mode: "service_account",
     };
   }
-
-  const clientId = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_ID);
-  const clientSecret = cleanEnv(process.env.GOOGLE_OAUTH_CLIENT_SECRET);
-  const refreshToken = cleanEnv(process.env.GOOGLE_OAUTH_REFRESH_TOKEN);
 
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error("OAuth credentials missing");
@@ -283,6 +300,7 @@ export default async function handler(req, res) {
         mimeType: "application/pdf",
         body: bufferStream,
       },
+      supportsAllDrives: true,
       fields: "id, webViewLink",
     });
 
