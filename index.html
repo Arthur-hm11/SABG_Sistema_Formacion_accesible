@@ -2944,31 +2944,14 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             </div>
                             <div class="form-group">
                                 <label for="institucion_educativa">Institución Educativa <span class="required">*</span></label>
-                                <select name="institucion_educativa" required id="institucion_educativa">
-                                    <option value="">Seleccione...</option>
-                                    <option>INSTITUTO NACIONAL PARA LA EDUCACIÓN DE ADULTOS (INEA)</option>
-                                    <option>COLEGIO DE BACHILLERES (COLBACH)</option>
-                                    <option>UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO (UNADM)</option>
-                                    <option>UNIVERSIDAD NACIONAL ROSARIO CASTELLANOS (UNRC)</option>
-                                    <option>TECNOLÓGICO NACIONAL DE MÉXICO (TECNM)</option>
-                                    <option>UNIVERSIDAD INTERNACIONAL DE LA RIOJA (UNIR)</option>
-                                    <option>SECRETARÍA DE EDUCACIÓN PÚBLICA</option>
+                                <select name="institucion_educativa" required id="institucion_educativa" disabled>
+                                    <option value="">Primero seleccione Nivel Educativo</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="modalidad">Modalidad <span class="required">*</span></label>
-                                <select name="modalidad" required id="modalidad">
-                                    <option value="">Seleccione...</option>
-                                    <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
-                                    <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
-                                    <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
-                                    <option value="CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)">CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)</option>
-                                    <option value="SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)">SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)</option>
-                                    <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
-                                    <option value="A DISTANCIA">A DISTANCIA</option>
-                                    <option value="PRESENCIAL">PRESENCIAL</option>
-                                    <option value="ESCOLARIZADA">ESCOLARIZADA</option>
-                                    <option value="MIXTO">MIXTO</option>
+                                <select name="modalidad" required id="modalidad" disabled>
+                                    <option value="">Primero seleccione Institución Educativa</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -5481,44 +5464,13 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         let editControl;
 
         if (field === 'nivel_educativo') {
-            editControl = document.createElement('select');
-            editControl.innerHTML = `
-                <option value="PRIMARIA">PRIMARIA</option>
-                <option value="SECUNDARIA">SECUNDARIA</option>
-                <option value="BACHILLERATO">BACHILLERATO</option>
-                <option value="LICENCIATURA">LICENCIATURA</option>
-                <option value="ESPECIALIDAD">ESPECIALIDAD</option>
-                <option value="MAESTRÍA">MAESTRÍA</option>
-                <option value="DOCTORADO">DOCTORADO</option>
-            `;
-            editControl.value = currentValue;
+            editControl = crearSelectCatalogoEducativo(field, cell.closest('tr'), currentValue);
         }
         else if (field === 'institucion_educativa') {
-            editControl = document.createElement('select');
-            editControl.innerHTML = `
-                <option value="INEA">INEA</option>
-                <option value="COLBACH">COLBACH</option>
-                <option value="UNADM">UNADM</option>
-                <option value="UNRC">UNRC</option>
-                <option value="TECNM">TECNM</option>
-                <option value="UNIR">UNIR</option>
-                <option value="SEP">SEP</option>
-            `;
-            editControl.value = currentValue;
+            editControl = crearSelectCatalogoEducativo(field, cell.closest('tr'), currentValue);
         }
         else if (field === 'modalidad') {
-            editControl = document.createElement('select');
-            editControl.innerHTML = `
-                <option value="GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)">GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)</option>
-                <option value="APRENDE INEA EN LÍNEA">APRENDE INEA EN LÍNEA</option>
-                <option value="PRESENCIAL MEV (INEA)">PRESENCIAL MEV (INEA)</option>
-                <option value="NO ESCOLARIZADA/VIRTUAL">NO ESCOLARIZADA/VIRTUAL</option>
-                <option value="A DISTANCIA">A DISTANCIA</option>
-                <option value="PRESENCIAL">PRESENCIAL</option>
-                <option value="ESCOLARIZADA">ESCOLARIZADA</option>
-                <option value="MIXTO">MIXTO</option>
-            `;
-            editControl.value = currentValue;
+            editControl = crearSelectCatalogoEducativo(field, cell.closest('tr'), currentValue);
         }
         else if (field === 'estado_avance') {
             editControl = document.createElement('select');
@@ -7785,6 +7737,216 @@ function initDependenciaAutocomplete() {
         });
     }
 
+const INSTITUCIONES_EDUCATIVAS = {
+    INEA: 'INSTITUTO NACIONAL PARA LA EDUCACIÓN DE ADULTOS (INEA)',
+    COLBACH: 'COLEGIO DE BACHILLERES (COLBACH)',
+    UNADM: 'UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO (UNADM)',
+    UNRC: 'UNIVERSIDAD NACIONAL ROSARIO CASTELLANOS (UNRC)',
+    TECNM: 'TECNOLÓGICO NACIONAL DE MÉXICO (TECNM)',
+    UNIR: 'UNIVERSIDAD INTERNACIONAL DE LA RIOJA (UNIR)',
+    SEP: 'SECRETARÍA DE EDUCACIÓN PÚBLICA'
+};
+
+const MODALIDADES_POR_INSTITUCION = {
+    INEA: [
+        'GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)',
+        'APRENDE INEA EN LÍNEA',
+        'PRESENCIAL MEV (INEA)'
+    ],
+    COLBACH: [
+        'CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)',
+        'SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)'
+    ],
+    UNADM: [
+        'NO ESCOLARIZADA/VIRTUAL',
+        'A DISTANCIA'
+    ],
+    UNRC: [
+        'ESCOLARIZADA',
+        'NO ESCOLARIZADA/VIRTUAL',
+        'A DISTANCIA'
+    ],
+    TECNM: [
+        'ESCOLARIZADA',
+        'PRESENCIAL',
+        'MIXTO',
+        'A DISTANCIA'
+    ],
+    UNIR: [
+        'NO ESCOLARIZADA/VIRTUAL',
+        'A DISTANCIA'
+    ],
+    SEP: [
+        'ESCOLARIZADA',
+        'PRESENCIAL',
+        'MIXTO',
+        'A DISTANCIA',
+        'NO ESCOLARIZADA/VIRTUAL'
+    ]
+};
+
+const INSTITUCIONES_POR_NIVEL_EDUCATIVO = {
+    PRIMARIA: ['INEA'],
+    SECUNDARIA: ['INEA'],
+    BACHILLERATO: ['COLBACH'],
+    LICENCIATURA: ['UNADM', 'UNRC', 'TECNM', 'UNIR', 'SEP'],
+    ESPECIALIDAD: ['UNIR', 'SEP'],
+    'MAESTRÍA': ['UNADM', 'UNRC', 'TECNM', 'UNIR', 'SEP'],
+    DOCTORADO: ['UNRC', 'TECNM', 'UNIR']
+};
+
+function normalizarCatalogo(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/–/g, '-')
+        .replace(/[^A-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function resolverNivelEducativo(valor) {
+    const key = normalizarCatalogo(valor);
+    return Object.keys(INSTITUCIONES_POR_NIVEL_EDUCATIVO)
+        .find((nivel) => normalizarCatalogo(nivel) === key) || '';
+}
+
+function resolverInstitucionEducativa(valor) {
+    const key = normalizarCatalogo(valor);
+    return Object.entries(INSTITUCIONES_EDUCATIVAS)
+        .find(([codigo, nombre]) => {
+            return normalizarCatalogo(codigo) === key || normalizarCatalogo(nombre) === key;
+        })?.[0] || '';
+}
+
+function resolverModalidadEducativa(valor, opciones = []) {
+    const key = normalizarCatalogo(valor);
+    return opciones.find((modalidad) => normalizarCatalogo(modalidad) === key) || '';
+}
+
+function llenarSelectBasico(select, opciones, placeholder, valorActual = '') {
+    if (!select) return;
+
+    select.innerHTML = '';
+    const optInicial = document.createElement('option');
+    optInicial.value = '';
+    optInicial.textContent = placeholder;
+    select.appendChild(optInicial);
+
+    opciones.forEach((opcion) => {
+        const opt = document.createElement('option');
+        opt.value = opcion;
+        opt.textContent = opcion;
+        select.appendChild(opt);
+    });
+
+    const valorNormalizado = normalizarCatalogo(valorActual);
+    const valorValido = opciones.find((opcion) => normalizarCatalogo(opcion) === valorNormalizado);
+    select.value = valorValido || '';
+    select.disabled = opciones.length === 0;
+}
+
+function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
+    const select = document.getElementById('institucion_educativa');
+    const nivel = resolverNivelEducativo(nivelEducativo);
+    const codigos = INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || [];
+    const opciones = codigos.map((codigo) => INSTITUCIONES_EDUCATIVAS[codigo]).filter(Boolean);
+
+    llenarSelectBasico(
+        select,
+        opciones,
+        opciones.length ? 'Seleccione...' : 'Primero seleccione Nivel Educativo',
+        valorActual
+    );
+}
+
+function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorActual = '') {
+    const select = document.getElementById('modalidad');
+    const nivel = resolverNivelEducativo(nivelEducativo);
+    const institucion = resolverInstitucionEducativa(institucionEducativa);
+    const institucionesValidas = INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || [];
+    const institucionValida = institucion && institucionesValidas.includes(institucion);
+    const opciones = institucionValida ? (MODALIDADES_POR_INSTITUCION[institucion] || []) : [];
+
+    llenarSelectBasico(
+        select,
+        opciones,
+        opciones.length ? 'Seleccione...' : 'Primero seleccione Institución Educativa',
+        valorActual
+    );
+}
+
+function initEducacionVinculada() {
+    const nivel = document.getElementById('nivel_educativo');
+    const institucion = document.getElementById('institucion_educativa');
+    const modalidad = document.getElementById('modalidad');
+    const form = document.getElementById('trimestralForm');
+    if (!nivel || !institucion || !modalidad) return;
+
+    llenarInstitucionEducativa(nivel.value, institucion.value);
+    llenarModalidadEducativa(nivel.value, institucion.value, modalidad.value);
+
+    nivel.addEventListener('change', () => {
+        llenarInstitucionEducativa(nivel.value, '');
+        llenarModalidadEducativa(nivel.value, '', '');
+    });
+
+    institucion.addEventListener('change', () => {
+        llenarModalidadEducativa(nivel.value, institucion.value, '');
+    });
+
+    form?.addEventListener('reset', () => {
+        setTimeout(() => {
+            llenarInstitucionEducativa('', '');
+            llenarModalidadEducativa('', '', '');
+        }, 0);
+    });
+}
+
+function valorCeldaEditable(row, field) {
+    const cell = row?.querySelector(`.editable-cell[data-field="${field}"]`);
+    if (!cell) return '';
+    return cell.textContent.replace('✏️', '').trim();
+}
+
+function crearSelectCatalogoEducativo(field, row, valorActual) {
+    const select = document.createElement('select');
+    select.className = 'edit-control';
+
+    let opciones = [];
+    if (field === 'nivel_educativo') {
+        opciones = Object.keys(INSTITUCIONES_POR_NIVEL_EDUCATIVO);
+    } else if (field === 'institucion_educativa') {
+        const nivel = resolverNivelEducativo(valorCeldaEditable(row, 'nivel_educativo'));
+        opciones = (INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || [])
+            .map((codigo) => INSTITUCIONES_EDUCATIVAS[codigo])
+            .filter(Boolean);
+    } else if (field === 'modalidad') {
+        const nivel = resolverNivelEducativo(valorCeldaEditable(row, 'nivel_educativo'));
+        const institucion = resolverInstitucionEducativa(valorCeldaEditable(row, 'institucion_educativa'));
+        const institucionValida = (INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || []).includes(institucion);
+        opciones = institucionValida ? (MODALIDADES_POR_INSTITUCION[institucion] || []) : [];
+    }
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = opciones.length ? 'Seleccione...' : 'Seleccione primero el campo vinculado';
+    select.appendChild(placeholder);
+
+    opciones.forEach((opcion) => {
+        const opt = document.createElement('option');
+        opt.value = opcion;
+        opt.textContent = opcion;
+        select.appendChild(opt);
+    });
+
+    const valorNormalizado = normalizarCatalogo(valorActual);
+    const valorValido = opciones.find((opcion) => normalizarCatalogo(opcion) === valorNormalizado);
+    select.value = valorValido || '';
+    select.disabled = opciones.length === 0;
+    return select;
+}
+
 const NIVELES_TABULARES_POR_PUESTO = {
     'PUESTO_OPERATIVO_U_HOMÓLOGO': ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
     'ENLACE_U_HOMÓLOGO': ['P11', 'P12', 'P13', 'P21', 'P23', 'P31', 'P32', 'P33'],
@@ -7834,6 +7996,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
     initDependenciaAutocomplete();
     initNivelPuestoTabularVinculado();
+    initEducacionVinculada();
     applyRoleVisibility();
 
     // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
