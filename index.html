@@ -7346,6 +7346,92 @@ async function eliminarRegistrosTrimestralSeleccionados() {
 
 window.eliminarRegistrosTrimestralSeleccionados = eliminarRegistrosTrimestralSeleccionados;
 
+let __trimRetryOnOnline = false;
+
+function showTrimestralNotice(message, type = 'info', timeout = 6500) {
+  try {
+    let el = document.getElementById('trimestralConnectionNotice');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'trimestralConnectionNotice';
+      el.setAttribute('role', 'status');
+      el.style.position = 'fixed';
+      el.style.right = '24px';
+      el.style.bottom = '24px';
+      el.style.zIndex = '999999';
+      el.style.maxWidth = '420px';
+      el.style.padding = '14px 16px';
+      el.style.borderRadius = '12px';
+      el.style.boxShadow = '0 12px 34px rgba(0,0,0,.22)';
+      el.style.fontSize = '14px';
+      el.style.lineHeight = '1.35';
+      el.style.fontWeight = '700';
+      el.style.transition = 'opacity .2s ease, transform .2s ease';
+      document.body.appendChild(el);
+    }
+
+    const colors = {
+      warn: { bg: '#7a2f4d', fg: '#fff' },
+      error: { bg: '#b42318', fg: '#fff' },
+      ok: { bg: '#2f7d55', fg: '#fff' },
+      info: { bg: '#4d6078', fg: '#fff' }
+    };
+    const c = colors[type] || colors.info;
+    el.textContent = message;
+    el.style.background = c.bg;
+    el.style.color = c.fg;
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+    el.style.display = 'block';
+
+    clearTimeout(el.__hideTimer);
+    if (timeout > 0) {
+      el.__hideTimer = setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(8px)';
+        setTimeout(() => { el.style.display = 'none'; }, 220);
+      }, timeout);
+    }
+  } catch (_) {}
+}
+
+function sendUserToLoginFromExpiredSession() {
+  try {
+    if (window.__rtTrimestralInterval) {
+      clearInterval(window.__rtTrimestralInterval);
+      window.__rtTrimestralInterval = null;
+    }
+
+    userRole = 'enlace';
+    userDependencia = null;
+    userName = '';
+    localStorage.removeItem('SABG_TOKEN');
+    localStorage.removeItem('SABG_USUARIO');
+    localStorage.removeItem('SABG_NOMBRE');
+    localStorage.removeItem('SABG_ROL');
+    localStorage.removeItem('SABG_DEPENDENCIA');
+    document.body.classList.remove('role-admin', 'role-superadmin');
+    resetToInicioView();
+    document.getElementById('loginScreen')?.classList.remove('hidden');
+    showTrimestralNotice('Tu sesión venció por inactividad. Inicia sesión nuevamente.', 'warn', 9000);
+  } catch (_) {}
+}
+
+function scheduleTrimestralRetryOnOnline() {
+  if (__trimRetryOnOnline) return;
+  __trimRetryOnOnline = true;
+
+  window.addEventListener('online', async () => {
+    __trimRetryOnOnline = false;
+    showTrimestralNotice('Conexión recuperada. Actualizando registros...', 'ok', 3500);
+    try {
+      await cargarRegistrosTrimestral(TRIM_PAGE, TRIM_LIMIT, TRIM_Q);
+    } catch (e) {
+      console.warn('No se pudo reintentar carga trimestral:', e);
+    }
+  }, { once: true });
+}
+
 async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q = TRIM_Q) {
   TRIM_PAGE = Math.max(1, Number(page) || 1);
   TRIM_LIMIT = Math.max(1, Number(limit) || 50);
@@ -7367,9 +7453,14 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
     if (TRIM_Q) url += `&q=${encodeURIComponent(TRIM_Q)}`;
 
     const response = await fetch(url);
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
 
-    if (result.success) {
+    if (response.status === 401 || response.status === 403) {
+      sendUserToLoginFromExpiredSession();
+      return;
+    }
+
+    if (response.ok && result.success) {
       const tbody = document.querySelector("#registrosTable tbody");
       tbody.innerHTML = "";
 
@@ -7440,11 +7531,18 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
       updateStatsFromRegistros(result.data);
       renderPagerTrimestral(result);
     } else {
-      alert("Error loading: " + (result.error || "unknown"));
+      console.warn("Error loading Trimestral:", result);
+      showTrimestralNotice('No se pudieron cargar los registros. Intenta actualizar en unos segundos.', 'warn', 7000);
     }
   } catch (error) {
     console.error("cargarRegistrosTrimestral error:", error);
-    alert("Network/server error loading Trimestral.");
+    const offline = (typeof navigator !== 'undefined' && navigator.onLine === false);
+    if (offline) {
+      showTrimestralNotice('Conexión interrumpida. Cuando vuelva internet, el sistema intentará actualizar.', 'warn', 0);
+      scheduleTrimestralRetryOnOnline();
+    } else {
+      showTrimestralNotice('No se pudo conectar con el servidor. Revisa la conexión o intenta actualizar.', 'warn', 8000);
+    }
   }
 }
 async function guardarRegistroTrimestral() {
