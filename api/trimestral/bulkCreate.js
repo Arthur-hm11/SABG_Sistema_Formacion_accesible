@@ -56,6 +56,7 @@ function isTrulyEmptyRow(r) {
     "enlace_segundo_apellido",
     "enlace_correo",
     "enlace_telefono",
+    "anio",
     "trimestre",
     "id_rusp",
     "primer_apellido",

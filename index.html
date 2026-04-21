@@ -4412,6 +4412,7 @@ async function uploadExcel() {
             // Detectar fila de encabezados (algunos usuarios traen filas extra antes del header)
             const normRows = rows.map(r => (r || []).map(c => normalizeHeaderKey(c)));
             const expectedCandidates = [
+                'anio','ano','año','a_o','a o','a?o','year','ejercicio',
                 'trimestre','trim','periodo',
                 'id_rusp','rusp','idrusp',
                 'primer_apellido','apellido_paterno','ap_paterno','paterno',
@@ -4459,6 +4460,7 @@ async function uploadExcel() {
 
             // Mapeos comunes (por si los encabezados vienen en español)
             const alias = {
+                anio: ['anio', 'ano', 'año', 'a_o', 'a o', 'a?o', 'year', 'ejercicio'],
                 trimestre: ['trimestre', 'trim', 'periodo'],
                 id_rusp: ['id_rusp', 'rusp', 'idrusp'],
                 primer_apellido: ['primer_apellido', 'apellido_paterno', 'ap_paterno', 'paterno'],
