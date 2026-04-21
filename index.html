@@ -7738,61 +7738,114 @@ function initDependenciaAutocomplete() {
     }
 
 const INSTITUCIONES_EDUCATIVAS = {
-    INEA: 'INSTITUTO NACIONAL PARA LA EDUCACIÓN DE ADULTOS (INEA)',
-    COLBACH: 'COLEGIO DE BACHILLERES (COLBACH)',
-    UNADM: 'UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO (UNADM)',
-    UNRC: 'UNIVERSIDAD NACIONAL ROSARIO CASTELLANOS (UNRC)',
-    TECNM: 'TECNOLÓGICO NACIONAL DE MÉXICO (TECNM)',
-    UNIR: 'UNIVERSIDAD INTERNACIONAL DE LA RIOJA (UNIR)',
-    SEP: 'SECRETARÍA DE EDUCACIÓN PÚBLICA'
+    INEA: 'INSTITUTO_NACIONAL_PARA_LA_EDUCACIÓN_DE_ADULTOS_INEA',
+    COLBACH: 'COLEGIO_DE_BACHILLERES_COLBACH',
+    SEP: 'SECRETARÍA_DE_EDUCACIÓN_PÚBLICA',
+    UNADM: 'UNIVERSIDAD_ABIERTA_Y_A_DISTANCIA_DE_MÉXICO_UNADM',
+    UNRC: 'UNIVERSIDAD_NACIONAL_ROSARIO_CASTELLANOS_UNRC',
+    TECNM: 'TECNOLÓGICO_NACIONAL_DE_MÉXICO_TECNM',
+    UNIR: 'UNIVERSIDAD_INTERNACIONAL_DE_LA_RIOJA_UNIR',
+    IESAP: 'INSTITUTO_DE_ESTUDIOS_SUPERIORES_EN_ADMINISTRACIÓN_PÚBLICA',
+    UP: 'UNIVERSIDAD_PANAMERICANA',
+    UOC: 'UNIVERSITAT_OBERTA_DE_CATALUNYA'
 };
 
 const MODALIDADES_POR_INSTITUCION = {
     INEA: [
-        'GUÍA DE ESTUDIO – EXAMEN ÚNICO (INEA)',
-        'APRENDE INEA EN LÍNEA',
-        'PRESENCIAL MEV (INEA)'
+        'GUÍA_DE_ESTUDIO–EXAMEN_ÚNICO_(INEA)',
+        'APRENDE_INEA_EN_LÍNEA',
+        'PRESENCIAL_MEV_(INEA)'
     ],
     COLBACH: [
-        'CERTIFICACIÓN POR EVALUACIONES PARCIALES (COLBACH)',
-        'SISTEMA DE ENSEÑANZA ABIERTA SEA (COLBACH)'
+        'CERTIFICACIÓN_POR_EVALUACIONES_PARCIALES_EXACER_(COLBACH)',
+        'SISTEMA_DE_ENSEÑANZA_ABIERTA_SEA_(COLBACH)'
+    ],
+    SEP: [
+        'NO_ESCOLARIZADA_VIRTUAL'
     ],
     UNADM: [
-        'NO ESCOLARIZADA/VIRTUAL',
-        'A DISTANCIA'
+        'ADISTANCIA'
     ],
     UNRC: [
-        'ESCOLARIZADA',
-        'NO ESCOLARIZADA/VIRTUAL',
-        'A DISTANCIA'
+        'ADISTANCIA'
     ],
     TECNM: [
         'ESCOLARIZADA',
-        'PRESENCIAL',
-        'MIXTO',
-        'A DISTANCIA'
+        'ADISTANCIA',
+        'MIXTO'
     ],
     UNIR: [
-        'NO ESCOLARIZADA/VIRTUAL',
-        'A DISTANCIA'
-    ],
-    SEP: [
-        'ESCOLARIZADA',
         'PRESENCIAL',
-        'MIXTO',
-        'A DISTANCIA',
-        'NO ESCOLARIZADA/VIRTUAL'
+        'ADISTANCIA'
+    ],
+    IESAP: [
+        'ESCOLARIZADA'
+    ],
+    UP: [
+        'ESCOLARIZADA',
+        'MIXTA'
+    ],
+    UOC: [
+        'ONLINE'
     ]
 };
 
 const INSTITUCIONES_POR_NIVEL_EDUCATIVO = {
     PRIMARIA: ['INEA'],
     SECUNDARIA: ['INEA'],
-    BACHILLERATO: ['COLBACH'],
-    LICENCIATURA: ['UNADM', 'UNRC', 'TECNM', 'UNIR', 'SEP'],
-    ESPECIALIDAD: ['UNIR', 'SEP'],
-    'MAESTRÍA': ['UNADM', 'UNRC', 'TECNM', 'UNIR', 'SEP'],
-    DOCTORADO: ['UNRC', 'TECNM', 'UNIR']
+    BACHILLERATO: ['COLBACH', 'SEP'],
+    LICENCIATURA: ['UNADM', 'UNRC', 'TECNM', 'UNIR', 'IESAP'],
+    ESPECIALIDAD: ['UNIR', 'IESAP'],
+    'MAESTRÍA': ['UNIR', 'UNRC', 'IESAP', 'UP', 'UOC'],
+    DOCTORADO: ['UNIR', 'UNRC', 'IESAP']
+};
+
+const MODALIDADES_POR_NIVEL_INSTITUCION = {
+    PRIMARIA: {
+        INEA: [
+            'GUÍA_DE_ESTUDIO–EXAMEN_ÚNICO_(INEA)',
+            'APRENDE_INEA_EN_LÍNEA',
+            'PRESENCIAL_MEV_(INEA)'
+        ]
+    },
+    SECUNDARIA: {
+        INEA: [
+            'APRENDE_INEA_EN_LÍNEA',
+            'PRESENCIAL_MEV_(INEA)'
+        ]
+    },
+    BACHILLERATO: {
+        COLBACH: [
+            'CERTIFICACIÓN_POR_EVALUACIONES_PARCIALES_EXACER_(COLBACH)',
+            'SISTEMA_DE_ENSEÑANZA_ABIERTA_SEA_(COLBACH)'
+        ],
+        SEP: [
+            'NO_ESCOLARIZADA_VIRTUAL'
+        ]
+    },
+    LICENCIATURA: {
+        UNADM: ['ADISTANCIA'],
+        UNRC: ['ADISTANCIA'],
+        TECNM: ['ESCOLARIZADA', 'ADISTANCIA', 'MIXTO'],
+        UNIR: ['PRESENCIAL', 'ADISTANCIA'],
+        IESAP: ['ESCOLARIZADA']
+    },
+    ESPECIALIDAD: {
+        UNIR: ['ADISTANCIA'],
+        IESAP: ['ESCOLARIZADA']
+    },
+    'MAESTRÍA': {
+        UNIR: ['ADISTANCIA'],
+        UNRC: ['ADISTANCIA'],
+        IESAP: ['ESCOLARIZADA'],
+        UP: ['ESCOLARIZADA', 'MIXTA'],
+        UOC: ['ONLINE']
+    },
+    DOCTORADO: {
+        UNIR: ['ADISTANCIA'],
+        UNRC: ['ADISTANCIA'],
+        IESAP: ['ESCOLARIZADA']
+    }
 };
 
 function normalizarCatalogo(valor) {
@@ -7866,7 +7919,9 @@ function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorAct
     const institucion = resolverInstitucionEducativa(institucionEducativa);
     const institucionesValidas = INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || [];
     const institucionValida = institucion && institucionesValidas.includes(institucion);
-    const opciones = institucionValida ? (MODALIDADES_POR_INSTITUCION[institucion] || []) : [];
+    const opciones = institucionValida
+        ? ((MODALIDADES_POR_NIVEL_INSTITUCION[nivel] && MODALIDADES_POR_NIVEL_INSTITUCION[nivel][institucion]) || MODALIDADES_POR_INSTITUCION[institucion] || [])
+        : [];
 
     llenarSelectBasico(
         select,
@@ -7925,7 +7980,9 @@ function crearSelectCatalogoEducativo(field, row, valorActual) {
         const nivel = resolverNivelEducativo(valorCeldaEditable(row, 'nivel_educativo'));
         const institucion = resolverInstitucionEducativa(valorCeldaEditable(row, 'institucion_educativa'));
         const institucionValida = (INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || []).includes(institucion);
-        opciones = institucionValida ? (MODALIDADES_POR_INSTITUCION[institucion] || []) : [];
+        opciones = institucionValida
+            ? ((MODALIDADES_POR_NIVEL_INSTITUCION[nivel] && MODALIDADES_POR_NIVEL_INSTITUCION[nivel][institucion]) || MODALIDADES_POR_INSTITUCION[institucion] || [])
+            : [];
     }
 
     const placeholder = document.createElement('option');
