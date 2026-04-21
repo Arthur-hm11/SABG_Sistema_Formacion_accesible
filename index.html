@@ -2937,7 +2937,6 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                     <option value="SECUNDARIA">SECUNDARIA</option>
                                     <option value="BACHILLERATO">BACHILLERATO</option>
                                     <option value="LICENCIATURA">LICENCIATURA</option>
-                                    <option value="ESPECIALIDAD">ESPECIALIDAD</option>
                                     <option value="MAESTRÍA">MAESTRÍA</option>
                                     <option value="DOCTORADO">DOCTORADO</option>
                                 </select>
@@ -7795,7 +7794,6 @@ const INSTITUCIONES_POR_NIVEL_EDUCATIVO = {
     SECUNDARIA: ['INEA'],
     BACHILLERATO: ['COLBACH', 'SEP'],
     LICENCIATURA: ['UNADM', 'UNRC', 'TECNM', 'UNIR', 'IESAP'],
-    ESPECIALIDAD: ['UNIR', 'IESAP'],
     'MAESTRÍA': ['UNIR', 'UNRC', 'IESAP', 'UP', 'UOC'],
     DOCTORADO: ['UNIR', 'UNRC', 'IESAP']
 };
@@ -7828,10 +7826,6 @@ const MODALIDADES_POR_NIVEL_INSTITUCION = {
         UNRC: ['ADISTANCIA'],
         TECNM: ['ESCOLARIZADA', 'ADISTANCIA', 'MIXTO'],
         UNIR: ['PRESENCIAL', 'ADISTANCIA'],
-        IESAP: ['ESCOLARIZADA']
-    },
-    ESPECIALIDAD: {
-        UNIR: ['ADISTANCIA'],
         IESAP: ['ESCOLARIZADA']
     },
     'MAESTRÍA': {
