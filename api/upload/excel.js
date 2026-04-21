@@ -1,6 +1,8 @@
 import formidable from 'formidable';
 import xlsx from 'xlsx';
 import pool from '../_lib/db.js';
+import { applyCors } from '../_lib/cors.js';
+import { readSabgSession, isAdminSession } from '../_lib/session.js';
 
 export const config = {
   api: { bodyParser: false }
@@ -33,9 +35,17 @@ function normalizarFila(row) {
 }
 
 export default async function handler(req, res) {
+  const pre = applyCors(req, res);
+  if (pre) return;
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Método no permitido' });
   }
+
+  const session = readSabgSession(req);
+  if (!session) return res.status(401).json({ success: false, message: 'Unauthorized' });
+  if (!isAdminSession(session)) return res.status(403).json({ success: false, message: 'No autorizado' });
 
   const form = formidable({
     maxFileSize: 15 * 1024 * 1024, // 15MB
@@ -96,8 +106,7 @@ export default async function handler(req, res) {
       console.error('upload/excel error:', e);
       return res.status(500).json({
         success: false,
-        message: 'Error guardando en Neon',
-        error: e.message
+        message: 'Error guardando archivo'
       });
 
     } finally {

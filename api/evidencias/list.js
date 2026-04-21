@@ -1,5 +1,6 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 function toInt(v, def) {
   const n = parseInt(String(v ?? ""), 10);
@@ -16,6 +17,15 @@ function cleanLike(v) {
 export default async function handler(req, res) {
   applyCors(req, res);
   if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET, OPTIONS");
+    return res.status(405).json({ ok: false, error: "Método no permitido" });
+  }
+
+  const session = readSabgSession(req);
+  if (!session) {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
 
   try {
     const page = Math.max(toInt(req.query?.page, 1), 1);
@@ -29,6 +39,16 @@ export default async function handler(req, res) {
 
     const where = [];
     const params = [];
+    const isAdmin = isAdminSession(session);
+    const sessionDependencia = cleanLike(session.dependencia);
+
+    if (!isAdmin) {
+      if (!sessionDependencia) {
+        return res.status(403).json({ ok: false, error: "Dependencia no autorizada" });
+      }
+      params.push(sessionDependencia);
+      where.push(`UPPER(BTRIM(dependencia)) = UPPER(BTRIM($${params.length}))`);
+    }
 
     if (mes) {
       params.push(`%${mes}%`);

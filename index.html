@@ -4778,54 +4778,6 @@ function updateStatsFromRegistros(registros){
     let userDependencia = null;
     let userName = '';
 
-    // Base de datos de usuarios (en producción esto vendría de un backend)
-    const usuarios = {
-        // Super Admin
-        '': { 
-            password: 'admin2024', 
-            role: 'superadmin',
-            dependencia: null,
-            nombre: 'Administrador'
-        },
-        // Dependencias
-        'SABG': { 
-            password: 'sabg2024', 
-            role: 'enlace',
-            dependencia: 'SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO',
-            nombre: 'Enlace SABG'
-        },
-        'SCT': { 
-            password: 'sct2024', 
-            role: 'enlace',
-            dependencia: 'SECRETARÍA DE COMUNICACIONES Y TRANSPORTES',
-            nombre: 'Enlace SCT'
-        },
-        'SHCP': { 
-            password: 'shcp2024', 
-            role: 'enlace',
-            dependencia: 'SECRETARÍA DE HACIENDA Y CRÉDITO PÚBLICO',
-            nombre: 'Enlace SHCP'
-        },
-        'SEP': { 
-            password: 'sep2024', 
-            role: 'enlace',
-            dependencia: 'SECRETARÍA DE EDUCACIÓN PÚBLICA',
-            nombre: 'Enlace SEP'
-        },
-        'ALTAMIRA': { 
-            password: 'altamira2024', 
-            role: 'enlace',
-            dependencia: 'ISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL ALTAMIRA',
-            nombre: 'Enlace Altamira'
-        },
-        'PROGRESO': { 
-            password: 'progreso2024', 
-            role: 'enlace',
-            dependencia: 'ISTRACIÓN DEL SISTEMA PORTUARIO NACIONAL PROGRESO',
-            nombre: 'Enlace Progreso'
-        }
-    };
-
     // ========================================
     // FUNCIONES DE AUTENTICACIÓN
     // ========================================
@@ -7516,7 +7468,11 @@ async function guardarRegistroTrimestral() {
 // BACKUP DE BASE DE DATOS
 // ========================================
 async function descargarBackup() {
-    if (!requireSuperAdmin('DOWNLOAD_BACKUP')) return;
+    if (!isAdminUser()) {
+        alert('⚠️ Acceso restringido.');
+        auditLog('DOWNLOAD_BACKUP', 'DENIED', { reason: 'not_admin' });
+        return;
+    }
 
     auditLog('DOWNLOAD_BACKUP', 'START', {});
 

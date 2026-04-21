@@ -1,5 +1,6 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 function norm(v) {
   if (v === undefined || v === null) return null;
@@ -58,8 +59,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
 
+  const session = readSabgSession(req);
+  if (!session) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
+
   try {
     const data = req.body || {};
+    const isAdmin = isAdminSession(session);
+    if (!isAdmin) {
+      if (!norm(session.dependencia)) {
+        return res.status(403).json({ success: false, error: "Dependencia no autorizada" });
+      }
+      data.dependencia = session.dependencia;
+      data.usuario_registro = session.usuario || data.usuario_registro;
+    }
 
     // Validar datos requeridos mínimos
     if (!norm(data.enlace_nombre) || !norm(data.anio) || !norm(data.trimestre) || !norm(data.nombre)) {
@@ -146,7 +160,7 @@ export default async function handler(req, res) {
     console.error("Error /api/trimestral/create:", error);
     return res.status(500).json({
       success: false,
-      error: error?.message || String(error)
+      error: "Error al guardar registro"
     });
   }
 }

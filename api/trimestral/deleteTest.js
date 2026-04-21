@@ -26,16 +26,10 @@ function readJsonBody(req) {
     req.on("end", () => {
       if (!data) return resolve({});
       try {
-    // 🔐 Validación de sesión SABG
-    const session = readSabgSession(req);
-    if (!session) {
-      return res.status(401).json({ ok:false, error:"No autenticado" });
-    }
-
-    if (!isAdminSession(session)) {
-      return res.status(403).json({ ok:false, error:"No autorizado" });
-    }
- resolve(JSON.parse(data)); } catch { reject(new Error("Body JSON inválido")); }
+        resolve(JSON.parse(data));
+      } catch {
+        reject(new Error("Body JSON inválido"));
+      }
     });
     req.on("error", reject);
   });
@@ -45,6 +39,10 @@ export default async function handler(req, res) {
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Método no permitido" });
+
+  const session = readSabgSession(req);
+  if (!session) return res.status(401).json({ ok:false, error:"No autenticado" });
+  if (!isAdminSession(session)) return res.status(403).json({ ok:false, error:"No autorizado" });
 
   try {
     const body = (req.body && typeof req.body === "object") ? req.body : await readJsonBody(req);
@@ -68,6 +66,6 @@ export default async function handler(req, res) {
     });
 
   } catch (e) {
-    return res.status(500).json({ ok:false, error: e?.message || "Error interno" });
+    return res.status(500).json({ ok:false, error: "Error interno" });
   }
 }

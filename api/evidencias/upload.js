@@ -2,6 +2,7 @@ import multer from "multer";
 import { google } from "googleapis";
 import stream from "stream";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession } from "../_lib/session.js";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
@@ -47,9 +48,8 @@ export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
 
-  // SECURITY: require session cookie
-  const cookie = String(req.headers.cookie || "");
-  if (!cookie.includes("sabg_session=")) {
+  const session = readSabgSession(req);
+  if (!session) {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
@@ -133,6 +133,6 @@ export default async function handler(req, res) {
     }
 
     console.error("UPLOAD ERROR:", e);
-    return res.status(500).json({ ok: false, error: String(e?.message || e) });
+    return res.status(500).json({ ok: false, error: "Error al subir evidencia" });
   }
 }

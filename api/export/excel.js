@@ -1,19 +1,27 @@
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const pool = require('../_lib/db.cjs');
+import { applyCors } from "../_lib/cors.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
+
 export default async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const pre = applyCors(req, res);
+  if (pre) return;
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
 
+  const session = readSabgSession(req);
+  if (!session) return res.status(401).json({ error: 'Unauthorized' });
+  if (!isAdminSession(session)) return res.status(403).json({ error: 'No autorizado' });
+
   const { format } = req.query;
 
   try {
     const result = await pool.query(`
-      SELECT * FROM trimestral_registros 
+      SELECT * FROM registros_trimestral
       ORDER BY created_at DESC
     `);
 
@@ -71,6 +79,6 @@ export default async (req, res) => {
 
   } catch (error) {
     console.error('Error al exportar:', error);
-    return res.status(500).json({ error: 'Error al exportar: ' + error.message });
+    return res.status(500).json({ error: 'Error al exportar' });
   }
 };

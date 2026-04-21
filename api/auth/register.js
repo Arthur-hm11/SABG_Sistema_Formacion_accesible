@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import pool from "../_lib/db.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 function norm(v) {
   if (v === undefined || v === null) return "";
@@ -18,6 +19,10 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
+
+  const session = readSabgSession(req);
+  if (!session) return res.status(401).json({ success: false, error: "Unauthorized" });
+  if (!isAdminSession(session)) return res.status(403).json({ success: false, error: "No autorizado" });
 
   try {
     const {
@@ -115,6 +120,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("Error registro:", error);
-    return res.status(500).json({ success: false, error: "Error en el servidor: " + (error?.message || String(error)) });
+    return res.status(500).json({ success: false, error: "Error en el servidor" });
   }
 }

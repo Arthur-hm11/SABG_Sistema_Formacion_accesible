@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -82,12 +83,20 @@ function isTrulyEmptyRow(r) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = String(req.headers.origin || "").replace(/\/$/, "");
+  if (origin === "https://sabg-sistema-formacion.onrender.com" || origin === "http://localhost:3000") {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ success: false, message: "Método no permitido" });
+
+  const session = readSabgSession(req);
+  if (!session) return res.status(401).json({ success: false, message: "Unauthorized" });
+  if (!isAdminSession(session)) return res.status(403).json({ success: false, message: "No autorizado" });
 
   const report = {
     received: 0,
@@ -236,11 +245,9 @@ export default async function handler(req, res) {
             report.errors_count += 1;
             if (report.errors.length < 50) {
               report.errors.push({
-                message: e2?.message || String(e2),
+                message: "No se pudo insertar la fila",
                 trimestre: r.trimestre ?? null,
-                curp: r.curp ?? null,
                 id_rusp: r.id_rusp ?? null,
-                nombre: r.nombre ?? null,
               });
             }
           }
@@ -259,7 +266,6 @@ export default async function handler(req, res) {
     return res.status(500).json({
       success: false,
       message: "Error del servidor",
-      error: err?.message || String(err),
       report,
     });
   }

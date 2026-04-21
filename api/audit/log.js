@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { applyCors } from '../_lib/cors.js';
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -6,7 +7,8 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const pre = applyCors(req, res);
+  if (pre) return;
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   // incluye Authorization por si luego mandas token, y Accept por compatibilidad
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');

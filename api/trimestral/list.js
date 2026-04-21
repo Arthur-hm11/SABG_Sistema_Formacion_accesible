@@ -1,5 +1,6 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 function toInt(v, def) {
   const n = parseInt(String(v ?? ""), 10);
@@ -17,16 +18,17 @@ export default async function handler(req, res) {
   // CORS
   const pre = applyCors(req, res);
   if (pre) return;
-  // SECURITY: block public access (PII)
-  const cookie = String(req.headers.cookie || "");
-  if (!cookie.includes("sabg_session=")) return res.status(401).json({ success:false, error:"Unauthorized" });
 
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
+  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
+
+  const session = readSabgSession(req);
+  if (!session) return res.status(401).json({ success:false, error:"Unauthorized" });
 
   try {
     // Params
@@ -42,6 +44,16 @@ export default async function handler(req, res) {
     // WHERE dinámico (parametrizado)
     const where = [];
     const params = [];
+    const isAdmin = isAdminSession(session);
+    const sessionDependencia = cleanLike(session.dependencia);
+
+    if (!isAdmin) {
+      if (!sessionDependencia) {
+        return res.status(403).json({ success: false, error: "Dependencia no autorizada" });
+      }
+      params.push(sessionDependencia);
+      where.push(`UPPER(BTRIM(dependencia)) = UPPER(BTRIM($${params.length}))`);
+    }
 
     if (dependencia) {
       params.push(`%${dependencia}%`);
@@ -105,7 +117,7 @@ export default async function handler(req, res) {
     console.error("Error /api/trimestral/list:", error);
     return res.status(500).json({
       success: false,
-      error: error?.message || String(error),
+      error: "Error al consultar registros",
     });
   }
 }

@@ -1,5 +1,6 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
+import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
@@ -11,6 +12,10 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Método no permitido" });
   }
+
+  const session = readSabgSession(req);
+  if (!session) return res.status(401).json({ success: false, error: "Unauthorized" });
+  if (!isAdminSession(session)) return res.status(403).json({ success: false, error: "No autorizado" });
 
   try {
     const edits = req.body?.edits;
@@ -46,6 +51,6 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     return res.json({ success: true, updated });
   } catch (err) {
     try { await pool.query("ROLLBACK"); } catch (_) {}
-    return res.status(500).json({ success: false, error: err?.message || "Error DB" });
+    return res.status(500).json({ success: false, error: "Error al guardar cambios" });
   }
 }
