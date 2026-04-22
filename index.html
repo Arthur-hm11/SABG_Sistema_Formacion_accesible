@@ -8045,7 +8045,7 @@ async function guardarRegistroTrimestral() {
 
     if (isInstitucionEducativaOtro(institucionSelectValue)) {
         if (institucionOtroValue.length < 75) {
-            alert('⚠️ Especifique la Institución Educativa con mínimo 75 caracteres.');
+            alert('⚠️ Especifique la Institución Educativa en MAYÚSCULAS.');
             institucionOtroInput?.focus();
             return;
         }
