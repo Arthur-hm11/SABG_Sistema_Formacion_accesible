@@ -1280,6 +1280,72 @@
             display: none !important;
         }
 
+        body:not(.role-admin):not(.role-superadmin) #navSeguimientoCargas,
+        body:not(.role-admin):not(.role-superadmin) #seguimientoCargas {
+            display: none !important;
+        }
+
+        .seguimiento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .seguimiento-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--guinda);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .seguimiento-card span {
+            color: #64748b;
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+        }
+
+        .seguimiento-card strong {
+            color: var(--guinda);
+            font-size: 1.9rem;
+        }
+
+        .seguimiento-toolbar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0 1.5rem;
+        }
+
+        .seguimiento-toolbar input,
+        .seguimiento-toolbar select {
+            border: 2px solid rgba(107,44,64,.18);
+            border-radius: 8px;
+            color: #334155;
+            font-size: 0.95rem;
+            padding: 0.85rem 1rem;
+        }
+
+        .seguimiento-status {
+            border-radius: 999px;
+            color: #fff;
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 800;
+            min-width: 105px;
+            padding: 0.4rem 0.75rem;
+            text-align: center;
+        }
+
+        .seguimiento-status.completo { background: #15803d; }
+        .seguimiento-status.incompleto { background: #b45309; }
+        .seguimiento-status.pendiente { background: #b91c1c; }
+
         /* Celdas editables */
         .editable-cell {
             position: relative;
@@ -2377,6 +2443,11 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
 </div>
             </div>
         </div>
+        <div class="nav-item" id="navSeguimientoCargas">
+            <button class="main-nav-btn" onclick="showMainSection('seguimientoCargas')">
+                📌 Seguimiento Institucional
+            </button>
+        </div>
     </nav>
 
     <div class="container">
@@ -3292,6 +3363,79 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                 </div>
             </div>
         </div>
+
+        <!-- SECCIÓN: SEGUIMIENTO INSTITUCIONAL (solo administradores) -->
+        <div id="seguimientoCargas" class="main-section">
+            <div class="card">
+                <h2>📌 Seguimiento Institucional</h2>
+
+                <div class="info-box">
+                    <h3>Semáforo de cumplimiento</h3>
+                    <ul>
+                        <li>Vista ejecutiva para identificar qué dependencias ya cargaron registros o evidencias.</li>
+                        <li>No muestra datos personales, CURP, correos ni archivos PDF.</li>
+                        <li>Visible únicamente para cuentas administradoras y superadministradoras.</li>
+                    </ul>
+                </div>
+
+                <div class="seguimiento-grid">
+                    <div class="seguimiento-card">
+                        <span>Dependencias</span>
+                        <strong id="segTotalDependencias">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Completas</span>
+                        <strong id="segCompletas">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Incompletas</span>
+                        <strong id="segIncompletas">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Pendientes</span>
+                        <strong id="segPendientes">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Avance</span>
+                        <strong id="segAvance">0%</strong>
+                    </div>
+                </div>
+
+                <div class="seguimiento-toolbar">
+                    <input id="segBusqueda" type="text" placeholder="Buscar dependencia o Ramo - UR..." oninput="renderSeguimientoCargas()">
+                    <select id="segFiltroEstado" onchange="renderSeguimientoCargas()">
+                        <option value="">Todos los estatus</option>
+                        <option value="completo">Completo</option>
+                        <option value="incompleto">Incompleto</option>
+                        <option value="pendiente">Pendiente</option>
+                    </select>
+                    <button class="btn" type="button" onclick="loadSeguimientoCargas()">🔄 Actualizar</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="seguimientoCargasTable">
+                        <thead>
+                            <tr>
+                                <th>DEPENDENCIA / INSTITUCIÓN</th>
+                                <th>RAMO - UR</th>
+                                <th>REGISTROS TRIMESTRALES</th>
+                                <th>EVIDENCIAS MENSUALES</th>
+                                <th>ÚLTIMA CARGA</th>
+                                <th>ESTATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seguimientoCargasBody">
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">
+                                    Seleccione actualizar para cargar el seguimiento.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="seguimientoCargasMeta" style="margin-top:1rem; color:#64748b; font-weight:600;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal para Registro de Evidencias -->
@@ -3507,6 +3651,233 @@ function formatFechaMx(value) {
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return String(value);
     return d.toLocaleString('es-MX');
+}
+
+let __seguimientoCargasRows = [];
+
+function normalizeSeguimientoText(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+}
+
+function getSeguimientoCatalogoDependencias() {
+    if (Array.isArray(window.DEPENDENCIA_RAMO_UR)) {
+        return window.DEPENDENCIA_RAMO_UR;
+    }
+    if (Array.isArray(typeof DEPENDENCIA_RAMO_UR !== 'undefined' ? DEPENDENCIA_RAMO_UR : null)) {
+        return DEPENDENCIA_RAMO_UR;
+    }
+    return [];
+}
+
+function getSeguimientoDate(row) {
+    return row?.created_at || row?.updated_at || row?.fecha_registro || row?.fecha || '';
+}
+
+function setSeguimientoLoading(text) {
+    const body = document.getElementById('seguimientoCargasBody');
+    const meta = document.getElementById('seguimientoCargasMeta');
+    if (body) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">
+                    ${escapeHtml(text)}
+                </td>
+            </tr>
+        `;
+    }
+    if (meta) meta.textContent = '';
+}
+
+async function fetchSeguimientoPages(urlBase, rowsKey, okCheck, limit = 200, maxPages = 40) {
+    const rows = [];
+    let page = 1;
+    let total = null;
+
+    while (page <= maxPages) {
+        const sep = urlBase.includes('?') ? '&' : '?';
+        const resp = await fetch(`${urlBase}${sep}page=${page}&limit=${limit}&cb=${Date.now()}`);
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !okCheck(data)) {
+            throw new Error(data?.error || data?.message || 'No se pudo consultar el seguimiento');
+        }
+
+        const pageRows = Array.isArray(data?.[rowsKey]) ? data[rowsKey] : [];
+        rows.push(...pageRows);
+        total = Number.isFinite(Number(data.total)) ? Number(data.total) : total;
+
+        if (!pageRows.length) break;
+        if (total !== null && rows.length >= total) break;
+        if (data.pages && page >= Number(data.pages)) break;
+        page += 1;
+    }
+
+    return rows;
+}
+
+function buildSeguimientoRows(registros, evidencias) {
+    const catalogo = getSeguimientoCatalogoDependencias();
+    const rowsByDep = new Map();
+
+    catalogo.forEach((item) => {
+        const dep = String(item?.dependencia || '').trim();
+        if (!dep) return;
+        const key = normalizeSeguimientoText(dep);
+        rowsByDep.set(key, {
+            key,
+            dependencia: dep,
+            ramoUr: item?.ramoUr || '',
+            registros: 0,
+            evidencias: 0,
+            ultimaCarga: ''
+        });
+    });
+
+    function ensureDep(depRaw, ramoRaw = '') {
+        const dep = String(depRaw || '').trim();
+        if (!dep) return null;
+        const key = normalizeSeguimientoText(dep);
+        if (!rowsByDep.has(key)) {
+            rowsByDep.set(key, {
+                key,
+                dependencia: dep,
+                ramoUr: ramoRaw || '',
+                registros: 0,
+                evidencias: 0,
+                ultimaCarga: ''
+            });
+        } else if (ramoRaw && !rowsByDep.get(key).ramoUr) {
+            rowsByDep.get(key).ramoUr = ramoRaw;
+        }
+        return rowsByDep.get(key);
+    }
+
+    function touchDate(row, dateValue) {
+        if (!row || !dateValue) return;
+        const next = new Date(dateValue);
+        if (Number.isNaN(next.getTime())) return;
+        const current = row.ultimaCarga ? new Date(row.ultimaCarga) : null;
+        if (!current || Number.isNaN(current.getTime()) || next > current) {
+            row.ultimaCarga = dateValue;
+        }
+    }
+
+    registros.forEach((registro) => {
+        const row = ensureDep(registro?.dependencia, registro?.ramo_ur);
+        if (!row) return;
+        row.registros += 1;
+        touchDate(row, getSeguimientoDate(registro));
+    });
+
+    evidencias.forEach((evidencia) => {
+        const row = ensureDep(evidencia?.dependencia);
+        if (!row) return;
+        row.evidencias += 1;
+        touchDate(row, getSeguimientoDate(evidencia));
+    });
+
+    return Array.from(rowsByDep.values()).map((row) => {
+        const completo = row.registros > 0 && row.evidencias > 0;
+        const incompleto = !completo && (row.registros > 0 || row.evidencias > 0);
+        return {
+            ...row,
+            estado: completo ? 'completo' : (incompleto ? 'incompleto' : 'pendiente')
+        };
+    }).sort((a, b) => a.dependencia.localeCompare(b.dependencia, 'es'));
+}
+
+function updateSeguimientoResumen(rows) {
+    const total = rows.length;
+    const completas = rows.filter(row => row.estado === 'completo').length;
+    const incompletas = rows.filter(row => row.estado === 'incompleto').length;
+    const pendientes = rows.filter(row => row.estado === 'pendiente').length;
+    const avance = total ? Math.round((completas / total) * 100) : 0;
+
+    const values = {
+        segTotalDependencias: total,
+        segCompletas: completas,
+        segIncompletas: incompletas,
+        segPendientes: pendientes,
+        segAvance: `${avance}%`
+    };
+
+    Object.entries(values).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = String(value);
+    });
+}
+
+function renderSeguimientoCargas() {
+    const body = document.getElementById('seguimientoCargasBody');
+    const meta = document.getElementById('seguimientoCargasMeta');
+    if (!body) return;
+
+    const q = normalizeSeguimientoText(document.getElementById('segBusqueda')?.value || '');
+    const filtro = String(document.getElementById('segFiltroEstado')?.value || '').trim();
+
+    const rows = __seguimientoCargasRows.filter((row) => {
+        const matchesSearch = !q || normalizeSeguimientoText(`${row.dependencia} ${row.ramoUr}`).includes(q);
+        const matchesStatus = !filtro || row.estado === filtro;
+        return matchesSearch && matchesStatus;
+    });
+
+    if (!rows.length) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">
+                    No hay dependencias que coincidan con el filtro.
+                </td>
+            </tr>
+        `;
+        if (meta) meta.textContent = `Mostrando 0 de ${__seguimientoCargasRows.length} dependencias.`;
+        updateSeguimientoResumen(__seguimientoCargasRows);
+        return;
+    }
+
+    body.innerHTML = rows.map((row) => {
+        const estadoLabel = row.estado === 'completo'
+            ? 'COMPLETO'
+            : (row.estado === 'incompleto' ? 'INCOMPLETO' : 'PENDIENTE');
+        return `
+            <tr>
+                <td>${escapeHtml(row.dependencia)}</td>
+                <td>${escapeHtml(row.ramoUr || '-')}</td>
+                <td style="text-align:center; font-weight:700;">${row.registros}</td>
+                <td style="text-align:center; font-weight:700;">${row.evidencias}</td>
+                <td>${escapeHtml(formatFechaMx(row.ultimaCarga) || '-')}</td>
+                <td><span class="seguimiento-status ${row.estado}">${estadoLabel}</span></td>
+            </tr>
+        `;
+    }).join('');
+
+    if (meta) meta.textContent = `Mostrando ${rows.length} de ${__seguimientoCargasRows.length} dependencias.`;
+    updateSeguimientoResumen(__seguimientoCargasRows);
+}
+
+async function loadSeguimientoCargas() {
+    if (!isAdminUser()) {
+        alert('⚠️ Acceso restringido.');
+        return;
+    }
+
+    setSeguimientoLoading('Cargando seguimiento institucional...');
+
+    try {
+        const [registros, evidencias] = await Promise.all([
+            fetchSeguimientoPages('/api/trimestral/list', 'data', data => data?.success === true, 500),
+            fetchSeguimientoPages('/api/evidencias/list', 'rows', data => data?.ok === true, 200)
+        ]);
+
+        __seguimientoCargasRows = buildSeguimientoRows(registros, evidencias);
+        renderSeguimientoCargas();
+    } catch (error) {
+        console.error('loadSeguimientoCargas error:', error);
+        setSeguimientoLoading('No se pudo cargar el seguimiento. Intenta actualizar nuevamente.');
+    }
 }
 
 let __evidenciasRevisionTimer = null;
@@ -5291,7 +5662,14 @@ async function loginUsuario() {
             if (btn.textContent.includes('Inicio') && sectionId === 'inicio') {
                 btn.classList.add('active');
             }
+            if (btn.textContent.includes('Seguimiento') && sectionId === 'seguimientoCargas') {
+                btn.classList.add('active');
+            }
         });
+
+        if (sectionId === 'seguimientoCargas') {
+            try { loadSeguimientoCargas(); } catch (e) { console.warn('No se pudo cargar seguimiento:', e); }
+        }
     }
 
     function showTrimestralTab(tabId) {

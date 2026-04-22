@@ -60,9 +60,15 @@ export default async function handler(req, res) {
 
     const sabg = `${payloadB64}.${sig}`;
 
+    const isSecureRequest =
+      String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim() === "https" ||
+      req.secure === true ||
+      process.env.RENDER === "true" ||
+      process.env.NODE_ENV === "production";
+
     const cookie = serialize("sabg_session", sabg, {
       httpOnly: true,
-      secure: true,
+      secure: isSecureRequest,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 8,
