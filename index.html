@@ -3045,6 +3045,10 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 <select name="institucion_educativa" required id="institucion_educativa" disabled>
                                     <option value="">Primero seleccione Nivel Educativo</option>
                                 </select>
+                                <div id="institucionEducativaOtroBox" class="hidden" style="margin-top: 0.75rem;">
+                                    <label for="institucion_educativa_otro">Especifique Institución Educativa <span class="required">*</span></label>
+                                    <textarea id="institucion_educativa_otro" rows="3" minlength="75" placeholder="Escriba la institución educativa. Mínimo 75 caracteres."></textarea>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="modalidad">Modalidad <span class="required">*</span></label>
@@ -8034,6 +8038,19 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
 async function guardarRegistroTrimestral() {
     const form = document.getElementById('trimestralForm');
     const formData = new FormData(form);
+    const institucionSelectValue = formData.get('institucion_educativa');
+    const institucionOtroInput = document.getElementById('institucion_educativa_otro');
+    const institucionOtroValue = String(institucionOtroInput?.value || '').trim();
+    let institucionEducativa = institucionSelectValue;
+
+    if (isInstitucionEducativaOtro(institucionSelectValue)) {
+        if (institucionOtroValue.length < 75) {
+            alert('⚠️ Especifique la Institución Educativa con mínimo 75 caracteres.');
+            institucionOtroInput?.focus();
+            return;
+        }
+        institucionEducativa = institucionOtroValue;
+    }
     
     const data = {
         enlace_nombre: formData.get('enlace_nombre'),
@@ -8055,7 +8072,7 @@ async function guardarRegistroTrimestral() {
         correo_institucional: formData.get('correo_institucional'),
         telefono_institucional: formData.get('telefono_institucional'),
         nivel_educativo: formData.get('nivel_educativo'),
-        institucion_educativa: formData.get('institucion_educativa'),
+        institucion_educativa: institucionEducativa,
         modalidad: formData.get('modalidad'),
         estado_avance: formData.get('estado_avance'),
         observaciones: formData.get('observaciones'),
@@ -8401,6 +8418,12 @@ function resolverModalidadEducativa(valor, opciones = []) {
     return opciones.find((modalidad) => normalizarCatalogo(modalidad) === key) || '';
 }
 
+const INSTITUCION_EDUCATIVA_OTRO = 'OTRO';
+
+function isInstitucionEducativaOtro(valor) {
+    return normalizarCatalogo(valor) === INSTITUCION_EDUCATIVA_OTRO;
+}
+
 function llenarSelectBasico(select, opciones, placeholder, valorActual = '') {
     if (!select) return;
 
@@ -8425,6 +8448,7 @@ function llenarSelectBasico(select, opciones, placeholder, valorActual = '') {
 
 function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
     const select = document.getElementById('institucion_educativa');
+    const otroInput = document.getElementById('institucion_educativa_otro');
     const nivel = resolverNivelEducativo(nivelEducativo);
     const codigos = INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || [];
     const opciones = codigos.map((codigo) => INSTITUCIONES_EDUCATIVAS[codigo]).filter(Boolean);
@@ -8435,10 +8459,31 @@ function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
         opciones.length ? 'Seleccione...' : 'Primero seleccione Nivel Educativo',
         valorActual
     );
+
+    if (opciones.length) {
+        const optOtro = document.createElement('option');
+        optOtro.value = INSTITUCION_EDUCATIVA_OTRO;
+        optOtro.textContent = 'Otro';
+        select.appendChild(optOtro);
+
+        const valorNormalizado = normalizarCatalogo(valorActual);
+        const valorCatalogo = opciones.find((opcion) => normalizarCatalogo(opcion) === valorNormalizado);
+        if (!valorCatalogo && valorActual) {
+            select.value = INSTITUCION_EDUCATIVA_OTRO;
+            if (otroInput) otroInput.value = String(valorActual).trim();
+        }
+    }
+
+    syncInstitucionEducativaOtro();
 }
 
 function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorActual = '') {
     const select = document.getElementById('modalidad');
+    if (isInstitucionEducativaOtro(institucionEducativa)) {
+        llenarSelectBasico(select, ['NO APLICA'], 'Seleccione...', valorActual || 'NO APLICA');
+        return;
+    }
+
     const nivel = resolverNivelEducativo(nivelEducativo);
     const institucion = resolverInstitucionEducativa(institucionEducativa);
     const institucionesValidas = INSTITUCIONES_POR_NIVEL_EDUCATIVO[nivel] || [];
@@ -8453,6 +8498,20 @@ function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorAct
         opciones.length ? 'Seleccione...' : 'Primero seleccione Institución Educativa',
         valorActual
     );
+}
+
+function syncInstitucionEducativaOtro() {
+    const select = document.getElementById('institucion_educativa');
+    const box = document.getElementById('institucionEducativaOtroBox');
+    const input = document.getElementById('institucion_educativa_otro');
+    if (!select || !box || !input) return;
+
+    const esOtro = isInstitucionEducativaOtro(select.value);
+    box.classList.toggle('hidden', !esOtro);
+    input.disabled = !esOtro;
+    input.required = esOtro;
+    input.minLength = 75;
+    if (!esOtro) input.value = '';
 }
 
 function initEducacionVinculada() {
@@ -8471,6 +8530,7 @@ function initEducacionVinculada() {
     });
 
     institucion.addEventListener('change', () => {
+        syncInstitucionEducativaOtro();
         llenarModalidadEducativa(nivel.value, institucion.value, '');
     });
 
@@ -8478,6 +8538,7 @@ function initEducacionVinculada() {
         setTimeout(() => {
             llenarInstitucionEducativa('', '');
             llenarModalidadEducativa('', '', '');
+            syncInstitucionEducativaOtro();
         }, 0);
     });
 }
