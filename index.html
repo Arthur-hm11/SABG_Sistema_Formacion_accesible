@@ -3047,7 +3047,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 </select>
                                 <div id="institucionEducativaOtroBox" class="hidden" style="margin-top: 0.75rem;">
                                     <label for="institucion_educativa_otro">Especifique Institución Educativa <span class="required">*</span></label>
-                                    <textarea id="institucion_educativa_otro" rows="3" minlength="75" placeholder="Escriba la institución educativa. Mínimo 75 caracteres."></textarea>
+                                    <textarea id="institucion_educativa_otro" rows="3" minlength="75" placeholder="Escriba el nombre de la institución educativa en MAYÚSCULAS."></textarea>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -8049,7 +8049,7 @@ async function guardarRegistroTrimestral() {
             institucionOtroInput?.focus();
             return;
         }
-        institucionEducativa = institucionOtroValue;
+        institucionEducativa = institucionOtroValue.toUpperCase();
     }
     
     const data = {
@@ -8463,7 +8463,7 @@ function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
     if (opciones.length) {
         const optOtro = document.createElement('option');
         optOtro.value = INSTITUCION_EDUCATIVA_OTRO;
-        optOtro.textContent = 'Otro';
+        optOtro.textContent = 'OTRO';
         select.appendChild(optOtro);
 
         const valorNormalizado = normalizarCatalogo(valorActual);
