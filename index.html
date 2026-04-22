@@ -1346,6 +1346,34 @@
         .seguimiento-status.incompleto { background: #b45309; }
         .seguimiento-status.pendiente { background: #b91c1c; }
 
+        .seguimiento-detail {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--guinda);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+        }
+
+        .seguimiento-detail-header {
+            align-items: flex-start;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .seguimiento-detail h3 {
+            color: var(--guinda);
+            margin: 0 0 0.35rem;
+        }
+
+        .seguimiento-detail small {
+            color: #64748b;
+            font-weight: 700;
+        }
+
         /* Celdas editables */
         .editable-cell {
             position: relative;
@@ -3373,7 +3401,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     <h3>Semáforo de cumplimiento</h3>
                     <ul>
                         <li>Vista ejecutiva para identificar qué dependencias ya cargaron registros o evidencias.</li>
-                        <li>No muestra datos personales, CURP, correos ni archivos PDF.</li>
+                        <li>El detalle de personas registradas está disponible únicamente para administradores y superadministradores.</li>
+                        <li>No muestra CURP, correos ni archivos PDF.</li>
                         <li>Visible únicamente para cuentas administradoras y superadministradoras.</li>
                     </ul>
                 </div>
@@ -3422,11 +3451,12 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 <th>EVIDENCIAS MENSUALES</th>
                                 <th>ÚLTIMA CARGA</th>
                                 <th>ESTATUS</th>
+                                <th>DETALLE</th>
                             </tr>
                         </thead>
                         <tbody id="seguimientoCargasBody">
                             <tr>
-                                <td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">
+                                <td colspan="7" style="text-align:center; padding:1.5rem; color:#64748b;">
                                     Seleccione actualizar para cargar el seguimiento.
                                 </td>
                             </tr>
@@ -3434,6 +3464,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     </table>
                 </div>
                 <div id="seguimientoCargasMeta" style="margin-top:1rem; color:#64748b; font-weight:600;"></div>
+                <div id="seguimientoDetalle" class="seguimiento-detail hidden"></div>
             </div>
         </div>
     </div>
@@ -3654,6 +3685,8 @@ function formatFechaMx(value) {
 }
 
 let __seguimientoCargasRows = [];
+let __seguimientoRegistrosRows = [];
+let __seguimientoEvidenciasRows = [];
 
 function normalizeSeguimientoText(value) {
     return String(value || '')
@@ -3681,16 +3714,21 @@ function getSeguimientoDate(row) {
 function setSeguimientoLoading(text) {
     const body = document.getElementById('seguimientoCargasBody');
     const meta = document.getElementById('seguimientoCargasMeta');
+    const detalle = document.getElementById('seguimientoDetalle');
     if (body) {
         body.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">
+                <td colspan="7" style="text-align:center; padding:1.5rem; color:#64748b;">
                     ${escapeHtml(text)}
                 </td>
             </tr>
         `;
     }
     if (meta) meta.textContent = '';
+    if (detalle) {
+        detalle.classList.add('hidden');
+        detalle.innerHTML = '';
+    }
 }
 
 async function fetchSeguimientoPages(urlBase, rowsKey, okCheck, limit = 200, maxPages = 40) {
@@ -3828,7 +3866,7 @@ function renderSeguimientoCargas() {
     if (!rows.length) {
         body.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">
+                <td colspan="7" style="text-align:center; padding:1.5rem; color:#64748b;">
                     No hay dependencias que coincidan con el filtro.
                 </td>
             </tr>
@@ -3850,12 +3888,124 @@ function renderSeguimientoCargas() {
                 <td style="text-align:center; font-weight:700;">${row.evidencias}</td>
                 <td>${escapeHtml(formatFechaMx(row.ultimaCarga) || '-')}</td>
                 <td><span class="seguimiento-status ${row.estado}">${estadoLabel}</span></td>
+                <td>
+                    <button class="btn" type="button" onclick="openSeguimientoDetalle('${encodeURIComponent(row.key)}')" ${row.registros > 0 ? '' : 'disabled'}>
+                        Ver personas
+                    </button>
+                </td>
             </tr>
         `;
     }).join('');
 
     if (meta) meta.textContent = `Mostrando ${rows.length} de ${__seguimientoCargasRows.length} dependencias.`;
     updateSeguimientoResumen(__seguimientoCargasRows);
+}
+
+function getNombrePersonaInteresada(registro) {
+    return [
+        registro?.nombre,
+        registro?.primer_apellido,
+        registro?.segundo_apellido
+    ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function getNombreEnlaceRegistro(registro) {
+    return [
+        registro?.enlace_nombre,
+        registro?.enlace_primer_apellido,
+        registro?.enlace_segundo_apellido
+    ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function openSeguimientoDetalle(encodedKey) {
+    if (!isAdminUser()) {
+        alert('⚠️ Acceso restringido.');
+        return;
+    }
+
+    const detalle = document.getElementById('seguimientoDetalle');
+    if (!detalle) return;
+
+    const key = decodeURIComponent(String(encodedKey || ''));
+    const depRow = __seguimientoCargasRows.find(row => row.key === key);
+    if (!depRow) {
+        detalle.classList.remove('hidden');
+        detalle.innerHTML = '<p style="color:#64748b; font-weight:700;">No se encontró la dependencia seleccionada.</p>';
+        return;
+    }
+
+    const registros = __seguimientoRegistrosRows
+        .filter(registro => normalizeSeguimientoText(registro?.dependencia) === key)
+        .sort((a, b) => new Date(getSeguimientoDate(b) || 0) - new Date(getSeguimientoDate(a) || 0));
+
+    const evidencias = __seguimientoEvidenciasRows
+        .filter(evidencia => normalizeSeguimientoText(evidencia?.dependencia) === key)
+        .sort((a, b) => new Date(getSeguimientoDate(b) || 0) - new Date(getSeguimientoDate(a) || 0));
+
+    const rowsHtml = registros.length ? registros.map((registro, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(getNombrePersonaInteresada(registro) || '-')}</td>
+            <td>${escapeHtml(registro?.id_rusp || '-')}</td>
+            <td>${escapeHtml(registro?.anio || '-')}</td>
+            <td>${escapeHtml(registro?.trimestre || '-')}</td>
+            <td>${escapeHtml(registro?.nivel_educativo || '-')}</td>
+            <td>${escapeHtml(registro?.institucion_educativa || '-')}</td>
+            <td>${escapeHtml(registro?.modalidad || '-')}</td>
+            <td>${escapeHtml(registro?.estado_avance || '-')}</td>
+            <td>${escapeHtml(getNombreEnlaceRegistro(registro) || registro?.usuario_registro || '-')}</td>
+            <td>${escapeHtml(formatFechaMx(getSeguimientoDate(registro)) || '-')}</td>
+        </tr>
+    `).join('') : `
+        <tr>
+            <td colspan="11" style="text-align:center; padding:1.25rem; color:#64748b;">
+                Esta dependencia todavía no tiene personas interesadas registradas.
+            </td>
+        </tr>
+    `;
+
+    const evidenciasResumen = evidencias.length
+        ? `${evidencias.length} evidencia(s) mensual(es) cargada(s). Última: ${formatFechaMx(getSeguimientoDate(evidencias[0])) || '-'}`
+        : 'Sin evidencias mensuales registradas.';
+
+    detalle.classList.remove('hidden');
+    detalle.innerHTML = `
+        <div class="seguimiento-detail-header">
+            <div>
+                <h3>Personas interesadas registradas</h3>
+                <small>${escapeHtml(depRow.dependencia)} | Ramo - UR: ${escapeHtml(depRow.ramoUr || '-')} | ${escapeHtml(evidenciasResumen)}</small>
+            </div>
+            <button class="btn btn-danger" type="button" onclick="closeSeguimientoDetalle()">Cerrar</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N°</th>
+                        <th>PERSONA INTERESADA</th>
+                        <th>ID RUSP</th>
+                        <th>AÑO</th>
+                        <th>TRIMESTRE</th>
+                        <th>NIVEL EDUCATIVO</th>
+                        <th>INSTITUCIÓN EDUCATIVA</th>
+                        <th>MODALIDAD</th>
+                        <th>ESTADO DE AVANCE</th>
+                        <th>ENLACE QUE REGISTRÓ</th>
+                        <th>FECHA DE CARGA</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+        </div>
+    `;
+    detalle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeSeguimientoDetalle() {
+    const detalle = document.getElementById('seguimientoDetalle');
+    if (!detalle) return;
+    detalle.classList.add('hidden');
+    detalle.innerHTML = '';
 }
 
 async function loadSeguimientoCargas() {
@@ -3872,6 +4022,8 @@ async function loadSeguimientoCargas() {
             fetchSeguimientoPages('/api/evidencias/list', 'rows', data => data?.ok === true, 200)
         ]);
 
+        __seguimientoRegistrosRows = registros;
+        __seguimientoEvidenciasRows = evidencias;
         __seguimientoCargasRows = buildSeguimientoRows(registros, evidencias);
         renderSeguimientoCargas();
     } catch (error) {
