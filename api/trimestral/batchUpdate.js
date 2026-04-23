@@ -22,6 +22,9 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     if (!Array.isArray(edits) || edits.length === 0) {
       return res.status(400).json({ success: false, error: "Sin cambios" });
     }
+    if (edits.length > 500) {
+      return res.status(400).json({ success: false, error: "Máximo 500 cambios por guardado" });
+    }
 
     const ALLOWED = new Set([
       "nivel_educativo",

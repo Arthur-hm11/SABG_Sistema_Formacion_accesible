@@ -1,6 +1,6 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
-import { readSabgSession, isAdminSession } from "../_lib/session.js";
+import { readSabgSession, isSuperAdminSession } from "../_lib/session.js";
 
 export default async (req, res) => {
   const pre = applyCors(req, res);
@@ -13,7 +13,7 @@ export default async (req, res) => {
 
   const session = readSabgSession(req);
   if (!session) return res.status(401).json({ error: 'Unauthorized' });
-  if (!isAdminSession(session)) return res.status(403).json({ error: 'No autorizado' });
+  if (!isSuperAdminSession(session)) return res.status(403).json({ error: 'Solo superadmin puede generar respaldos completos' });
 
   try {
     // Obtener todos los registros

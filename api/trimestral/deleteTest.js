@@ -1,22 +1,15 @@
-import { Pool } from "pg";
+import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
-import { readSabgSession, isAdminSession } from "../_lib/session.js";
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 1,
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 8000,
-});
+import { readSabgSession, isSuperAdminSession } from "../_lib/session.js";
 
 const TABLE = "public.registros_trimestral";
 
 function setCors(req, res) {
   const pre = applyCors(req, res);
-  if (pre) return;
+  if (pre) return pre;
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  return null;
 }
 
 function readJsonBody(req) {
@@ -36,13 +29,14 @@ function readJsonBody(req) {
 }
 
 export default async function handler(req, res) {
-  setCors(req, res);
+  const pre = setCors(req, res);
+  if (pre) return;
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Método no permitido" });
 
   const session = readSabgSession(req);
   if (!session) return res.status(401).json({ ok:false, error:"No autenticado" });
-  if (!isAdminSession(session)) return res.status(403).json({ ok:false, error:"No autorizado" });
+  if (!isSuperAdminSession(session)) return res.status(403).json({ ok:false, error:"Solo superadmin puede eliminar registros trimestrales" });
 
   try {
     const body = (req.body && typeof req.body === "object") ? req.body : await readJsonBody(req);
@@ -50,6 +44,9 @@ export default async function handler(req, res) {
     const ids = Array.isArray(body?.ids) ? body.ids.map(Number).filter(Boolean) : [];
     if (!ids.length) {
       return res.status(400).json({ ok:false, error:"Faltan ids válidos" });
+    }
+    if (ids.length > 500) {
+      return res.status(400).json({ ok:false, error:"Máximo 500 registros por eliminación" });
     }
 
     const r = await pool.query(

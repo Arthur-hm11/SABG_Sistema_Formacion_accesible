@@ -1,10 +1,6 @@
-import { Pool } from "pg";
+import pool from "../_lib/db.js";
+import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
 
 function norm(v) {
   if (v === undefined || v === null) return null;
@@ -84,11 +80,8 @@ function isTrulyEmptyRow(r) {
 }
 
 export default async function handler(req, res) {
-  const origin = String(req.headers.origin || "").replace(/\/$/, "");
-  if (origin === "https://sabg-sistema-formacion.onrender.com" || origin === "http://localhost:3000") {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Vary", "Origin");
-  }
+  const pre = applyCors(req, res);
+  if (pre) return;
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
@@ -117,6 +110,9 @@ export default async function handler(req, res) {
 
     if (!rows.length) {
       return res.status(400).json({ success: false, message: "No se recibieron registros (rows vacíos)", report });
+    }
+    if (rows.length > 5000) {
+      return res.status(413).json({ success: false, message: "Máximo 5000 registros por carga. Divide el archivo en bloques.", report });
     }
 
     // columnas EXACTAS de tu tabla (captura)

@@ -8086,9 +8086,9 @@ async function guardarRegistroTrimestral() {
 // BACKUP DE BASE DE DATOS
 // ========================================
 async function descargarBackup() {
-    if (!isAdminUser()) {
+    if (!isSuperAdmin()) {
         alert('⚠️ Acceso restringido.');
-        auditLog('DOWNLOAD_BACKUP', 'DENIED', { reason: 'not_admin' });
+        auditLog('DOWNLOAD_BACKUP', 'DENIED', { reason: 'not_superadmin' });
         return;
     }
 
@@ -8102,7 +8102,7 @@ async function descargarBackup() {
         document.getElementById('loadingOverlay').classList.add('active');
         document.querySelector('.loading-text').textContent = '💾 Generando backup...';
 
-        const response = await fetch('/api/backup/export');
+        const response = await fetch('/api/backup/export', { credentials: 'include' });
         
         if (!response.ok) {
             throw new Error('Error al generar backup');
@@ -8122,8 +8122,6 @@ async function descargarBackup() {
         auditLog('DOWNLOAD_BACKUP', 'OK', {});
 document.getElementById('loadingOverlay').classList.remove('active');
         document.querySelector('.loading-text').textContent = '🚀 Iniciando sesión...';
-
-        auditLog('EXPORT_' + String(format).toUpperCase(), 'OK', { format });
 
         alert('✅ Backup descargado exitosamente!\n\nArchivo: backup_sabg_' + new Date().toISOString().split('T')[0] + '.json\n\nGuarda este archivo en un lugar seguro.');
 

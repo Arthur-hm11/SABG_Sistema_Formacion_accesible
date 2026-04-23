@@ -28,6 +28,9 @@ export default async function handler(req, res) {
     if (!ids.length) {
       return res.status(400).json({ ok: false, error: "No se recibieron evidencias válidas para eliminar." });
     }
+    if (ids.length > 200) {
+      return res.status(400).json({ ok: false, error: "Máximo 200 evidencias por eliminación." });
+    }
 
     const r = await pool.query(
       `
