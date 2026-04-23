@@ -120,6 +120,9 @@ async function mount(method, route, handlerPath) {
 }
 
 // Montaje de rutas (import dinámico)
+await mount("get",  "/api/health",                "./api/health.js");
+await mount("get",  "/api/dashboard/seguimiento", "./api/dashboard/seguimiento.js");
+
 await mount("post", "/api/evidencias/upload",      "./api/evidencias/upload.js");
 await mount("get",  "/api/evidencias/envcheck",   "./api/evidencias/envcheck.js");
 await mount("get",  "/api/evidencias/list",       "./api/evidencias/list.js");

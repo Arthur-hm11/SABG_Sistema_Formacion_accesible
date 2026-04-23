@@ -3689,8 +3689,6 @@ function formatFechaMx(value) {
 }
 
 let __seguimientoCargasRows = [];
-let __seguimientoRegistrosRows = [];
-let __seguimientoEvidenciasRows = [];
 
 function normalizeSeguimientoText(value) {
     return String(value || '')
@@ -3735,33 +3733,7 @@ function setSeguimientoLoading(text) {
     }
 }
 
-async function fetchSeguimientoPages(urlBase, rowsKey, okCheck, limit = 200, maxPages = 40) {
-    const rows = [];
-    let page = 1;
-    let total = null;
-
-    while (page <= maxPages) {
-        const sep = urlBase.includes('?') ? '&' : '?';
-        const resp = await fetch(`${urlBase}${sep}page=${page}&limit=${limit}&cb=${Date.now()}`);
-        const data = await resp.json().catch(() => ({}));
-        if (!resp.ok || !okCheck(data)) {
-            throw new Error(data?.error || data?.message || 'No se pudo consultar el seguimiento');
-        }
-
-        const pageRows = Array.isArray(data?.[rowsKey]) ? data[rowsKey] : [];
-        rows.push(...pageRows);
-        total = Number.isFinite(Number(data.total)) ? Number(data.total) : total;
-
-        if (!pageRows.length) break;
-        if (total !== null && rows.length >= total) break;
-        if (data.pages && page >= Number(data.pages)) break;
-        page += 1;
-    }
-
-    return rows;
-}
-
-function buildSeguimientoRows(registros, evidencias) {
+function buildSeguimientoRows(resumen) {
     const catalogo = getSeguimientoCatalogoDependencias();
     const rowsByDep = new Map();
 
@@ -3798,28 +3770,12 @@ function buildSeguimientoRows(registros, evidencias) {
         return rowsByDep.get(key);
     }
 
-    function touchDate(row, dateValue) {
-        if (!row || !dateValue) return;
-        const next = new Date(dateValue);
-        if (Number.isNaN(next.getTime())) return;
-        const current = row.ultimaCarga ? new Date(row.ultimaCarga) : null;
-        if (!current || Number.isNaN(current.getTime()) || next > current) {
-            row.ultimaCarga = dateValue;
-        }
-    }
-
-    registros.forEach((registro) => {
-        const row = ensureDep(registro?.dependencia, registro?.ramo_ur);
+    resumen.forEach((item) => {
+        const row = ensureDep(item?.dependencia, item?.ramo_ur || item?.ramoUr);
         if (!row) return;
-        row.registros += 1;
-        touchDate(row, getSeguimientoDate(registro));
-    });
-
-    evidencias.forEach((evidencia) => {
-        const row = ensureDep(evidencia?.dependencia);
-        if (!row) return;
-        row.evidencias += 1;
-        touchDate(row, getSeguimientoDate(evidencia));
+        row.registros = Number(item?.registros || 0);
+        row.evidencias = Number(item?.evidencias || 0);
+        row.ultimaCarga = item?.ultima_carga || item?.ultimaCarga || '';
     });
 
     return Array.from(rowsByDep.values()).map((row) => {
@@ -3921,7 +3877,7 @@ function getNombreEnlaceRegistro(registro) {
     ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
 }
 
-function openSeguimientoDetalle(encodedKey) {
+async function openSeguimientoDetalle(encodedKey) {
     if (!isAdminUser()) {
         alert('⚠️ Acceso restringido.');
         return;
@@ -3938,71 +3894,98 @@ function openSeguimientoDetalle(encodedKey) {
         return;
     }
 
-    const registros = __seguimientoRegistrosRows
-        .filter(registro => normalizeSeguimientoText(registro?.dependencia) === key)
-        .sort((a, b) => new Date(getSeguimientoDate(b) || 0) - new Date(getSeguimientoDate(a) || 0));
-
-    const evidencias = __seguimientoEvidenciasRows
-        .filter(evidencia => normalizeSeguimientoText(evidencia?.dependencia) === key)
-        .sort((a, b) => new Date(getSeguimientoDate(b) || 0) - new Date(getSeguimientoDate(a) || 0));
-
-    const rowsHtml = registros.length ? registros.map((registro, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${escapeHtml(getNombrePersonaInteresada(registro) || '-')}</td>
-            <td>${escapeHtml(registro?.id_rusp || '-')}</td>
-            <td>${escapeHtml(registro?.anio || '-')}</td>
-            <td>${escapeHtml(registro?.trimestre || '-')}</td>
-            <td>${escapeHtml(registro?.nivel_educativo || '-')}</td>
-            <td>${escapeHtml(registro?.institucion_educativa || '-')}</td>
-            <td>${escapeHtml(registro?.modalidad || '-')}</td>
-            <td>${escapeHtml(registro?.estado_avance || '-')}</td>
-            <td>${escapeHtml(getNombreEnlaceRegistro(registro) || registro?.usuario_registro || '-')}</td>
-            <td>${escapeHtml(formatFechaMx(getSeguimientoDate(registro)) || '-')}</td>
-        </tr>
-    `).join('') : `
-        <tr>
-            <td colspan="11" style="text-align:center; padding:1.25rem; color:#64748b;">
-                Esta dependencia todavía no tiene personas interesadas registradas.
-            </td>
-        </tr>
-    `;
-
-    const evidenciasResumen = evidencias.length
-        ? `${evidencias.length} evidencia(s) mensual(es) cargada(s). Última: ${formatFechaMx(getSeguimientoDate(evidencias[0])) || '-'}`
-        : 'Sin evidencias mensuales registradas.';
-
     detalle.classList.remove('hidden');
     detalle.innerHTML = `
         <div class="seguimiento-detail-header">
             <div>
                 <h3>Personas interesadas registradas</h3>
-                <small>${escapeHtml(depRow.dependencia)} | Ramo - UR: ${escapeHtml(depRow.ramoUr || '-')} | ${escapeHtml(evidenciasResumen)}</small>
+                <small>${escapeHtml(depRow.dependencia)} | Ramo - UR: ${escapeHtml(depRow.ramoUr || '-')} | Cargando detalle...</small>
             </div>
             <button class="btn btn-danger" type="button" onclick="closeSeguimientoDetalle()">Cerrar</button>
         </div>
-        <div style="overflow-x:auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>N°</th>
-                        <th>PERSONA INTERESADA</th>
-                        <th>ID RUSP</th>
-                        <th>AÑO</th>
-                        <th>TRIMESTRE</th>
-                        <th>NIVEL EDUCATIVO</th>
-                        <th>INSTITUCIÓN EDUCATIVA</th>
-                        <th>MODALIDAD</th>
-                        <th>ESTADO DE AVANCE</th>
-                        <th>ENLACE QUE REGISTRÓ</th>
-                        <th>FECHA DE CARGA</th>
-                    </tr>
-                </thead>
-                <tbody>${rowsHtml}</tbody>
-            </table>
-        </div>
+        <p style="color:#64748b; font-weight:700;">Consultando personas registradas...</p>
     `;
     detalle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    try {
+        const resp = await fetch(`/api/dashboard/seguimiento?detalle=1&dependencia=${encodeURIComponent(depRow.dependencia)}&limit=500&cb=${Date.now()}`);
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || data?.ok !== true) {
+            throw new Error(data?.error || 'No se pudo consultar el detalle');
+        }
+
+        const registros = Array.isArray(data.personas) ? data.personas : [];
+        const totalEvidencias = Number(data?.evidencias?.total || 0);
+        const ultimaEvidencia = data?.evidencias?.ultima_carga || '';
+
+        const rowsHtml = registros.length ? registros.map((registro, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHtml(getNombrePersonaInteresada(registro) || '-')}</td>
+                <td>${escapeHtml(registro?.id_rusp || '-')}</td>
+                <td>${escapeHtml(registro?.anio || '-')}</td>
+                <td>${escapeHtml(registro?.trimestre || '-')}</td>
+                <td>${escapeHtml(registro?.nivel_educativo || '-')}</td>
+                <td>${escapeHtml(registro?.institucion_educativa || '-')}</td>
+                <td>${escapeHtml(registro?.modalidad || '-')}</td>
+                <td>${escapeHtml(registro?.estado_avance || '-')}</td>
+                <td>${escapeHtml(getNombreEnlaceRegistro(registro) || registro?.usuario_registro || '-')}</td>
+                <td>${escapeHtml(formatFechaMx(getSeguimientoDate(registro)) || '-')}</td>
+            </tr>
+        `).join('') : `
+            <tr>
+                <td colspan="11" style="text-align:center; padding:1.25rem; color:#64748b;">
+                    Esta dependencia todavía no tiene personas interesadas registradas.
+                </td>
+            </tr>
+        `;
+
+        const evidenciasResumen = totalEvidencias
+            ? `${totalEvidencias} evidencia(s) mensual(es) cargada(s). Última: ${formatFechaMx(ultimaEvidencia) || '-'}`
+            : 'Sin evidencias mensuales registradas.';
+
+        detalle.innerHTML = `
+            <div class="seguimiento-detail-header">
+                <div>
+                    <h3>Personas interesadas registradas</h3>
+                    <small>${escapeHtml(depRow.dependencia)} | Ramo - UR: ${escapeHtml(depRow.ramoUr || '-')} | ${escapeHtml(evidenciasResumen)}</small>
+                </div>
+                <button class="btn btn-danger" type="button" onclick="closeSeguimientoDetalle()">Cerrar</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>PERSONA INTERESADA</th>
+                            <th>ID RUSP</th>
+                            <th>AÑO</th>
+                            <th>TRIMESTRE</th>
+                            <th>NIVEL EDUCATIVO</th>
+                            <th>INSTITUCIÓN EDUCATIVA</th>
+                            <th>MODALIDAD</th>
+                            <th>ESTADO DE AVANCE</th>
+                            <th>ENLACE QUE REGISTRÓ</th>
+                            <th>FECHA DE CARGA</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>
+        `;
+    } catch (error) {
+        console.error('openSeguimientoDetalle error:', error);
+        detalle.innerHTML = `
+            <div class="seguimiento-detail-header">
+                <div>
+                    <h3>Personas interesadas registradas</h3>
+                    <small>${escapeHtml(depRow.dependencia)} | Ramo - UR: ${escapeHtml(depRow.ramoUr || '-')}</small>
+                </div>
+                <button class="btn btn-danger" type="button" onclick="closeSeguimientoDetalle()">Cerrar</button>
+            </div>
+            <p style="color:#b91c1c; font-weight:700;">No se pudo cargar el detalle. Intenta nuevamente.</p>
+        `;
+    }
 }
 
 function closeSeguimientoDetalle() {
@@ -4021,14 +4004,13 @@ async function loadSeguimientoCargas() {
     setSeguimientoLoading('Cargando seguimiento institucional...');
 
     try {
-        const [registros, evidencias] = await Promise.all([
-            fetchSeguimientoPages('/api/trimestral/list', 'data', data => data?.success === true, 500),
-            fetchSeguimientoPages('/api/evidencias/list', 'rows', data => data?.ok === true, 200)
-        ]);
+        const resp = await fetch(`/api/dashboard/seguimiento?cb=${Date.now()}`);
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || data?.ok !== true || !Array.isArray(data.rows)) {
+            throw new Error(data?.error || 'No se pudo consultar el seguimiento');
+        }
 
-        __seguimientoRegistrosRows = registros;
-        __seguimientoEvidenciasRows = evidencias;
-        __seguimientoCargasRows = buildSeguimientoRows(registros, evidencias);
+        __seguimientoCargasRows = buildSeguimientoRows(data.rows);
         renderSeguimientoCargas();
     } catch (error) {
         console.error('loadSeguimientoCargas error:', error);
