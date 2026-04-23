@@ -1280,6 +1280,10 @@
             display: none !important;
         }
 
+        body:not(.role-superadmin) #adminPanelEvidencias {
+            display: none !important;
+        }
+
         body:not(.role-admin):not(.role-superadmin) #navSeguimientoCargas,
         body:not(.role-admin):not(.role-superadmin) #seguimientoCargas {
             display: none !important;
@@ -4529,6 +4533,7 @@ function syncRoleBodyClasses() {
     const role = String(roleRaw || '').toLowerCase().trim();
     document.body.classList.toggle('role-superadmin', role === 'superadmin');
     document.body.classList.toggle('role-admin', isAdminRoleValue(role));
+    document.body.classList.toggle('role-enlace', role === 'enlace');
 }
 
 function applyRoleVisibility() {
@@ -5428,6 +5433,7 @@ async function loginUsuario() {
         // Visibilidad estricta de controles admin
         const adminEls = [
             'adminPanelTrimestral',
+            'adminPanelEvidencias',
             'exportButtonsTrimestral',
             'estadoEdicion',
             'notasTablaTrimestral'
@@ -5442,6 +5448,7 @@ async function loginUsuario() {
             try {
                 document.body.classList.toggle("role-superadmin", userRole === "superadmin");
                 document.body.classList.toggle("role-admin", isAdminRoleValue(userRole));
+                document.body.classList.toggle("role-enlace", userRole === "enlace");
             } catch (_) {}
 
         });
@@ -7882,7 +7889,7 @@ function sendUserToLoginFromExpiredSession() {
     localStorage.removeItem('SABG_NOMBRE');
     localStorage.removeItem('SABG_ROL');
     localStorage.removeItem('SABG_DEPENDENCIA');
-    document.body.classList.remove('role-admin', 'role-superadmin');
+    document.body.classList.remove('role-admin', 'role-superadmin', 'role-enlace');
     resetToInicioView();
     document.getElementById('loginScreen')?.classList.remove('hidden');
     showTrimestralNotice('Tu sesión venció por inactividad. Inicia sesión nuevamente.', 'warn', 9000);
