@@ -9,12 +9,19 @@ import {
   uploadLimiter,
 } from "./api/_lib/limiters.js";
 import { isAllowedOrigin, normalizeOrigin } from "./api/_lib/cors.js";
+import pool from "./api/_lib/db.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+function toInt(value, fallback, min, max) {
+  const n = parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(Math.max(n, min), max);
+}
 
 app.disable("x-powered-by");
 
@@ -164,4 +171,30 @@ app.get(/\.*/, (req, res, next) => {
 
   return res.sendFile(path.join(__dirname, "index.html"));
 });
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
+server.requestTimeout = toInt(process.env.SERVER_REQUEST_TIMEOUT_MS, 60000, 10000, 300000);
+server.headersTimeout = toInt(process.env.SERVER_HEADERS_TIMEOUT_MS, 65000, 15000, 300000);
+server.keepAliveTimeout = toInt(process.env.SERVER_KEEPALIVE_TIMEOUT_MS, 5000, 1000, 60000);
+
+async function shutdown(signal) {
+  console.log(`↘️ ${signal} recibido. Cerrando servidor HTTP...`);
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log("✅ Pool de PostgreSQL cerrado.");
+    } catch (error) {
+      console.error("Error cerrando pool de PostgreSQL:", error);
+    } finally {
+      process.exit(0);
+    }
+  });
+
+  setTimeout(() => {
+    console.error("⏱️ Cierre forzado por timeout.");
+    process.exit(1);
+  }, 10000).unref();
+}
+
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));

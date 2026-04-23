@@ -2,7 +2,7 @@ services:
   - type: web
     name: sabg-sistema-formacion
     runtime: node
-    plan: free
+    plan: standard
     region: oregon
     buildCommand: npm install
     startCommand: npm start
@@ -12,5 +12,25 @@ services:
         value: 24.12.0
       - key: DATABASE_URL
         sync: false
+      - key: POSTGRES_URL
+        sync: false
       - key: SESSION_SECRET
         sync: false
+      - key: PG_POOL_MAX
+        value: "12"
+      - key: PG_IDLE_TIMEOUT_MS
+        value: "20000"
+      - key: PG_CONNECTION_TIMEOUT_MS
+        value: "8000"
+      - key: PG_STATEMENT_TIMEOUT_MS
+        value: "15000"
+      - key: PG_QUERY_TIMEOUT_MS
+        value: "20000"
+      - key: PG_KEEPALIVE_DELAY_MS
+        value: "10000"
+      - key: SERVER_REQUEST_TIMEOUT_MS
+        value: "60000"
+      - key: SERVER_HEADERS_TIMEOUT_MS
+        value: "65000"
+      - key: SERVER_KEEPALIVE_TIMEOUT_MS
+        value: "5000"

@@ -1,11 +1,6 @@
-import { Pool } from 'pg';
 import { applyCors } from '../_lib/cors.js';
 import { readSabgSession } from '../_lib/session.js';
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+import pool from '../_lib/db.js';
 
 function clip(value, max) {
   if (value === undefined || value === null) return null;
