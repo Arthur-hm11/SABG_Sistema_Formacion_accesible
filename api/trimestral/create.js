@@ -71,6 +71,10 @@ export default async function handler(req, res) {
       if (!norm(session.dependencia)) {
         return res.status(403).json({ success: false, error: "Dependencia no autorizada" });
       }
+      const requestedDependencia = norm(data.dependencia);
+      if (requestedDependencia && requestedDependencia !== session.dependencia) {
+        return res.status(403).json({ success: false, error: "Solo puedes registrar información de tu dependencia" });
+      }
       data.dependencia = session.dependencia;
       data.usuario_registro = session.usuario || data.usuario_registro;
     }

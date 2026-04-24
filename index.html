@@ -4559,6 +4559,7 @@ function applyRoleVisibility() {
     }
 
     updateRevisionDceveVisibility();
+    applyEnlaceDependenciaLock();
 }
 // ========================================
 // Carga masiva (Admin): usuarios exportado desde sistema SABG
@@ -5425,6 +5426,7 @@ async function loginUsuario() {
 
         // Aplicar permisos visuales por rol
         applyRoleVisibility();
+        applyEnlaceDependenciaLock();
 
         // Auditoría
         try { auditLog('LOGIN', 'OK', { usuario: (data.usuario || usuario) }); } catch(e) {}
@@ -7487,6 +7489,57 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         return Boolean(ramo);
     }
 
+    function isEnlaceUser() {
+        const roleRaw =
+            (typeof userRole !== 'undefined' && userRole) ? userRole :
+            (localStorage.getItem('SABG_ROL') || '');
+        return String(roleRaw || '').toLowerCase().trim() === 'enlace';
+    }
+
+    function getCurrentUserDependencia() {
+        return String(
+            (typeof userDependencia !== 'undefined' && userDependencia) ? userDependencia :
+            (localStorage.getItem('SABG_DEPENDENCIA') || '')
+        ).trim();
+    }
+
+    function applyEnlaceDependenciaLock() {
+        const depInput = document.getElementById('dependenciaInput');
+        const ramoInput = document.getElementById('ramoUrInput');
+        const depSuggestions = document.getElementById('dependenciaSuggestions');
+        if (!depInput || !ramoInput) return;
+
+        const isEnlace = isEnlaceUser();
+        const dependenciaSesion = getCurrentUserDependencia();
+
+        if (isEnlace && dependenciaSesion) {
+            depInput.value = dependenciaSesion;
+            depInput.readOnly = true;
+            depInput.setAttribute('readonly', 'readonly');
+            depInput.style.background = '#f8fafc';
+            depInput.style.cursor = 'not-allowed';
+            setRamoPorDependencia(dependenciaSesion);
+            ramoInput.readOnly = true;
+            ramoInput.setAttribute('readonly', 'readonly');
+            ramoInput.style.background = '#f8fafc';
+            ramoInput.style.cursor = 'not-allowed';
+            if (depSuggestions) {
+                depSuggestions.classList.remove('show');
+                depSuggestions.innerHTML = '';
+            }
+            return;
+        }
+
+        depInput.readOnly = false;
+        depInput.removeAttribute('readonly');
+        depInput.style.background = '';
+        depInput.style.cursor = '';
+        ramoInput.readOnly = true;
+        ramoInput.setAttribute('readonly', 'readonly');
+        ramoInput.style.background = '';
+        ramoInput.style.cursor = '';
+    }
+
     function initAutocomplete() {
         const ramoInput = document.getElementById('ramoUrInput');
         const ramoSuggestions = document.getElementById('ramoUrSuggestions');
@@ -7514,6 +7567,8 @@ const tabs = document.querySelectorAll('#trimestral .tab');
                 setRamoPorDependencia(depInput.value);
             });
         }
+
+        applyEnlaceDependenciaLock();
     }
 
     function setupAutocomplete(input, suggestionsContainer, dataList, onSelect) {
@@ -8102,6 +8157,7 @@ async function guardarRegistroTrimestral() {
             alert('✅ Registro guardado exitosamente!');
             form.reset();
             llenarNivelTabular('');
+            applyEnlaceDependenciaLock();
             await cargarRegistrosTrimestral();
         } else {
             alert('❌ Error: ' + result.error);
@@ -8704,6 +8760,7 @@ function initNivelPuestoTabularVinculado() {
 document.addEventListener('DOMContentLoaded', () => {
     // Restaurar rol si existe
     try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
+    try { userDependencia = localStorage.getItem('SABG_DEPENDENCIA') || userDependencia; } catch(e) {}
     initDependenciaAutocomplete();
     initNivelPuestoTabularVinculado();
     initEducacionVinculada();
