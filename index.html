@@ -3051,7 +3051,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 </select>
                                 <div id="institucionEducativaOtroBox" class="hidden" style="margin-top: 0.75rem;">
                                     <label for="institucion_educativa_otro">Especifique Institución Educativa <span class="required">*</span></label>
-                                    <textarea id="institucion_educativa_otro" rows="3" maxlength="60" placeholder="Escriba el nombre de la institución educativa en MAYÚSCULAS. Máximo 60 caracteres." style="text-transform: uppercase;"></textarea>
+                                    <textarea id="institucion_educativa_otro" rows="3" maxlength="10" placeholder="Escriba el nombre de la institución educativa en MAYÚSCULAS. Máximo 10 caracteres." style="text-transform: uppercase;"></textarea>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -3064,11 +3064,11 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                     <input
                                         type="text"
                                         id="modalidad_otro"
-                                        maxlength="60"
-                                        placeholder="Escriba la modalidad en MAYÚSCULAS. Máximo 60 caracteres."
+                                        maxlength="10"
+                                        placeholder="Escriba la modalidad en MAYÚSCULAS. Máximo 10 caracteres."
                                         style="text-transform: uppercase;"
                                     >
-                                    <p style="color: #64748b; margin-top: 0.5rem; font-size: 0.9rem;">La modalidad capturada debe escribirse en MAYÚSCULAS. Máximo 60 caracteres.</p>
+                                    <p style="color: #64748b; margin-top: 0.5rem; font-size: 0.9rem;">La modalidad capturada debe escribirse en MAYÚSCULAS. Máximo 10 caracteres.</p>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -4457,7 +4457,7 @@ async function loadEvidenciasRevision() {
                     <td>${pdfCell}</td>
                     <td>${estadoCell}</td>
                     <td>${observacionesCell}</td>
-                    <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro))}</td>
+                    <td>${escapeHtml(formatFechaMx(row.created_at_evidencia || row.created_at_registro || row.created_at))}</td>
                 </tr>
             `;
 	        }).join('');
@@ -8043,22 +8043,22 @@ async function guardarRegistroTrimestral() {
     const modalidadSelectValue = formData.get('modalidad');
     const modalidadOtroInput = document.getElementById('modalidad_otro');
     const institucionOtroValue = String(institucionOtroInput?.value || '').trim();
-    const modalidadOtroValue = String(modalidadOtroInput?.value || '').trim().toUpperCase().slice(0, 60);
+    const modalidadOtroValue = String(modalidadOtroInput?.value || '').trim().toUpperCase().slice(0, 10);
     let institucionEducativa = institucionSelectValue;
     let modalidad = modalidadSelectValue;
 
     if (isInstitucionEducativaOtro(institucionSelectValue)) {
         if (!institucionOtroValue) {
-            alert('⚠️ Especifique la Institución Educativa en MAYÚSCULAS. Máximo 60 caracteres.');
+            alert('⚠️ Especifique la Institución Educativa en MAYÚSCULAS. Máximo 10 caracteres.');
             institucionOtroInput?.focus();
             return;
         }
-        institucionEducativa = institucionOtroValue.toUpperCase().slice(0, 60);
+        institucionEducativa = institucionOtroValue.toUpperCase().slice(0, 10);
     }
 
     if (isModalidadOtro(modalidadSelectValue)) {
         if (!modalidadOtroValue) {
-            alert('⚠️ Especifique la Modalidad en MAYÚSCULAS. Máximo 60 caracteres.');
+            alert('⚠️ Especifique la Modalidad en MAYÚSCULAS. Máximo 10 caracteres.');
             modalidadOtroInput?.focus();
             return;
         }
@@ -8544,10 +8544,10 @@ function syncInstitucionEducativaOtro() {
     box.classList.toggle('hidden', !esOtro);
     input.disabled = !esOtro;
     input.required = esOtro;
-    input.maxLength = 60;
+    input.maxLength = 10;
     input.style.textTransform = 'uppercase';
     if (esOtro) {
-        input.value = String(input.value || '').toUpperCase().slice(0, 60);
+        input.value = String(input.value || '').toUpperCase().slice(0, 10);
     }
     if (!esOtro) input.value = '';
 }
@@ -8562,7 +8562,7 @@ function syncModalidadOtro() {
     box.classList.toggle('hidden', !esOtro);
     input.disabled = !esOtro;
     input.required = esOtro;
-    input.maxLength = 60;
+    input.maxLength = 10;
     if (!esOtro) input.value = '';
 }
 
@@ -8592,12 +8592,12 @@ function initEducacionVinculada() {
     });
 
     modalidadOtro?.addEventListener('input', () => {
-        modalidadOtro.value = String(modalidadOtro.value || '').toUpperCase().slice(0, 60);
+        modalidadOtro.value = String(modalidadOtro.value || '').toUpperCase().slice(0, 10);
     });
 
     const institucionOtro = document.getElementById('institucion_educativa_otro');
     institucionOtro?.addEventListener('input', () => {
-        institucionOtro.value = String(institucionOtro.value || '').toUpperCase().slice(0, 60);
+        institucionOtro.value = String(institucionOtro.value || '').toUpperCase().slice(0, 10);
     });
 
     form?.addEventListener('reset', () => {

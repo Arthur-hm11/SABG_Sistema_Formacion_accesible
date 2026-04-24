@@ -115,7 +115,9 @@ export default async function handler(req, res) {
         estado_revision,
         observaciones_dceve,
         created_at,
-        updated_at
+        created_at AS created_at_evidencia,
+        updated_at,
+        updated_at AS updated_at_evidencia
       FROM public.evidencias_mensuales
       ${whereSql}
       ORDER BY created_at DESC
