@@ -1,6 +1,4 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pool = require('../_lib/db.cjs');
+import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
 

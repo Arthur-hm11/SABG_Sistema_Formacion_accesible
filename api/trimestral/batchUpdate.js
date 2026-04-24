@@ -17,6 +17,7 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   if (!session) return res.status(401).json({ success: false, error: "Unauthorized" });
   if (!isAdminSession(session)) return res.status(403).json({ success: false, error: "No autorizado" });
 
+  let client;
   try {
     const edits = req.body?.edits;
     if (!Array.isArray(edits) || edits.length === 0) {
@@ -34,8 +35,9 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       "observaciones"
     ]);
 
-    // Transacción
-    await pool.query("BEGIN");
+    // La transaccion debe correr sobre el mismo cliente del pool.
+    client = await pool.connect();
+    await client.query("BEGIN");
 
     let updated = 0;
     for (const e of edits) {
@@ -46,14 +48,19 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       if (!id || !ALLOWED.has(field)) continue;
 
       const q = `UPDATE public.registros_trimestral SET ${field} = $1 WHERE id = $2`;
-      await pool.query(q, [value, id]);
+      await client.query(q, [value, id]);
       updated++;
     }
 
-    await pool.query("COMMIT");
+    await client.query("COMMIT");
     return res.json({ success: true, updated });
   } catch (err) {
-    try { await pool.query("ROLLBACK"); } catch (_) {}
+    try {
+      if (client) await client.query("ROLLBACK");
+    } catch (_) {}
+    console.error("Error /api/trimestral/batchUpdate:", err);
     return res.status(500).json({ success: false, error: "Error al guardar cambios" });
+  } finally {
+    client?.release();
   }
 }
