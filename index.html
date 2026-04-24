@@ -3051,7 +3051,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 </select>
                                 <div id="institucionEducativaOtroBox" class="hidden" style="margin-top: 0.75rem;">
                                     <label for="institucion_educativa_otro">Especifique Institución Educativa <span class="required">*</span></label>
-                                    <textarea id="institucion_educativa_otro" rows="3" maxlength="10" placeholder="Escriba el nombre de la institución educativa en MAYÚSCULAS. Máximo 10 caracteres." style="text-transform: uppercase;"></textarea>
+                                    <textarea id="institucion_educativa_otro" rows="3" maxlength="60" placeholder="ESCRIBA EL NOMBRE DE LA INSTITUCIÓN EDUCATIVA EN MAYÚSCULAS." style="text-transform: uppercase;"></textarea>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -3068,7 +3068,6 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                         placeholder="Escriba la modalidad en MAYÚSCULAS. Máximo 10 caracteres."
                                         style="text-transform: uppercase;"
                                     >
-                                    <p style="color: #64748b; margin-top: 0.5rem; font-size: 0.9rem;">La modalidad capturada debe escribirse en MAYÚSCULAS. Máximo 10 caracteres.</p>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -3370,7 +3369,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             style="flex:1; min-width:280px; padding:1rem 1.2rem; border:2px solid rgba(107,44,64,.25); border-radius:12px; font-size:1rem;"
                             oninput="debouncedLoadEvidenciasRevision()"
                         />
-                        <select id="selectDescargaRevisionDceve" class="revision-download-select revision-admin-control" onchange="updateDescargarDceveButton()" style="display:none;" hidden aria-hidden="true" disabled>
+                        <select id="selectDescargaRevisionDceve" class="revision-download-select revision-admin-control" onchange="updateDescargarDceveButton()" style="display:none !important;" hidden aria-hidden="true" disabled>
                             <option value="">Seleccionar PDF para descargar...</option>
                         </select>
                         <button class="btn btn-danger revision-admin-control" id="btnEliminarRevisionDceve" type="button" onclick="eliminarRevisionesSeleccionadas()" style="display:none;" hidden aria-hidden="true" disabled>🗑️ Eliminar seleccionados</button>
@@ -4107,14 +4106,13 @@ function updateDescargarDceveButton() {
         setRevisionAdminControlVisible(selector, false);
         return;
     }
-    const hasDownloadOptions = !!(selector && selector.options && selector.options.length > 1);
-    setRevisionAdminControlVisible(selector, hasDownloadOptions);
-    const selectedPdfId = String(selector?.value || '').trim();
+    if (selector) {
+        selector.value = '';
+        setRevisionAdminControlVisible(selector, false);
+    }
     setRevisionAdminControlVisible(btn, true);
-    btn.disabled = (!selectedPdfId && __dceveSelected.size === 0);
-    btn.textContent = selectedPdfId
-        ? '📥 Descargar PDF'
-        : (__dceveSelected.size > 0
+    btn.disabled = (__dceveSelected.size === 0);
+    btn.textContent = (__dceveSelected.size > 0
         ? `📥 Descargar PDF (${__dceveSelected.size})`
         : '📥 Descargar PDF');
 }
@@ -4145,7 +4143,7 @@ function updateDescargaPdfOptions(rows) {
         });
 
     selector.innerHTML = '<option value="">Seleccionar PDF para descargar...</option>' + options.join('');
-    setRevisionAdminControlVisible(selector, options.length > 0);
+    setRevisionAdminControlVisible(selector, false);
     updateDescargarDceveButton();
 }
 
@@ -4352,10 +4350,9 @@ function descargarRevisionesSeleccionadas() {
         return;
     }
 
-    const selectedPdfId = String(document.getElementById('selectDescargaRevisionDceve')?.value || '').trim();
-    const ids = selectedPdfId ? [selectedPdfId] : Array.from(__dceveSelected);
+    const ids = Array.from(__dceveSelected);
     if (!ids.length) {
-        alert('ℹ️ Selecciona un PDF en el combo para descargarlo.');
+        alert('ℹ️ Selecciona al menos un registro para descargarlo.');
         return;
     }
 
@@ -8049,11 +8046,11 @@ async function guardarRegistroTrimestral() {
 
     if (isInstitucionEducativaOtro(institucionSelectValue)) {
         if (!institucionOtroValue) {
-            alert('⚠️ Especifique la Institución Educativa en MAYÚSCULAS. Máximo 10 caracteres.');
+            alert('⚠️ Especifique la Institución Educativa en MAYÚSCULAS.');
             institucionOtroInput?.focus();
             return;
         }
-        institucionEducativa = institucionOtroValue.toUpperCase().slice(0, 10);
+        institucionEducativa = institucionOtroValue.toUpperCase().slice(0, 60);
     }
 
     if (isModalidadOtro(modalidadSelectValue)) {
@@ -8486,7 +8483,7 @@ function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
         const valorCatalogo = opciones.find((opcion) => normalizarCatalogo(opcion) === valorNormalizado);
         if (!valorCatalogo && valorActual) {
             select.value = INSTITUCION_EDUCATIVA_OTRO;
-            if (otroInput) otroInput.value = String(valorActual).trim();
+            if (otroInput) otroInput.value = String(valorActual).trim().toUpperCase().slice(0, 60);
         }
     }
 
@@ -8496,7 +8493,7 @@ function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
 function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorActual = '') {
     const select = document.getElementById('modalidad');
     if (isInstitucionEducativaOtro(institucionEducativa)) {
-        llenarSelectBasico(select, ['NO APLICA', MODALIDAD_OTRO], 'Seleccione...', valorActual || 'NO APLICA');
+        llenarSelectBasico(select, ['NO APLICA', MODALIDAD_OTRO], 'Seleccione...', valorActual || MODALIDAD_OTRO);
         syncModalidadOtro();
         return;
     }
@@ -8527,7 +8524,7 @@ function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorAct
         if (!valorCatalogo && valorActual && !['NO APLICA', MODALIDAD_OTRO].includes(String(valorActual).trim().toUpperCase())) {
             select.value = MODALIDAD_OTRO;
             const otroInput = document.getElementById('modalidad_otro');
-            if (otroInput) otroInput.value = String(valorActual).trim().toUpperCase().slice(0, 75);
+            if (otroInput) otroInput.value = String(valorActual).trim().toUpperCase().slice(0, 10);
         }
     }
 
@@ -8544,10 +8541,10 @@ function syncInstitucionEducativaOtro() {
     box.classList.toggle('hidden', !esOtro);
     input.disabled = !esOtro;
     input.required = esOtro;
-    input.maxLength = 10;
+    input.maxLength = 60;
     input.style.textTransform = 'uppercase';
     if (esOtro) {
-        input.value = String(input.value || '').toUpperCase().slice(0, 10);
+        input.value = String(input.value || '').toUpperCase().slice(0, 60);
     }
     if (!esOtro) input.value = '';
 }
@@ -8585,6 +8582,10 @@ function initEducacionVinculada() {
     institucion.addEventListener('change', () => {
         syncInstitucionEducativaOtro();
         llenarModalidadEducativa(nivel.value, institucion.value, '');
+        if (isInstitucionEducativaOtro(institucion.value)) {
+            modalidad.value = MODALIDAD_OTRO;
+            syncModalidadOtro();
+        }
     });
 
     modalidad.addEventListener('change', () => {
@@ -8597,7 +8598,7 @@ function initEducacionVinculada() {
 
     const institucionOtro = document.getElementById('institucion_educativa_otro');
     institucionOtro?.addEventListener('input', () => {
-        institucionOtro.value = String(institucionOtro.value || '').toUpperCase().slice(0, 10);
+        institucionOtro.value = String(institucionOtro.value || '').toUpperCase().slice(0, 60);
     });
 
     form?.addEventListener('reset', () => {
