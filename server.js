@@ -10,6 +10,7 @@ import {
 } from "./api/_lib/limiters.js";
 import { isAllowedOrigin, normalizeOrigin } from "./api/_lib/cors.js";
 import pool from "./api/_lib/db.js";
+import { getSessionRole, readSabgSession } from "./api/_lib/session.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -95,6 +96,27 @@ app.use("/api/auth/login", authLimiter);
 app.use("/api/evidencias/upload", uploadLimiter);
 app.use("/api/export/excel", sensitiveExportLimiter);
 app.use("/api/backup/export", sensitiveExportLimiter);
+
+const MONITOR_ALLOWED_API_PATHS = new Set([
+  "/api/auth/login",
+  "/api/health",
+  "/api/monitor/ping",
+  "/api/monitor/summary",
+  "/api/audit/log",
+]);
+
+app.use("/api", (req, res, next) => {
+  const session = readSabgSession(req);
+  if (getSessionRole(session) !== "monitor") return next();
+
+  const pathOnly = String(req.originalUrl || req.url || "").split("?")[0];
+  if (MONITOR_ALLOWED_API_PATHS.has(pathOnly)) return next();
+
+  return res.status(403).json({
+    success: false,
+    error: "La cuenta de monitoreo solo puede consultar el panel de rendimiento",
+  });
+});
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "25mb" }));
@@ -129,6 +151,8 @@ async function mount(method, route, handlerPath) {
 // Montaje de rutas (import dinámico)
 await mount("get",  "/api/health",                "./api/health.js");
 await mount("get",  "/api/dashboard/seguimiento", "./api/dashboard/seguimiento.js");
+await mount("post", "/api/monitor/ping",          "./api/monitor/ping.js");
+await mount("get",  "/api/monitor/summary",       "./api/monitor/summary.js");
 
 await mount("post", "/api/evidencias/upload",      "./api/evidencias/upload.js");
 await mount("get",  "/api/evidencias/envcheck",   "./api/evidencias/envcheck.js");

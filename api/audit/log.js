@@ -1,19 +1,12 @@
 import { applyCors } from '../_lib/cors.js';
+import { ensureMonitoringTables, logAuditEvent } from '../_lib/monitoring.js';
 import { readSabgSession } from '../_lib/session.js';
-import pool from '../_lib/db.js';
 
 function clip(value, max) {
   if (value === undefined || value === null) return null;
   const s = String(value).trim();
   if (!s) return null;
   return s.length > max ? s.slice(0, max) : s;
-}
-
-function safeJson(value, max = 4000) {
-  if (value === undefined || value === null) return null;
-  const raw = JSON.stringify(value);
-  if (raw.length <= max) return raw;
-  return JSON.stringify({ truncated: true, preview: raw.slice(0, max) });
 }
 
 export default async function handler(req, res) {
@@ -56,20 +49,15 @@ export default async function handler(req, res) {
 
     // Inserta en audit_logs (si existe). Si no existe, no tiramos el sistema.
     try {
-      await pool.query(
-        `
-        INSERT INTO audit_logs (usuario, accion, modulo, detalle, ip, user_agent, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
-        `,
-        [
-          usuario,
-          accion,
-          modulo,
-          safeJson(detalle),
-          ip,
-          user_agent
-        ]
-      );
+      await ensureMonitoringTables();
+      await logAuditEvent({
+        usuario,
+        accion,
+        modulo,
+        detalle,
+        ip,
+        userAgent: user_agent,
+      });
     } catch (e) {
       // Si la tabla no existe o el esquema no coincide, no tumbamos la app
       // (así desaparece el 404 y no afecta UX)

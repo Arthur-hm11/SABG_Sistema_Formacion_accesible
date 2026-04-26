@@ -60,6 +60,10 @@ export function isSuperAdminSession(session) {
   return getSessionRole(session) === "superadmin";
 }
 
+export function isMonitorSession(session) {
+  return getSessionRole(session) === "monitor";
+}
+
 export function getSessionRole(session) {
   const rol = String(session?.rol || "").toLowerCase().trim();
   return rol === "administrador" ? "admin" : rol;

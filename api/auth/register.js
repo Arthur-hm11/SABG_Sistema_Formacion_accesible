@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
-import { readSabgSession, isAdminSession } from "../_lib/session.js";
+import { readSabgSession, isAdminSession, getSessionRole } from "../_lib/session.js";
 
 function norm(v) {
   if (v === undefined || v === null) return "";
@@ -33,6 +33,7 @@ export default async function handler(req, res) {
       dependencia,
       usuario,
       password,
+      rol,
     } = req.body || {};
 
     const curpClean = norm(curp).toUpperCase();
@@ -40,9 +41,20 @@ export default async function handler(req, res) {
     const primerApellidoClean = norm(primer_apellido);
     const segundoApellidoClean = norm(segundo_apellido);
     const correoClean = norm(correo).toLowerCase();
-    const dependenciaClean = norm(dependencia);
+    const dependenciaCleanRaw = norm(dependencia);
     const usuarioClean = norm(usuario).toUpperCase();
     const passwordClean = norm(password);
+    const roleRequested = norm(rol).toLowerCase();
+    const sessionRole = getSessionRole(session);
+    const allowedRoles = new Set(["enlace", "admin", "superadmin", "monitor"]);
+    const finalRole =
+      sessionRole === "superadmin" && allowedRoles.has(roleRequested)
+        ? roleRequested
+        : "enlace";
+    const dependenciaClean =
+      finalRole === "monitor"
+        ? (dependenciaCleanRaw || "MONITOREO SABG")
+        : dependenciaCleanRaw;
 
     if (
       !curpClean ||
@@ -108,7 +120,7 @@ export default async function handler(req, res) {
         correoClean,
         curpClean,
         dependenciaClean,
-        "enlace",
+        finalRole,
       ]
     );
 
@@ -116,6 +128,7 @@ export default async function handler(req, res) {
       success: true,
       message: "Usuario registrado exitosamente",
       usuario: usuarioClean,
+      rol: finalRole,
     });
   } catch (error) {
     console.error("Error registro:", error);

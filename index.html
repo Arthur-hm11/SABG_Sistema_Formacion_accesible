@@ -1289,6 +1289,20 @@
             display: none !important;
         }
 
+        body:not(.role-monitor) #navMonitoreoSistema,
+        body:not(.role-monitor) #monitoreoSistema {
+            display: none !important;
+        }
+
+        body.role-monitor #navSeguimientoCargas,
+        body.role-monitor #trimestral,
+        body.role-monitor #evidencias,
+        body.role-monitor #seguimientoCargas,
+        body.role-monitor #dropdownTrimestral,
+        body.role-monitor #dropdownEvidencias {
+            display: none !important;
+        }
+
         .seguimiento-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -1907,6 +1921,25 @@
     opacity: 1;
 }
 
+#registroModal select {
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background-color: white;
+}
+
+#registroModal select:focus {
+    outline: none;
+    border-color: var(--guinda);
+    box-shadow: 0 5px 15px rgba(107, 44, 64, 0.3);
+    transform: scale(1.01);
+}
+
         #registroModal .modal-actions {
             display: flex;
             gap: 1rem;
@@ -2438,7 +2471,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
             </button>
         </div>
 
-        <div class="nav-item">
+        <div class="nav-item" id="navTrimestral">
             <button class="main-nav-btn" onclick="toggleDropdown('dropdownTrimestral', this)">
                 📊 Reporte Trimestral Formación Académica
                 <span class="arrow">▼</span>
@@ -2459,7 +2492,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
             </div>
         </div>
 
-        <div class="nav-item">
+        <div class="nav-item" id="navEvidencias">
             <button class="main-nav-btn" onclick="toggleDropdown('dropdownEvidencias', this)">
                 📄 Reporte de Evidencias Mensuales
                 <span class="arrow">▼</span>
@@ -2478,6 +2511,11 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
         <div class="nav-item" id="navSeguimientoCargas">
             <button class="main-nav-btn" onclick="showMainSection('seguimientoCargas')">
                 📌 Seguimiento Institucional
+            </button>
+        </div>
+        <div class="nav-item" id="navMonitoreoSistema">
+            <button class="main-nav-btn" onclick="showMainSection('monitoreoSistema')">
+                📈 Monitoreo del Sistema
             </button>
         </div>
     </nav>
@@ -3485,6 +3523,154 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                 <div id="seguimientoDetalle" class="seguimiento-detail hidden"></div>
             </div>
         </div>
+
+        <div id="monitoreoSistema" class="main-section">
+            <div class="card">
+                <h2>📈 Monitoreo del Sistema</h2>
+
+                <div class="info-box">
+                    <h3>Panel de uso y salud operativa</h3>
+                    <ul>
+                        <li>Muestra accesos recientes, actividad por dependencia y conteos generales del sistema.</li>
+                        <li>Las personas activas se calculan por latido reciente del navegador; no exponen CURP ni contraseñas.</li>
+                        <li>Diseñado para cuentas de monitoreo y superadministración.</li>
+                    </ul>
+                </div>
+
+                <div class="seguimiento-grid">
+                    <div class="seguimiento-card">
+                        <span>Usuarios registrados</span>
+                        <strong id="monTotalUsuarios">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Registros trimestrales</span>
+                        <strong id="monTotalRegistros">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Evidencias mensuales</span>
+                        <strong id="monTotalEvidencias">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Activos 5 min</span>
+                        <strong id="monActivos5m">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Activos 15 min</span>
+                        <strong id="monActivos15m">0</strong>
+                    </div>
+                    <div class="seguimiento-card">
+                        <span>Logins hoy</span>
+                        <strong id="monLoginsHoy">0</strong>
+                    </div>
+                </div>
+
+                <div class="seguimiento-toolbar">
+                    <button class="btn" type="button" onclick="loadMonitoringSummary()">🔄 Actualizar monitoreo</button>
+                    <div id="monitoreoMeta" style="color:#64748b; font-weight:600;"></div>
+                </div>
+
+                <div class="table-container" style="margin-top:1rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ROL</th>
+                                <th>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monRolesBody">
+                            <tr><td colspan="2" style="text-align:center; padding:1rem; color:#64748b;">Sin datos.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container" style="margin-top:1rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>USUARIO</th>
+                                <th>ROL</th>
+                                <th>DEPENDENCIA</th>
+                                <th>SECCIÓN</th>
+                                <th>ÚLTIMA ACTIVIDAD</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monActivosBody">
+                            <tr><td colspan="5" style="text-align:center; padding:1rem; color:#64748b;">Sin actividad reciente.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container" style="margin-top:1rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>USUARIO</th>
+                                <th>ROL</th>
+                                <th>DEPENDENCIA</th>
+                                <th>ÚLTIMO LOGIN</th>
+                                <th>INGRESOS 7 DÍAS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monLoginsBody">
+                            <tr><td colspan="5" style="text-align:center; padding:1rem; color:#64748b;">Sin inicios de sesión recientes.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container" style="margin-top:1rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>DEPENDENCIA</th>
+                                <th>ACTIVOS (15 MIN)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monDependenciasBody">
+                            <tr><td colspan="2" style="text-align:center; padding:1rem; color:#64748b;">Sin actividad por dependencia.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container" style="margin-top:1rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>CUENTA QUE REGISTRÓ</th>
+                                <th>ROL</th>
+                                <th>DEPENDENCIA</th>
+                                <th>PERSONA REGISTRADA</th>
+                                <th>TRIMESTRE</th>
+                                <th>AÑO</th>
+                                <th>FECHA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monRegistrosBody">
+                            <tr><td colspan="7" style="text-align:center; padding:1rem; color:#64748b;">Sin registros recientes.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container" style="margin-top:1rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>CUENTA QUE SUBIÓ</th>
+                                <th>ROL</th>
+                                <th>DEPENDENCIA</th>
+                                <th>ENLACE QUE REGISTRA</th>
+                                <th>ARCHIVO</th>
+                                <th>MES</th>
+                                <th>AÑO</th>
+                                <th>FECHA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monEvidenciasBody">
+                            <tr><td colspan="8" style="text-align:center; padding:1rem; color:#64748b;">Sin evidencias recientes.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal para Registro de Evidencias -->
@@ -3590,6 +3776,12 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
             <div id="dep_reg_menu" class="autocomplete-menu" role="listbox" aria-label="Dependencias"></div>
             <datalist id="dep_reg_list"></datalist>
         </div>
+            <select id="reg_rol" class="hidden">
+                <option value="enlace">Rol: Enlace</option>
+                <option value="admin">Rol: Administrador</option>
+                <option value="superadmin">Rol: Superadmin</option>
+                <option value="monitor">Rol: Monitoreo</option>
+            </select>
 <input
                 id="reg_usuario"
                 type="text"
@@ -4534,6 +4726,24 @@ function isAdminUser() {
     return isAdminRoleValue(roleRaw);
 }
 
+function isMonitorRoleValue(roleRaw) {
+    return String(roleRaw || '').toLowerCase().trim() === 'monitor';
+}
+
+function isMonitorUser() {
+    const roleRaw =
+        (typeof userRole !== 'undefined' && userRole) ? userRole :
+        (localStorage.getItem('SABG_ROL') || '');
+    return isMonitorRoleValue(roleRaw);
+}
+
+function canViewMonitoringUI() {
+    const roleRaw =
+        (typeof userRole !== 'undefined' && userRole) ? userRole :
+        (localStorage.getItem('SABG_ROL') || '');
+    return isMonitorRoleValue(roleRaw);
+}
+
 function syncRoleBodyClasses() {
     const roleRaw =
         (typeof userRole !== 'undefined' && userRole) ? userRole :
@@ -4542,6 +4752,7 @@ function syncRoleBodyClasses() {
     document.body.classList.toggle('role-superadmin', role === 'superadmin');
     document.body.classList.toggle('role-admin', isAdminRoleValue(role));
     document.body.classList.toggle('role-enlace', role === 'enlace');
+    document.body.classList.toggle('role-monitor', role === 'monitor');
 }
 
 function applyRoleVisibility() {
@@ -4558,8 +4769,241 @@ function applyRoleVisibility() {
         }
     }
 
+    const navMonitor = document.getElementById('navMonitoreoSistema');
+    if (navMonitor) {
+        navMonitor.style.display = canViewMonitoringUI() ? '' : 'none';
+    }
+
+    const roleSelect = document.getElementById('reg_rol');
+    const depInput = document.getElementById('reg_dependencia');
+    if (roleSelect) {
+        roleSelect.classList.add('hidden');
+        roleSelect.value = 'enlace';
+    }
+    if (depInput && isMonitorUser()) {
+        depInput.value = 'MONITOREO SABG';
+    }
+
     updateRevisionDceveVisibility();
     applyEnlaceDependenciaLock();
+}
+
+let __monitorHeartbeatTimer = null;
+let __monitorSummaryTimer = null;
+
+function getCurrentVisibleSectionId() {
+    const activeMain = document.querySelector('.main-section.active');
+    if (!activeMain) return 'inicio';
+
+    const activeSub = activeMain.querySelector('.tab-content.active, .subsection.active');
+    if (activeSub?.id) return `${activeMain.id}:${activeSub.id}`;
+    return activeMain.id || 'inicio';
+}
+
+async function sendMonitorHeartbeat() {
+    try {
+        const usuario = localStorage.getItem('SABG_USUARIO');
+        if (!usuario) return;
+
+        await fetch('/api/monitor/ping', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ route: getCurrentVisibleSectionId() })
+        });
+    } catch (_) {
+        // silencioso
+    }
+}
+
+function startMonitorHeartbeat() {
+    try {
+        if (__monitorHeartbeatTimer) clearInterval(__monitorHeartbeatTimer);
+        if (!localStorage.getItem('SABG_USUARIO')) return;
+        sendMonitorHeartbeat();
+        __monitorHeartbeatTimer = setInterval(sendMonitorHeartbeat, 60000);
+    } catch (_) {
+        // silencioso
+    }
+}
+
+function stopMonitorHeartbeat() {
+    try {
+        if (__monitorHeartbeatTimer) clearInterval(__monitorHeartbeatTimer);
+        __monitorHeartbeatTimer = null;
+    } catch (_) {
+        // silencioso
+    }
+}
+
+function formatDateTimeMX(value) {
+    if (!value) return '—';
+    try {
+        return new Date(value).toLocaleString('es-MX', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (_) {
+        return String(value);
+    }
+}
+
+async function loadMonitoringSummary() {
+    if (!canViewMonitoringUI()) return;
+
+    const meta = document.getElementById('monitoreoMeta');
+    if (meta) meta.textContent = 'Cargando monitoreo...';
+
+    try {
+        const response = await fetch('/api/monitor/summary', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data?.success) {
+            throw new Error(data?.error || `HTTP ${response.status}`);
+        }
+
+        const totals = data.totals || {};
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+
+        setText('monTotalUsuarios', formatNumberMX(totals.total_usuarios));
+        setText('monTotalRegistros', formatNumberMX(totals.total_registros));
+        setText('monTotalEvidencias', formatNumberMX(totals.total_evidencias));
+        setText('monActivos5m', formatNumberMX(totals.activos_5m));
+        setText('monActivos15m', formatNumberMX(totals.activos_15m));
+        setText('monLoginsHoy', formatNumberMX(totals.logins_hoy));
+
+        const rolesBody = document.getElementById('monRolesBody');
+        if (rolesBody) {
+            const roles = Array.isArray(data.roles) ? data.roles : [];
+            rolesBody.innerHTML = roles.length
+                ? roles.map(row => `
+                    <tr>
+                        <td>${row.rol || 'sin_rol'}</td>
+                        <td>${formatNumberMX(row.total)}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="2" style="text-align:center; padding:1rem; color:#64748b;">Sin datos.</td></tr>`;
+        }
+
+        const activosBody = document.getElementById('monActivosBody');
+        if (activosBody) {
+            const rows = Array.isArray(data.active_users) ? data.active_users : [];
+            activosBody.innerHTML = rows.length
+                ? rows.map(row => `
+                    <tr>
+                        <td>${row.usuario || '—'}</td>
+                        <td>${row.rol || '—'}</td>
+                        <td>${row.dependencia || '—'}</td>
+                        <td>${row.route || '—'}</td>
+                        <td>${formatDateTimeMX(row.last_seen)}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="5" style="text-align:center; padding:1rem; color:#64748b;">Sin actividad reciente.</td></tr>`;
+        }
+
+        const loginsBody = document.getElementById('monLoginsBody');
+        if (loginsBody) {
+            const rows = Array.isArray(data.recent_logins) ? data.recent_logins : [];
+            loginsBody.innerHTML = rows.length
+                ? rows.map(row => `
+                    <tr>
+                        <td>${row.usuario || '—'}</td>
+                        <td>${row.rol || '—'}</td>
+                        <td>${row.dependencia || '—'}</td>
+                        <td>${formatDateTimeMX(row.ultimo_login)}</td>
+                        <td>${formatNumberMX(row.ingresos_7d)}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="5" style="text-align:center; padding:1rem; color:#64748b;">Sin inicios de sesión recientes.</td></tr>`;
+        }
+
+        const depsBody = document.getElementById('monDependenciasBody');
+        if (depsBody) {
+            const rows = Array.isArray(data.activity_by_dependencia) ? data.activity_by_dependencia : [];
+            depsBody.innerHTML = rows.length
+                ? rows.map(row => `
+                    <tr>
+                        <td>${row.dependencia || '—'}</td>
+                        <td>${formatNumberMX(row.activos)}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="2" style="text-align:center; padding:1rem; color:#64748b;">Sin actividad por dependencia.</td></tr>`;
+        }
+
+        const registrosBody = document.getElementById('monRegistrosBody');
+        if (registrosBody) {
+            const rows = Array.isArray(data.recent_registros) ? data.recent_registros : [];
+            registrosBody.innerHTML = rows.length
+                ? rows.map(row => `
+                    <tr>
+                        <td>${row.usuario || '—'}</td>
+                        <td>${row.rol || '—'}</td>
+                        <td>${row.dependencia || '—'}</td>
+                        <td>${row.persona_registrada || '—'}</td>
+                        <td>${row.trimestre || '—'}</td>
+                        <td>${row.anio || '—'}</td>
+                        <td>${formatDateTimeMX(row.created_at)}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="7" style="text-align:center; padding:1rem; color:#64748b;">Sin registros recientes.</td></tr>`;
+        }
+
+        const evidenciasBody = document.getElementById('monEvidenciasBody');
+        if (evidenciasBody) {
+            const rows = Array.isArray(data.recent_evidencias) ? data.recent_evidencias : [];
+            evidenciasBody.innerHTML = rows.length
+                ? rows.map(row => `
+                    <tr>
+                        <td>${row.usuario || '—'}</td>
+                        <td>${row.rol || '—'}</td>
+                        <td>${row.dependencia || '—'}</td>
+                        <td>${row.enlace_registra || '—'}</td>
+                        <td>${row.archivo_pdf_nombre || '—'}</td>
+                        <td>${row.mes || '—'}</td>
+                        <td>${row.anio || '—'}</td>
+                        <td>${formatDateTimeMX(row.created_at)}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="8" style="text-align:center; padding:1rem; color:#64748b;">Sin evidencias recientes.</td></tr>`;
+        }
+
+        if (meta) {
+            meta.textContent = `Actualizado: ${formatDateTimeMX(data.generated_at)} · Activos 60 min: ${formatNumberMX(totals.activos_60m)} · Logins 24h: ${formatNumberMX(totals.logins_24h)} · Logins 7 días: ${formatNumberMX(totals.logins_7d)}`;
+        }
+    } catch (error) {
+        if (meta) meta.textContent = `No se pudo cargar monitoreo: ${error?.message || 'Error'}`;
+    }
+}
+
+function startMonitoringAutoRefresh() {
+    try {
+        if (__monitorSummaryTimer) clearInterval(__monitorSummaryTimer);
+        if (!canViewMonitoringUI()) return;
+        loadMonitoringSummary();
+        __monitorSummaryTimer = setInterval(loadMonitoringSummary, 60000);
+    } catch (_) {
+        // silencioso
+    }
+}
+
+function stopMonitoringAutoRefresh() {
+    try {
+        if (__monitorSummaryTimer) clearInterval(__monitorSummaryTimer);
+        __monitorSummaryTimer = null;
+    } catch (_) {
+        // silencioso
+    }
 }
 // ========================================
 // Carga masiva (Admin): usuarios exportado desde sistema SABG
@@ -5325,6 +5769,11 @@ function updateStatsFromRegistros(registros){
      // Control Modal Registro
     function mostrarRegistro() {
         document.getElementById("registroModal").classList.remove("hidden");
+        const roleSelect = document.getElementById("reg_rol");
+        if (roleSelect) {
+            roleSelect.value = 'enlace';
+            handleRegistroRoleChange();
+        }
     }
 
     function cerrarRegistro() {
@@ -5333,6 +5782,20 @@ function updateStatsFromRegistros(registros){
         const regDep = document.getElementById("reg_dependencia") || document.getElementById("reg_institucion");
         if (regDep) regDep.value = "";
         document.getElementById("reg_password").value = "";
+    }
+
+    function handleRegistroRoleChange() {
+        const roleSelect = document.getElementById('reg_rol');
+        const depInput = document.getElementById('reg_dependencia');
+        if (!roleSelect || !depInput) return;
+
+        if (String(roleSelect.value || '').toLowerCase() === 'monitor') {
+            depInput.value = 'MONITOREO SABG';
+            depInput.readOnly = true;
+        } else {
+            depInput.readOnly = false;
+            if (depInput.value === 'MONITOREO SABG') depInput.value = '';
+        }
     }
 
     // ========================================
@@ -5439,6 +5902,12 @@ async function loginUsuario() {
 
         document.getElementById('loginScreen')?.classList.add('hidden');
         resetToInicioView();
+        startMonitorHeartbeat();
+        if (canViewMonitoringUI()) {
+            startMonitoringAutoRefresh();
+        } else {
+            stopMonitoringAutoRefresh();
+        }
 
         // Visibilidad estricta de controles admin
         const adminEls = [
@@ -5474,14 +5943,16 @@ async function loginUsuario() {
             document.getElementById('dropdownItemRevision')?.classList.remove('admin-only');
         }
 
-        await cargarRegistrosTrimestral();
+        if (!isMonitorUser()) {
+            await cargarRegistrosTrimestral();
+        }
 
         // Refresco cada 60s
         try {
             if (window.__rtTrimestralInterval) clearInterval(window.__rtTrimestralInterval);
             window.__rtTrimestralInterval = setInterval(() => {
                 const u = localStorage.getItem('SABG_USUARIO');
-                if (u) cargarRegistrosTrimestral();
+                if (u && !isMonitorUser()) cargarRegistrosTrimestral();
             }, 60000);
         } catch (e) {}
 
@@ -5507,6 +5978,7 @@ async function loginUsuario() {
     let dependencia = document.getElementById("reg_dependencia").value || "";
     let usuario = document.getElementById("reg_usuario").value || "";
     let password = document.getElementById("reg_password").value || "";
+    let rol = (document.getElementById("reg_rol")?.value || "enlace").trim().toLowerCase();
 
     // Limpiar espacios y convertir a mayúsculas donde corresponda
     curp = curp.trim().toUpperCase();
@@ -5517,6 +5989,11 @@ async function loginUsuario() {
     dependencia = dependencia.trim();
     usuario = usuario.trim().toUpperCase();
     password = password.trim();
+    rol = rol.trim().toLowerCase();
+
+    if (rol === 'monitor' && !dependencia) {
+        dependencia = 'MONITOREO SABG';
+    }
 
     // Validar campos vacíos
     if (!curp) {
@@ -5619,7 +6096,8 @@ async function loginUsuario() {
                 correo: correo,
                 dependencia: dependencia,
                 usuario: usuario,
-                password: password
+                password: password,
+                rol: rol
             })
         });
 
@@ -5653,7 +6131,9 @@ async function loginUsuario() {
             localStorage.removeItem('SABG_NOMBRE');
             localStorage.removeItem('SABG_ROL');
             localStorage.removeItem('SABG_DEPENDENCIA');
-            document.body.classList.remove('role-admin', 'role-superadmin');
+            document.body.classList.remove('role-admin', 'role-superadmin', 'role-monitor', 'role-enlace');
+            stopMonitorHeartbeat();
+            stopMonitoringAutoRefresh();
             try {
                 __dceveDirty.clear();
                 __dceveSelected.clear();
@@ -5677,6 +6157,10 @@ async function loginUsuario() {
     // ========================================
 
     function resetToInicioView() {
+        if (isMonitorUser()) {
+            showMainSection('monitoreoSistema');
+            return;
+        }
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
             menu.classList.remove('show');
         });
@@ -5790,6 +6274,8 @@ async function loginUsuario() {
             try { cargarRegistrosTrimestral(); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
         }
 
+        try { sendMonitorHeartbeat(); } catch (_) {}
+
 }
 
     function showMainSection(sectionId) {
@@ -5820,10 +6306,19 @@ async function loginUsuario() {
             if (btn.textContent.includes('Seguimiento') && sectionId === 'seguimientoCargas') {
                 btn.classList.add('active');
             }
+            if (btn.textContent.includes('Monitoreo') && sectionId === 'monitoreoSistema') {
+                btn.classList.add('active');
+            }
         });
 
         if (sectionId === 'seguimientoCargas') {
             try { loadSeguimientoCargas(); } catch (e) { console.warn('No se pudo cargar seguimiento:', e); }
+        }
+        if (sectionId === 'monitoreoSistema') {
+            try {
+                sendMonitorHeartbeat();
+                startMonitoringAutoRefresh();
+            } catch (e) { console.warn('No se pudo cargar monitoreo:', e); }
         }
     }
 
@@ -7952,7 +8447,9 @@ function sendUserToLoginFromExpiredSession() {
     localStorage.removeItem('SABG_NOMBRE');
     localStorage.removeItem('SABG_ROL');
     localStorage.removeItem('SABG_DEPENDENCIA');
-    document.body.classList.remove('role-admin', 'role-superadmin', 'role-enlace');
+    document.body.classList.remove('role-admin', 'role-superadmin', 'role-enlace', 'role-monitor');
+    stopMonitorHeartbeat();
+    stopMonitoringAutoRefresh();
     resetToInicioView();
     document.getElementById('loginScreen')?.classList.remove('hidden');
     showTrimestralNotice('Tu sesión venció por inactividad. Inicia sesión nuevamente.', 'warn', 9000);
@@ -8777,6 +9274,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Error al cargar el archivo. Revisa la consola.');
             }
         });
+    }
+
+    const roleSelect = document.getElementById('reg_rol');
+    if (roleSelect) {
+        roleSelect.addEventListener('change', handleRegistroRoleChange);
+        handleRegistroRoleChange();
+    }
+
+    if (localStorage.getItem('SABG_USUARIO')) {
+        startMonitorHeartbeat();
+        if (canViewMonitoringUI()) startMonitoringAutoRefresh();
     }
 });
 // === GUARDADO MASIVO A NEON (solo admin) ===

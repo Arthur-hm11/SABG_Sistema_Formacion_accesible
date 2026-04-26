@@ -4,6 +4,7 @@ import stream from "stream";
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession } from "../_lib/session.js";
+import { logAuditEvent } from "../_lib/monitoring.js";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 const MESES_EVIDENCIA = [
@@ -336,6 +337,32 @@ export default async function handler(req, res) {
         "PENDIENTE",
       ]
     );
+
+    try {
+      await logAuditEvent({
+        usuario: session.usuario || session.id || "SIN_USUARIO",
+        accion: "EVIDENCIA_UPLOAD",
+        modulo: "evidencias",
+        detalle: {
+          evidencia_id: insertRes.rows?.[0]?.id || null,
+          cuenta_registro: usuarioRegistro,
+          dependencia,
+          mes: period.month,
+          anio: period.year,
+          archivo_pdf_nombre: safeName,
+          enlace: {
+            nombre,
+            primer_apellido: primerApellido,
+            segundo_apellido: segundoApellido,
+            correo,
+          },
+        },
+        ip: req.headers["x-forwarded-for"]?.toString().split(",")[0],
+        userAgent: req.headers["user-agent"],
+      });
+    } catch (_) {
+      // El monitoreo no debe romper la subida productiva
+    }
 
     return res.json({
       ok: true,

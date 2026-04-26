@@ -1,6 +1,7 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
+import { logAuditEvent } from "../_lib/monitoring.js";
 
 function norm(v) {
   if (v === undefined || v === null) return null;
@@ -146,6 +147,31 @@ export default async function handler(req, res) {
       RETURNING *`,
       values
     );
+
+    try {
+      await logAuditEvent({
+        usuario: session.usuario || data.usuario_registro || "SIN_USUARIO",
+        accion: "REGISTRO_TRIMESTRAL_CREATE",
+        modulo: "trimestral",
+        detalle: {
+          registro_id: result.rows?.[0]?.id || null,
+          persona: {
+            nombre: clip(data.nombre, 200),
+            primer_apellido: clip(data.primer_apellido, 100),
+            segundo_apellido: clip(data.segundo_apellido, 100),
+          },
+          curp: curpClean ? `${String(curpClean).slice(0, 4)}**********${String(curpClean).slice(-4)}` : null,
+          dependencia: norm(data.dependencia),
+          trimestre: clip(data.trimestre, 50),
+          anio: clip(String(data.anio ?? ""), 4),
+          cuenta_registro: session.usuario || data.usuario_registro || null,
+        },
+        ip: req.headers["x-forwarded-for"]?.toString().split(",")[0],
+        userAgent: req.headers["user-agent"],
+      });
+    } catch (_) {
+      // El monitoreo no debe romper el registro productivo
+    }
 
     return res.status(201).json({
       success: true,
