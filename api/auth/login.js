@@ -3,6 +3,7 @@ import { serialize } from "cookie";
 import bcrypt from "bcryptjs";
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
+import { ensureMonitoringTables, logAuditEvent } from "../_lib/monitoring.js";
 
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
@@ -75,6 +76,44 @@ export default async function handler(req, res) {
     });
 
     res.setHeader("Set-Cookie", cookie);
+
+    try {
+      await ensureMonitoringTables();
+      const usuarioUp = String(u.usuario || "").trim().toUpperCase();
+      const rol = String(u.rol || "").trim().toLowerCase();
+      const dependencia = String(u.dependencia || "").trim();
+      const route = "inicio";
+
+      await pool.query(
+        `
+          INSERT INTO monitor_heartbeats (usuario, rol, dependencia, route, last_seen, updated_at)
+          VALUES ($1, $2, $3, $4, NOW(), NOW())
+          ON CONFLICT (usuario)
+          DO UPDATE SET
+            rol = EXCLUDED.rol,
+            dependencia = EXCLUDED.dependencia,
+            route = EXCLUDED.route,
+            last_seen = NOW(),
+            updated_at = NOW()
+        `,
+        [usuarioUp, rol, dependencia, route]
+      );
+
+      await logAuditEvent({
+        usuario: usuarioUp,
+        accion: "LOGIN",
+        modulo: "auth",
+        detalle: {
+          ok: true,
+          rol,
+          dependencia,
+        },
+        ip: req.headers["x-forwarded-for"]?.toString().split(",")[0],
+        userAgent: req.headers["user-agent"],
+      });
+    } catch (monitorError) {
+      console.error("Error registrando monitoreo de login:", monitorError);
+    }
 
     return res.json({
       success: true,
