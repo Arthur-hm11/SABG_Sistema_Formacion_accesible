@@ -47,6 +47,24 @@ function normalizeCurpForDb(curpVal) {
   return compact;
 }
 
+function isAllowedMissingCurp(curpVal) {
+  const s = upperOrNull(curpVal);
+  if (!s) return true;
+  return new Set([
+    "SIN CURP",
+    "S/CURP",
+    "SIN INFORMACION",
+    "SIN INFORMACIÓN",
+    "NO CUENTA CON CURP",
+    "N/A",
+    "NO APLICA",
+    "NA",
+    "NULL",
+    "-",
+    "0",
+  ]).has(s);
+}
+
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
@@ -103,9 +121,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: "Faltan datos requeridos" });
     }
 
+    const observacionesClean = norm(data.observaciones);
     const curpClean = normalizeCurpForDb(data.curp);
-    if (!curpClean) {
-      return res.status(400).json({ success: false, error: "La CURP es obligatoria y debe tener un formato válido de 18 caracteres." });
+    const curpMissingAllowed = isAllowedMissingCurp(data.curp);
+
+    if (!curpClean && !curpMissingAllowed) {
+      return res.status(400).json({
+        success: false,
+        error: "La CURP debe tener un formato válido de 18 caracteres o dejarse sin capturar con justificación en observaciones."
+      });
+    }
+
+    if (!curpClean && !observacionesClean) {
+      return res.status(400).json({
+        success: false,
+        error: "Si no cuenta con CURP, debes justificarlo en el campo de observaciones."
+      });
     }
 
     // Si viene CURP válida, revisar si ya existe
@@ -151,7 +182,7 @@ export default async function handler(req, res) {
       norm(data.institucion_educativa),
       norm(data.modalidad),
       norm(data.estado_avance),
-      norm(data.observaciones),
+      observacionesClean,
       clip(data.usuario_registro, 100),
     ];
 

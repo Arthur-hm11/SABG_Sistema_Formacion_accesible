@@ -3023,8 +3023,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 <input type="text" name="nombre" required id="nombre">
                             </div>
                             <div class="form-group">
-                                <label for="curp">CURP <span class="required">*</span></label>
-                                <input type="text" name="curp" id="curp" required maxlength="18" placeholder="18 caracteres" style="text-transform: uppercase;">
+                                <label for="curp">CURP</label>
+                                <input type="text" name="curp" id="curp" maxlength="18" placeholder="18 caracteres o sin captura" style="text-transform: uppercase;">
                             </div>
                             <div class="form-group">
                                 <label for="nivel_puesto">Nivel de Puesto <span class="required">*</span></label>
@@ -5196,7 +5196,8 @@ function showBulkReportModal(aggregateReport, extra={}){
     const ok = Number(inserted || 0);
     const dup = Number(rep.duplicates_omitted || 0);
     const empty = Number(rep.empty_discarded || 0);
-    const invCurp = Number(rep.curp_invalid_to_null || 0);
+    const missingCurp = Number(rep.curp_missing_allowed || 0);
+    const invalidCurp = Number(rep.curp_invalid_skipped || 0);
     const errorsCount = Number(rep.errors_count || 0);
     const received = Number(rep.received || 0);
     const processed = Number(rep.processed || 0);
@@ -5231,7 +5232,8 @@ function showBulkReportModal(aggregateReport, extra={}){
     kpis.innerHTML = `
       <div class="bulk-kpi"><div class="label">Insertados</div><div class="value">${inserted}</div><div class="hint">Registros guardados en la tabla</div></div>
       <div class="bulk-kpi"><div class="label">Duplicados omitidos</div><div class="value">${dup}</div><div class="hint">Requiere UNIQUE (curp, trimestre) WHERE curp IS NOT NULL</div></div>
-      <div class="bulk-kpi"><div class="label">CURP inválida → NULL</div><div class="value">${invCurp}</div><div class="hint">CURP vacía o inválida se guarda como NULL</div></div>
+      <div class="bulk-kpi"><div class="label">CURP sin dato aceptada</div><div class="value">${missingCurp}</div><div class="hint">NULL / SIN CURP se guardan y quedan reportadas</div></div>
+      <div class="bulk-kpi"><div class="label">CURP inválida omitida</div><div class="value">${invalidCurp}</div><div class="hint">Filas con CURP mal capturada no se guardan</div></div>
       <div class="bulk-kpi"><div class="label">Filas vacías descartadas</div><div class="value">${empty}</div><div class="hint">Filas sin datos (solo espacios / títulos)</div></div>
       <div class="bulk-kpi"><div class="label">Errores</div><div class="value">${errorsCount}</div><div class="hint">Si hay, revisa detalle abajo</div></div>
       <div class="bulk-kpi"><div class="label">Recibidos</div><div class="value">${received}</div><div class="hint">Filas recibidas del frontend</div></div>
@@ -8643,20 +8645,21 @@ async function guardarRegistroTrimestral() {
         nivelTabular = nivelTabularOtroValue;
     }
 
-    const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/;
-    if (!curpValue) {
-        alert('⚠️ El campo CURP es obligatorio.');
-        document.getElementById('curp')?.focus();
-        return;
-    }
-
-    if (curpValue.length !== 18 || !curpPattern.test(curpValue)) {
-        alert('⚠️ La CURP debe tener 18 caracteres y un formato válido.');
-        document.getElementById('curp')?.focus();
-        return;
-    }
-
     const observaciones = String(formData.get('observaciones') || '').trim();
+    const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/;
+    const curpMissingAllowed = !curpValue || ['SIN CURP', 'S/CURP', 'SIN INFORMACION', 'SIN INFORMACIÓN', 'NO CUENTA CON CURP', 'N/A', 'NO APLICA', 'NA', 'NULL', '-', '0'].includes(curpValue);
+
+    if (!curpMissingAllowed && (curpValue.length !== 18 || !curpPattern.test(curpValue))) {
+        alert('⚠️ La CURP debe tener 18 caracteres y un formato válido, o dejarse sin capturar con justificación en observaciones.');
+        document.getElementById('curp')?.focus();
+        return;
+    }
+
+    if (curpMissingAllowed && !observaciones) {
+        alert('⚠️ Si no cuenta con CURP, debes justificarlo en observaciones.');
+        document.getElementById('observaciones')?.focus();
+        return;
+    }
 
     const data = {
         enlace_nombre: formData.get('enlace_nombre'),
@@ -8670,7 +8673,7 @@ async function guardarRegistroTrimestral() {
         primer_apellido: formData.get('primer_apellido'),
         segundo_apellido: formData.get('segundo_apellido'),
         nombre: formData.get('nombre'),
-        curp: curpValue,
+        curp: curpMissingAllowed ? null : curpValue,
         nivel_puesto: nivelPuesto,
         nivel_tabular: nivelTabular,
         ramo_ur: formData.get('ramo_ur'),

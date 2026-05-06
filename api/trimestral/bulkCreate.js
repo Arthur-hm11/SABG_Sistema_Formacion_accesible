@@ -44,6 +44,31 @@ function normalizeCurpForDb(curpVal) {
   return compact;
 }
 
+function classifyCurp(curpVal) {
+  const s = upperOrNull(curpVal);
+  if (!s) return { status: "missing", value: null };
+
+  const allowedMissing = new Set([
+    "SIN CURP",
+    "S/CURP",
+    "SIN INFORMACION",
+    "SIN INFORMACIÓN",
+    "NO CUENTA CON CURP",
+    "N/A",
+    "NO APLICA",
+    "NA",
+    "NULL",
+    "-",
+    "0",
+  ]);
+  if (allowedMissing.has(s)) return { status: "missing", value: null };
+
+  const compact = s.replace(/[^A-Z0-9]/g, "");
+  if (compact.length !== 18) return { status: "invalid", value: null };
+  if (!/^[A-Z0-9]{18}$/.test(compact)) return { status: "invalid", value: null };
+  return { status: "valid", value: compact };
+}
+
 // SOLO descarta si TODA la fila está vacía
 function isTrulyEmptyRow(r) {
   const keys = [
@@ -96,7 +121,8 @@ export default async function handler(req, res) {
     received: 0,
     empty_discarded: 0,
     processed: 0,
-    curp_invalid_to_null: 0,
+    curp_missing_allowed: 0,
+    curp_invalid_skipped: 0,
     inserted: 0,
     duplicates_omitted: 0,
     errors_count: 0,
@@ -158,8 +184,23 @@ export default async function handler(req, res) {
       }
 
       const curpRaw = raw?.curp;
-      const curpClean = normalizeCurpForDb(curpRaw);
-      if (norm(curpRaw) !== null && curpClean === null) report.curp_invalid_to_null += 1;
+      const curpInfo = classifyCurp(curpRaw);
+      if (curpInfo.status === "missing") {
+        report.curp_missing_allowed += 1;
+      } else if (curpInfo.status === "invalid") {
+        report.curp_invalid_skipped += 1;
+        report.errors_count += 1;
+        report.errors.push({
+          trimestre: raw?.trimestre ?? null,
+          curp: curpRaw ?? null,
+          id_rusp: raw?.id_rusp ?? null,
+          nombre: raw?.nombre ?? null,
+          primer_apellido: raw?.primer_apellido ?? null,
+          segundo_apellido: raw?.segundo_apellido ?? null,
+          message: "CURP inválida. La fila no se guardó."
+        });
+        continue;
+      }
 
       const anioSeguro =
         raw?.anio ?? raw?.ano ?? raw?.año ?? raw?.AÑO ?? raw?.ANIO ?? raw?.Ano ?? null;
@@ -178,7 +219,7 @@ export default async function handler(req, res) {
         segundo_apellido: clip(raw.segundo_apellido, 100),
         nombre: clip(raw.nombre, 200),
 
-        curp: curpClean,
+        curp: curpInfo.value,
 
         nivel_puesto: clip(raw.nivel_puesto, 200),
         nivel_tabular: clip(raw.nivel_tabular, 50),
