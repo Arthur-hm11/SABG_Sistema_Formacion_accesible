@@ -9336,7 +9336,7 @@ function initAnioVigente() {
     const anioSelect = document.getElementById('anio');
     if (!anioSelect) return;
 
-    const renderCurrentYear = () => {
+    const lockCurrentYear = () => {
         const currentYear = String(new Date().getFullYear());
         anioSelect.innerHTML = '';
         const option = document.createElement('option');
@@ -9344,13 +9344,22 @@ function initAnioVigente() {
         option.textContent = currentYear;
         anioSelect.appendChild(option);
         anioSelect.value = currentYear;
+        anioSelect.setAttribute('aria-readonly', 'true');
+        anioSelect.tabIndex = -1;
+        anioSelect.style.pointerEvents = 'none';
+        anioSelect.style.backgroundColor = '#f3f4f6';
+        anioSelect.style.color = '#374151';
+        anioSelect.style.cursor = 'default';
     };
 
-    renderCurrentYear();
+    lockCurrentYear();
+
+    anioSelect.addEventListener('mousedown', (event) => event.preventDefault());
+    anioSelect.addEventListener('keydown', (event) => event.preventDefault());
 
     const form = document.getElementById('trimestralForm');
     form?.addEventListener('reset', () => {
-        setTimeout(renderCurrentYear, 0);
+        setTimeout(lockCurrentYear, 0);
     });
 }
 
