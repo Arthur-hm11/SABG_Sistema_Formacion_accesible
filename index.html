@@ -3051,6 +3051,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 <select name="nivel_tabular" required id="nivel_tabular" disabled>
                                     <option value="">Primero seleccione Nivel de Puesto</option>
                                 </select>
+                                <p class="field-help">Si selecciona <strong>OTRO</strong>, especifique el nivel tabular en el campo de observaciones.</p>
                             </div>
                             <div class="form-group" style="position: relative;">
                                 <label for="dependenciaInput">Dependencia <span class="required">*</span></label>
@@ -7194,7 +7195,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         },
         {
                 "dependencia": "FONDO DE CULTURA ECONÓMICA",
-                "ramoUr": "2026-03-11 00:00:00"
+                "ramoUr": "10-K2N"
         },
         {
                 "dependencia": "IMPRESORA Y ENCUADERNADORA PROGRESO, S.A. DE C.V.",
@@ -8613,6 +8614,15 @@ async function guardarRegistroTrimestral() {
         modalidad = modalidadOtroValue;
     }
     
+    const observaciones = String(formData.get('observaciones') || '').trim();
+    const nivelTabularSeleccionado = String(formData.get('nivel_tabular') || '').trim().toUpperCase();
+
+    if (nivelTabularSeleccionado === 'OTRO' && !observaciones) {
+        alert('⚠️ Si selecciona OTRO en Nivel Tabular, especifique el dato en Observaciones.');
+        document.getElementById('observaciones')?.focus();
+        return;
+    }
+
     const data = {
         enlace_nombre: formData.get('enlace_nombre'),
         enlace_primer_apellido: formData.get('enlace_apellido1'),
@@ -8636,7 +8646,7 @@ async function guardarRegistroTrimestral() {
         institucion_educativa: institucionEducativa,
         modalidad,
         estado_avance: formData.get('estado_avance'),
-        observaciones: formData.get('observaciones'),
+        observaciones,
         usuario_registro: userName
     };
 
@@ -9225,7 +9235,10 @@ function llenarNivelTabular(nivelPuesto, valorActual = '') {
     const nivelTabular = document.getElementById('nivel_tabular');
     if (!nivelTabular) return;
 
-    const opciones = NIVELES_TABULARES_POR_PUESTO[nivelPuesto] || [];
+    const opcionesBase = NIVELES_TABULARES_POR_PUESTO[nivelPuesto] || [];
+    const opciones = opcionesBase.includes('OTRO') || opcionesBase.length === 0
+        ? [...opcionesBase]
+        : [...opcionesBase, 'OTRO'];
     nivelTabular.innerHTML = '';
 
     const placeholder = document.createElement('option');
