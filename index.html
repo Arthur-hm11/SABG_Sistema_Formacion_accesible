@@ -2924,8 +2924,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0;">usuario@institucion.gob.mx</td>
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0;">55-0000-0000</td>
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0;">MAESTRÍA</td>
-                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">UNIVERSIDAD_ABIERTA_Y_A_DISTANCIA_DE_MÉXICO_UNADM</td>
-                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">A_DISTANCIA</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">UNIVERSIDAD ABIERTA Y A DISTANCIA DE MÉXICO UNADM</td>
+                                        <td style="padding: 1rem; border: 1px solid #e2e8f0;">A DISTANCIA</td>
                                         <td style="padding: 1rem; border: 1px solid #e2e8f0; color: #10b981; font-weight: bold;">PERSONA INSCRITA</td>
                                     </tr>
                                 </tbody>
@@ -8537,22 +8537,22 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
           <td>${registro.segundo_apellido || ""}</td>
           <td>${registro.nombre || ""}</td>
           <td>${registro.curp || ""}</td>
-          <td>${registro.nivel_puesto || ""}</td>
-          <td>${registro.nivel_tabular || ""}</td>
+          <td>${humanizarValorCatalogo(registro.nivel_puesto) || ""}</td>
+          <td>${humanizarValorCatalogo(registro.nivel_tabular) || ""}</td>
           <td>${registro.ramo_ur || ""}</td>
           <td>${registro.dependencia || ""}</td>
           <td>${registro.correo_institucional || ""}</td>
           <td>${registro.telefono_institucional || ""}</td>
           <td class="editable-cell" data-field="nivel_educativo" onclick="makeEditable(this)" role="button" tabindex="0">
-            ${registro.nivel_educativo || ""}
+            ${humanizarValorCatalogo(registro.nivel_educativo) || ""}
             <span class="edit-icon">✏️</span>
           </td>
           <td class="editable-cell" data-field="institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0">
-            ${registro.institucion_educativa || ""}
+            ${humanizarValorCatalogo(registro.institucion_educativa) || ""}
             <span class="edit-icon">✏️</span>
           </td>
           <td class="editable-cell" data-field="modalidad" onclick="makeEditable(this)" role="button" tabindex="0">
-            ${registro.modalidad || ""}
+            ${humanizarValorCatalogo(registro.modalidad) || ""}
             <span class="edit-icon">✏️</span>
           </td>
           <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
@@ -9024,6 +9024,12 @@ function resolverInstitucionEducativa(valor) {
 function resolverModalidadEducativa(valor, opciones = []) {
     const key = normalizarCatalogo(valor);
     return opciones.find((modalidad) => normalizarCatalogo(modalidad) === key) || '';
+}
+
+function humanizarValorCatalogo(valor) {
+    const raw = String(valor || '').trim();
+    if (!raw) return '';
+    return raw.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 const INSTITUCION_EDUCATIVA_OTRO = 'OTRO';
