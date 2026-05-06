@@ -3045,13 +3045,20 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                     <option value="TITULAR_DE_UNIDAD_O_SUPERIOR">TITULAR DE UNIDAD O SUPERIOR</option>
                                     <option value="OTRO">OTRO</option>
                                 </select>
+                                <div id="nivelPuestoOtroBox" class="hidden" style="margin-top: 0.75rem;">
+                                    <label for="nivel_puesto_otro">Especifique Nivel de Puesto <span class="required">*</span></label>
+                                    <input type="text" id="nivel_puesto_otro" maxlength="50" placeholder="ESPECIFIQUE. MÁXIMO 50 CARACTERES." style="text-transform: uppercase;">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="nivel_tabular">Nivel Tabular <span class="required">*</span></label>
                                 <select name="nivel_tabular" required id="nivel_tabular" disabled>
                                     <option value="">Primero seleccione Nivel de Puesto</option>
                                 </select>
-                                <p class="field-help">Si selecciona <strong>OTRO</strong>, especifique el nivel tabular en el campo de observaciones.</p>
+                                <div id="nivelTabularOtroBox" class="hidden" style="margin-top: 0.75rem;">
+                                    <label for="nivel_tabular_otro">Especifique Nivel Tabular <span class="required">*</span></label>
+                                    <input type="text" id="nivel_tabular_otro" maxlength="50" placeholder="ESPECIFIQUE. MÁXIMO 50 CARACTERES." style="text-transform: uppercase;">
+                                </div>
                             </div>
                             <div class="form-group" style="position: relative;">
                                 <label for="dependenciaInput">Dependencia <span class="required">*</span></label>
@@ -8591,10 +8598,18 @@ async function guardarRegistroTrimestral() {
     const institucionOtroInput = document.getElementById('institucion_educativa_otro');
     const modalidadSelectValue = formData.get('modalidad');
     const modalidadOtroInput = document.getElementById('modalidad_otro');
+    const nivelPuestoSelectValue = formData.get('nivel_puesto');
+    const nivelPuestoOtroInput = document.getElementById('nivel_puesto_otro');
+    const nivelTabularSelectValue = formData.get('nivel_tabular');
+    const nivelTabularOtroInput = document.getElementById('nivel_tabular_otro');
     const institucionOtroValue = String(institucionOtroInput?.value || '').trim();
     const modalidadOtroValue = String(modalidadOtroInput?.value || '').trim().toUpperCase().slice(0, 10);
+    const nivelPuestoOtroValue = String(nivelPuestoOtroInput?.value || '').trim().toUpperCase().slice(0, 50);
+    const nivelTabularOtroValue = String(nivelTabularOtroInput?.value || '').trim().toUpperCase().slice(0, 50);
     let institucionEducativa = institucionSelectValue;
     let modalidad = modalidadSelectValue;
+    let nivelPuesto = nivelPuestoSelectValue;
+    let nivelTabular = nivelTabularSelectValue;
 
     if (isInstitucionEducativaOtro(institucionSelectValue)) {
         if (!institucionOtroValue) {
@@ -8613,15 +8628,26 @@ async function guardarRegistroTrimestral() {
         }
         modalidad = modalidadOtroValue;
     }
-    
-    const observaciones = String(formData.get('observaciones') || '').trim();
-    const nivelTabularSeleccionado = String(formData.get('nivel_tabular') || '').trim().toUpperCase();
 
-    if (nivelTabularSeleccionado === 'OTRO' && !observaciones) {
-        alert('⚠️ Si selecciona OTRO en Nivel Tabular, especifique el dato en Observaciones.');
-        document.getElementById('observaciones')?.focus();
-        return;
+    if (isNivelPuestoOtro(nivelPuestoSelectValue)) {
+        if (!nivelPuestoOtroValue) {
+            alert('⚠️ Especifique el Nivel de Puesto. Máximo 50 caracteres.');
+            nivelPuestoOtroInput?.focus();
+            return;
+        }
+        nivelPuesto = nivelPuestoOtroValue;
     }
+
+    if (isNivelTabularOtro(nivelTabularSelectValue)) {
+        if (!nivelTabularOtroValue) {
+            alert('⚠️ Especifique el Nivel Tabular. Máximo 50 caracteres.');
+            nivelTabularOtroInput?.focus();
+            return;
+        }
+        nivelTabular = nivelTabularOtroValue;
+    }
+
+    const observaciones = String(formData.get('observaciones') || '').trim();
 
     const data = {
         enlace_nombre: formData.get('enlace_nombre'),
@@ -8636,8 +8662,8 @@ async function guardarRegistroTrimestral() {
         segundo_apellido: formData.get('segundo_apellido'),
         nombre: formData.get('nombre'),
         curp: formData.get('curp'),
-        nivel_puesto: formData.get('nivel_puesto'),
-        nivel_tabular: formData.get('nivel_tabular'),
+        nivel_puesto: nivelPuesto,
+        nivel_tabular: nivelTabular,
         ramo_ur: formData.get('ramo_ur'),
         dependencia: formData.get('dependencia'),
         correo_institucional: formData.get('correo_institucional'),
@@ -8990,6 +9016,8 @@ function resolverModalidadEducativa(valor, opciones = []) {
 
 const INSTITUCION_EDUCATIVA_OTRO = 'OTRO';
 const MODALIDAD_OTRO = 'OTRO';
+const NIVEL_PUESTO_OTRO = 'OTRO';
+const NIVEL_TABULAR_OTRO = 'OTRO';
 
 function isInstitucionEducativaOtro(valor) {
     return normalizarCatalogo(valor) === INSTITUCION_EDUCATIVA_OTRO;
@@ -8997,6 +9025,14 @@ function isInstitucionEducativaOtro(valor) {
 
 function isModalidadOtro(valor) {
     return normalizarCatalogo(valor) === MODALIDAD_OTRO;
+}
+
+function isNivelPuestoOtro(valor) {
+    return normalizarCatalogo(valor) === NIVEL_PUESTO_OTRO;
+}
+
+function isNivelTabularOtro(valor) {
+    return normalizarCatalogo(valor) === NIVEL_TABULAR_OTRO;
 }
 
 function llenarSelectBasico(select, opciones, placeholder, valorActual = '') {
@@ -9231,8 +9267,43 @@ const NIVELES_TABULARES_POR_PUESTO = {
     'OTRO': ['NO APLICA']
 };
 
+function syncNivelPuestoOtro() {
+    const select = document.getElementById('nivel_puesto');
+    const box = document.getElementById('nivelPuestoOtroBox');
+    const input = document.getElementById('nivel_puesto_otro');
+    if (!select || !box || !input) return;
+
+    const esOtro = isNivelPuestoOtro(select.value);
+    box.classList.toggle('hidden', !esOtro);
+    input.disabled = !esOtro;
+    input.required = esOtro;
+    input.maxLength = 50;
+    if (esOtro) {
+        input.value = String(input.value || '').toUpperCase().slice(0, 50);
+    }
+    if (!esOtro) input.value = '';
+}
+
+function syncNivelTabularOtro() {
+    const select = document.getElementById('nivel_tabular');
+    const box = document.getElementById('nivelTabularOtroBox');
+    const input = document.getElementById('nivel_tabular_otro');
+    if (!select || !box || !input) return;
+
+    const esOtro = isNivelTabularOtro(select.value);
+    box.classList.toggle('hidden', !esOtro);
+    input.disabled = !esOtro;
+    input.required = esOtro;
+    input.maxLength = 50;
+    if (esOtro) {
+        input.value = String(input.value || '').toUpperCase().slice(0, 50);
+    }
+    if (!esOtro) input.value = '';
+}
+
 function llenarNivelTabular(nivelPuesto, valorActual = '') {
     const nivelTabular = document.getElementById('nivel_tabular');
+    const otroInput = document.getElementById('nivel_tabular_otro');
     if (!nivelTabular) return;
 
     const opcionesBase = NIVELES_TABULARES_POR_PUESTO[nivelPuesto] || [];
@@ -9254,16 +9325,54 @@ function llenarNivelTabular(nivelPuesto, valorActual = '') {
     });
 
     nivelTabular.disabled = opciones.length === 0;
-    nivelTabular.value = opciones.includes(valorActual) ? valorActual : '';
+    if (opciones.includes(valorActual)) {
+        nivelTabular.value = valorActual;
+    } else if (valorActual) {
+        nivelTabular.value = NIVEL_TABULAR_OTRO;
+        if (otroInput) otroInput.value = String(valorActual).trim().toUpperCase().slice(0, 50);
+    } else {
+        nivelTabular.value = '';
+    }
+
+    syncNivelTabularOtro();
 }
 
 function initNivelPuestoTabularVinculado() {
     const nivelPuesto = document.getElementById('nivel_puesto');
     const nivelTabular = document.getElementById('nivel_tabular');
+    const nivelPuestoOtro = document.getElementById('nivel_puesto_otro');
+    const nivelTabularOtro = document.getElementById('nivel_tabular_otro');
+    const form = document.getElementById('trimestralForm');
     if (!nivelPuesto || !nivelTabular) return;
 
     llenarNivelTabular(nivelPuesto.value, nivelTabular.value);
-    nivelPuesto.addEventListener('change', () => llenarNivelTabular(nivelPuesto.value));
+    syncNivelPuestoOtro();
+    syncNivelTabularOtro();
+
+    nivelPuesto.addEventListener('change', () => {
+        syncNivelPuestoOtro();
+        llenarNivelTabular(nivelPuesto.value);
+    });
+
+    nivelTabular.addEventListener('change', () => {
+        syncNivelTabularOtro();
+    });
+
+    nivelPuestoOtro?.addEventListener('input', () => {
+        nivelPuestoOtro.value = String(nivelPuestoOtro.value || '').toUpperCase().slice(0, 50);
+    });
+
+    nivelTabularOtro?.addEventListener('input', () => {
+        nivelTabularOtro.value = String(nivelTabularOtro.value || '').toUpperCase().slice(0, 50);
+    });
+
+    form?.addEventListener('reset', () => {
+        setTimeout(() => {
+            llenarNivelTabular('', '');
+            syncNivelPuestoOtro();
+            syncNivelTabularOtro();
+        }, 0);
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
