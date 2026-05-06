@@ -3023,8 +3023,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                 <input type="text" name="nombre" required id="nombre">
                             </div>
                             <div class="form-group">
-                                <label for="curp">CURP</label>
-                                <input type="text" name="curp" id="curp">
+                                <label for="curp">CURP <span class="required">*</span></label>
+                                <input type="text" name="curp" id="curp" required maxlength="18" placeholder="18 caracteres" style="text-transform: uppercase;">
                             </div>
                             <div class="form-group">
                                 <label for="nivel_puesto">Nivel de Puesto <span class="required">*</span></label>
@@ -8601,6 +8601,7 @@ async function guardarRegistroTrimestral() {
     const modalidadOtroValue = String(modalidadOtroInput?.value || '').trim().toUpperCase().slice(0, 10);
     const nivelPuestoOtroValue = String(nivelPuestoOtroInput?.value || '').trim().toUpperCase().slice(0, 50);
     const nivelTabularOtroValue = String(nivelTabularOtroInput?.value || '').trim().toUpperCase().slice(0, 50);
+    const curpValue = String(formData.get('curp') || '').trim().toUpperCase();
     let institucionEducativa = institucionSelectValue;
     let modalidad = modalidadSelectValue;
     let nivelPuesto = nivelPuestoSelectValue;
@@ -8642,6 +8643,19 @@ async function guardarRegistroTrimestral() {
         nivelTabular = nivelTabularOtroValue;
     }
 
+    const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/;
+    if (!curpValue) {
+        alert('⚠️ El campo CURP es obligatorio.');
+        document.getElementById('curp')?.focus();
+        return;
+    }
+
+    if (curpValue.length !== 18 || !curpPattern.test(curpValue)) {
+        alert('⚠️ La CURP debe tener 18 caracteres y un formato válido.');
+        document.getElementById('curp')?.focus();
+        return;
+    }
+
     const observaciones = String(formData.get('observaciones') || '').trim();
 
     const data = {
@@ -8656,7 +8670,7 @@ async function guardarRegistroTrimestral() {
         primer_apellido: formData.get('primer_apellido'),
         segundo_apellido: formData.get('segundo_apellido'),
         nombre: formData.get('nombre'),
-        curp: formData.get('curp'),
+        curp: curpValue,
         nivel_puesto: nivelPuesto,
         nivel_tabular: nivelTabular,
         ramo_ur: formData.get('ramo_ur'),

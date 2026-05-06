@@ -80,12 +80,33 @@ export default async function handler(req, res) {
       data.usuario_registro = session.usuario || data.usuario_registro;
     }
 
-    // Validar datos requeridos mínimos
-    if (!norm(data.enlace_nombre) || !norm(data.anio) || !norm(data.trimestre) || !norm(data.nombre)) {
+    // Validar datos requeridos del formulario
+    if (
+      !norm(data.enlace_nombre) ||
+      !norm(data.anio) ||
+      !norm(data.trimestre) ||
+      !norm(data.id_rusp) ||
+      !norm(data.primer_apellido) ||
+      !norm(data.segundo_apellido) ||
+      !norm(data.nombre) ||
+      !norm(data.nivel_puesto) ||
+      !norm(data.nivel_tabular) ||
+      !norm(data.ramo_ur) ||
+      !norm(data.dependencia) ||
+      !norm(data.correo_institucional) ||
+      !norm(data.telefono_institucional) ||
+      !norm(data.nivel_educativo) ||
+      !norm(data.institucion_educativa) ||
+      !norm(data.modalidad) ||
+      !norm(data.estado_avance)
+    ) {
       return res.status(400).json({ success: false, error: "Faltan datos requeridos" });
     }
 
     const curpClean = normalizeCurpForDb(data.curp);
+    if (!curpClean) {
+      return res.status(400).json({ success: false, error: "La CURP es obligatoria y debe tener un formato válido de 18 caracteres." });
+    }
 
     // Si viene CURP válida, revisar si ya existe
     if (curpClean) {
@@ -102,7 +123,7 @@ export default async function handler(req, res) {
       if (existe.rows.length > 0) {
         return res.status(409).json({
           success: false,
-          error: "La persona ya está registrada."
+          error: "La CURP ya está registrada."
         });
       }
     }
@@ -183,7 +204,7 @@ export default async function handler(req, res) {
     if (error?.code === "23505") {
       return res.status(409).json({
         success: false,
-        error: "La persona ya está registrada."
+        error: "La CURP ya está registrada."
       });
     }
 
