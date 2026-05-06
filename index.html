@@ -2994,12 +2994,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="anio">Año <span class="required">*</span></label>
-                                <select name="anio" required id="anio">
-                                    <option value="">Seleccione...</option>
-                                    <option value="2025">2025</option>
-                                    <option value="2026">2026</option>
-                                    <option value="2027">2027</option>
-                                </select>
+                                <select name="anio" required id="anio"></select>
                             </div>
                             <div class="form-group">
                                 <label for="trimestre">Trimestre <span class="required">*</span></label>
@@ -9337,6 +9332,28 @@ function llenarNivelTabular(nivelPuesto, valorActual = '') {
     syncNivelTabularOtro();
 }
 
+function initAnioVigente() {
+    const anioSelect = document.getElementById('anio');
+    if (!anioSelect) return;
+
+    const renderCurrentYear = () => {
+        const currentYear = String(new Date().getFullYear());
+        anioSelect.innerHTML = '';
+        const option = document.createElement('option');
+        option.value = currentYear;
+        option.textContent = currentYear;
+        anioSelect.appendChild(option);
+        anioSelect.value = currentYear;
+    };
+
+    renderCurrentYear();
+
+    const form = document.getElementById('trimestralForm');
+    form?.addEventListener('reset', () => {
+        setTimeout(renderCurrentYear, 0);
+    });
+}
+
 function initNivelPuestoTabularVinculado() {
     const nivelPuesto = document.getElementById('nivel_puesto');
     const nivelTabular = document.getElementById('nivel_tabular');
@@ -9380,6 +9397,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
     try { userDependencia = localStorage.getItem('SABG_DEPENDENCIA') || userDependencia; } catch(e) {}
     initDependenciaAutocomplete();
+    initAnioVigente();
     initNivelPuestoTabularVinculado();
     initEducacionVinculada();
     applyRoleVisibility();
