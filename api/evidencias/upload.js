@@ -268,8 +268,8 @@ export default async function handler(req, res) {
     const dependencia = clean(session.dependencia, 250);
     const usuarioRegistro = clean(session.usuario || session.id, 200);
 
-    if (!nombre || !primerApellido || !segundoApellido || !correo) {
-      return res.status(400).json({ ok: false, error: "Completa todos los datos del Enlace." });
+    if (!nombre || !primerApellido || !correo) {
+      return res.status(400).json({ ok: false, error: "Completa los datos requeridos del Enlace." });
     }
 
     if (!dependencia) {

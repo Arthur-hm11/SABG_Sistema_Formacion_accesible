@@ -3695,8 +3695,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         <input type="text" required>
                     </div>
                     <div class="form-group">
-                        <label>Segundo Apellido <span class="required">*</span></label>
-                        <input type="text" required>
+                        <label>Segundo Apellido</label>
+                        <input type="text">
                     </div>
                     <div class="form-group">
                         <label>Correo Institucional <span class="required">*</span></label>
@@ -9700,7 +9700,7 @@ setTimeout(__setSaveButtonsState, 800);
       const file = document.getElementById("pdfFile")?.files?.[0] || null;
       const period = getCurrentEvidencePeriod();
 
-      if (!nombre || !primerApellido || !segundoApellido || !correo) throw new Error("Completa todos los datos del Enlace.");
+      if (!nombre || !primerApellido || !correo) throw new Error("Completa los datos requeridos del Enlace.");
       if (!file) throw new Error("Selecciona un archivo PDF.");
       if (!String(file.name||"").toLowerCase().endsWith(".pdf")) throw new Error("Solo se permiten archivos PDF.");
       if (!isCurrentEvidenceMonth(window.__evidenciaMes)) {
