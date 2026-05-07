@@ -1303,6 +1303,14 @@
             display: none !important;
         }
 
+        body.role-superadmin .dceve-copy-admin {
+            display: none !important;
+        }
+
+        body:not(.role-superadmin) .dceve-copy-superadmin {
+            display: none !important;
+        }
+
         .seguimiento-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -3395,8 +3403,13 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     
                     <div class="info-box">
                         <h3>📋 Panel de Control DCEVE</h3>
-                        <ul>
+                        <ul class="dceve-copy-admin">
                             <li>Visualice las evidencias registradas</li>
+                        </ul>
+                        <ul class="dceve-copy-superadmin">
+                            <li>Visualice las evidencias registradas por las dependencias</li>
+                            <li>Descargue los archivos PDF adjuntos</li>
+                            <li>Seleccione el estado de avance: OK, PENDIENTE, SIN ENTREGA o DEPENDENCIA QUE NO DEBE ENTREGAR</li>
                         </ul>
                     </div>
 
