@@ -105,7 +105,6 @@ export default async function handler(req, res) {
       !norm(data.trimestre) ||
       !norm(data.id_rusp) ||
       !norm(data.primer_apellido) ||
-      !norm(data.segundo_apellido) ||
       !norm(data.nombre) ||
       !norm(data.nivel_puesto) ||
       !norm(data.nivel_tabular) ||
