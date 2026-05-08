@@ -6666,13 +6666,16 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         async function exportData(format) {
         const fmt = String(format).toLowerCase();
         if (fmt !== 'excel' && fmt !== 'xls') {
-        if (fmt !== 'excel' && fmt !== 'xls') {
             if (!requireSuperAdmin('EXPORT_' + String(format).toUpperCase())) return;
-        }
         }
 
         const overlay = document.getElementById('loadingOverlay');
         const loadingText = document.querySelector('.loading-text');
+
+        const normalizeExportCellText = (value) => String(value ?? '')
+            .replace(/[✎✏✐🖉🖊📝]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
 
         // Helpers
         const getTableData = () => {
@@ -6686,8 +6689,8 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             const dataRows = rows.map(tr => {
                 const cells = Array.from(tr.querySelectorAll('td')).map(td => {
-                    // Evitar iconos/elementos y quedarnos con el texto visible
-                    const txt = (td.innerText || td.textContent || '').replace(/\s+/g, ' ').trim();
+                    // Limpiar iconos/acciones para quedarnos con el texto visible real
+                    const txt = normalizeExportCellText(td.innerText || td.textContent || '');
                     return txt;
                 });
 
@@ -6726,29 +6729,6 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             return lines.join('\n');
         };
 
-        const toXlsHtml = (headers, rowsCells) => {
-            const escHtml = (s) => String(s ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
-
-            const thead = `<tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr>`;
-            const tbody = rowsCells.map(cells => `<tr>${cells.map(c => `<td>${escHtml(c)}</td>`).join('')}</tr>`).join('');
-            return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8" />
-</head>
-<body>
-<table border="1">
-<thead>${thead}</thead>
-<tbody>${tbody}</tbody>
-</table>
-</body>
-</html>`;
-        };
-
         try {
             if (overlay) overlay.classList.add('active');
             if (loadingText) loadingText.textContent = `📥 Exportando a ${String(format).toUpperCase()}...`;
@@ -6769,13 +6749,25 @@ const tabs = document.querySelectorAll('#trimestral .tab');
                 auditLog('EXPORT_CSV', 'OK', { total: rowsCells.length });
                 alert(`✅ Datos exportados exitosamente!\n\nFormato: usuarios\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
             } else if (format === 'excel' || format === 'xls') {
-                // Exportación "sistema SABG" sin librerías: HTML .xls (sistema SABG lo abre perfecto)
-                const html = toXlsHtml(headers, rowsCells);
-                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-                const filename = `registros_sabg_${today}.xls`;
+                const response = await fetch('/api/export/excel?format=xlsx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ headers, rows: rowsCells })
+                });
+
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || 'No se pudo generar el archivo XLSX');
+                }
+
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const filenameMatch = disposition.match(/filename=([^;]+)/i);
+                const filename = (filenameMatch?.[1] || `registros_sabg_${today}.xlsx`).replace(/"/g, '').trim();
+                const blob = await response.blob();
                 downloadBlob(blob, filename);
                 auditLog('EXPORT_EXCEL', 'OK', { total: rowsCells.length });
-                alert(`✅ Datos exportados exitosamente!\n\nFormato: EXCEL\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
+                alert(`✅ Datos exportados exitosamente!\n\nFormato: XLSX\nArchivo: ${filename}\nTotal de registros: ${rowsCells.length}`);
             } else if (format === 'json') {
                 const json = JSON.stringify(dataRows.map(r => r.obj), null, 2);
                 const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
