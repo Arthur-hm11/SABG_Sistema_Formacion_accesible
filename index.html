@@ -3121,8 +3121,8 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             </div>
                             <div class="form-group">
                                 <label for="estado_avance">Estado de Avance <span class="required">*</span></label>
-                                <select name="estado_avance" required id="estado_avance">
-                                    <option value="">Seleccione...</option>
+                                <select name="estado_avance" required id="estado_avance" disabled>
+                                    <option value="">Seleccione primero el trimestre</option>
                                     <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
                                     <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
                                     <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
@@ -9436,6 +9436,29 @@ function initNivelPuestoTabularVinculado() {
     });
 }
 
+function initEstadoAvanceVinculado() {
+    const trimestre = document.getElementById('trimestre');
+    const estado = document.getElementById('estado_avance');
+    const form = document.getElementById('trimestralForm');
+    if (!trimestre || !estado) return;
+
+    const placeholder = estado.querySelector('option[value=""]');
+
+    const sync = () => {
+        const hasTrimestre = !!String(trimestre.value || '').trim();
+        estado.disabled = !hasTrimestre;
+        if (placeholder) placeholder.textContent = hasTrimestre ? 'Seleccione...' : 'Seleccione primero el trimestre';
+        if (!hasTrimestre) estado.value = '';
+    };
+
+    trimestre.addEventListener('change', sync);
+    form?.addEventListener('reset', () => {
+        setTimeout(sync, 0);
+    });
+
+    sync();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Restaurar rol si existe
     try { userRole = localStorage.getItem('SABG_ROL') || userRole; } catch(e) {}
@@ -9444,6 +9467,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAnioVigente();
     initNivelPuestoTabularVinculado();
     initEducacionVinculada();
+    initEstadoAvanceVinculado();
     applyRoleVisibility();
 
     // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
