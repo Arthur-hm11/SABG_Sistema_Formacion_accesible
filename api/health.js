@@ -1,6 +1,6 @@
 import pool from "./_lib/db.js";
 import { applyCors } from "./_lib/cors.js";
-import { readSabgSession, isAdminSession, isMonitorSession } from "./_lib/session.js";
+import { isAdminSession, isMonitorSession, validateSabgSession } from "./_lib/session.js";
 
 function withTimeout(promise, ms) {
   return Promise.race([
@@ -41,11 +41,14 @@ export default async function handler(req, res) {
     });
   }
 
-  const session = readSabgSession(req);
-  if (!session) {
-    return res.status(401).json({
+  let session = null;
+  try {
+    session = await validateSabgSession(req, res);
+  } catch (error) {
+    console.error("Error validando sesión para deep health:", error);
+    return res.status(500).json({
       ok: false,
-      error: "No autorizado para ver el estado profundo del sistema",
+      error: "Error validando la sesión",
       checks: {
         server: "ok",
         database: "hidden",
@@ -55,8 +58,8 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!isAdminSession(session) && !isMonitorSession(session)) {
-    return res.status(403).json({
+  if (!session || (!isAdminSession(session) && !isMonitorSession(session))) {
+    return res.status(!session ? 401 : 403).json({
       ok: false,
       error: "No autorizado para ver el estado profundo del sistema",
       checks: {
