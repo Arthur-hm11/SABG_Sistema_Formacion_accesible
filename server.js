@@ -193,9 +193,8 @@ await mount("post", "/api/auth/logout",            "./api/auth/logout.js");
 await mount("post", "/api/auth/register",          "./api/auth/register.js");
 
 await mount("post", "/api/upload/excel",           "./api/upload/excel.js");
-await mount("get",  "/api/export/excel",           "./api/export/excel.js");
 await mount("post", "/api/export/excel",           "./api/export/excel.js");
-await mount("get",  "/api/backup/export",          "./api/backup/export.js");
+await mount("post", "/api/backup/export",          "./api/backup/export.js");
 
 await mount("post", "/api/audit/log",              "./api/audit/log.js");
 

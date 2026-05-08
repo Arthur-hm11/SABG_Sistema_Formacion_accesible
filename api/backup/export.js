@@ -5,11 +5,11 @@ import { readSabgSession, isSuperAdminSession } from "../_lib/session.js";
 export default async (req, res) => {
   const pre = applyCors(req, res);
   if (pre) return;
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   const session = readSabgSession(req);
   if (!session) return res.status(401).json({ error: 'Unauthorized' });

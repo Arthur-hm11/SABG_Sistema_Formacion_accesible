@@ -8816,7 +8816,11 @@ async function descargarBackup() {
         document.getElementById('loadingOverlay').classList.add('active');
         document.querySelector('.loading-text').textContent = '💾 Generando backup...';
 
-        const response = await fetch('/api/backup/export', { credentials: 'include' });
+        const response = await fetch('/api/backup/export', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Accept': 'application/json' }
+        });
         
         if (!response.ok) {
             throw new Error('Error al generar backup');
