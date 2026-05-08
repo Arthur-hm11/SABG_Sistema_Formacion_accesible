@@ -6678,17 +6678,17 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             .trim();
 
         // Helpers
-        const getTableData = () => {
+        const getVisibleTableData = () => {
             const table = document.getElementById('registrosTable');
             if (!table) throw new Error('No se encontró la tabla de registros');
 
-            const headers = Array.from(table.querySelectorAll('thead th'))
+            const headers = Array.from(table.querySelectorAll('thead th:not(.no-export)'))
                 .map(th => (th.innerText || th.textContent || '').trim())
                 .filter(h => h.length > 0);
 
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             const dataRows = rows.map(tr => {
-                const cells = Array.from(tr.querySelectorAll('td')).map(td => {
+                const cells = Array.from(tr.querySelectorAll('td:not(.no-export)')).map(td => {
                     // Limpiar iconos/acciones para quedarnos con el texto visible real
                     const txt = normalizeExportCellText(td.innerText || td.textContent || '');
                     return txt;
@@ -6700,6 +6700,73 @@ const tabs = document.querySelectorAll('#trimestral .tab');
                 for (let i = headers.length; i < cells.length; i++) {
                     obj[`Columna_${i+1}`] = cells[i] ?? '';
                 }
+                return { cells, obj };
+            });
+
+            return { headers, dataRows };
+        };
+
+        const buildTrimestralExportObject = (registro, index) => ({
+            'N°': index + 1,
+            'AÑO': registro.anio || registro['año'] || '',
+            'TRIMESTRE': registro.trimestre || '',
+            'ID RUSP': registro.id_rusp || '',
+            'PRIMER APELLIDO': registro.primer_apellido || '',
+            'SEGUNDO APELLIDO': registro.segundo_apellido || '',
+            'NOMBRE(S)': registro.nombre || '',
+            'CURP': registro.curp || '',
+            'NIVEL DE PUESTO': humanizarValorCatalogo(registro.nivel_puesto) || '',
+            'NIVEL TABULAR': humanizarValorCatalogo(registro.nivel_tabular) || '',
+            'RAMO - UR': registro.ramo_ur || '',
+            'DEPENDENCIA': registro.dependencia || '',
+            'CORREO INSTITUCIONAL': registro.correo_institucional || '',
+            'TELÉFONO': registro.telefono_institucional || '',
+            'NIVEL EDUCATIVO': humanizarValorCatalogo(registro.nivel_educativo) || '',
+            'INSTITUCIÓN EDUCATIVA': humanizarValorCatalogo(registro.institucion_educativa) || '',
+            'MODALIDAD': humanizarValorCatalogo(registro.modalidad) || '',
+            'ESTADO DE AVANCE': registro.estado_avance || '',
+            'OBSERVACIONES': registro.observaciones || '-',
+            'ENLACE NOMBRE(S)': registro.enlace_nombre || '',
+            'ENLACE PRIMER APELLIDO': registro.enlace_primer_apellido || '',
+            'ENLACE SEGUNDO APELLIDO': registro.enlace_segundo_apellido || '',
+            'ENLACE CORREO': registro.enlace_correo || '',
+            'ENLACE TELÉFONO': registro.enlace_telefono || ''
+        });
+
+        const getAllTrimestralTableData = async () => {
+            const table = document.getElementById('registrosTable');
+            if (!table) throw new Error('No se encontró la tabla de registros');
+
+            const headers = Array.from(table.querySelectorAll('thead th:not(.no-export)'))
+                .map(th => (th.innerText || th.textContent || '').trim())
+                .filter(h => h.length > 0);
+
+            const allRows = [];
+            let page = 1;
+            let pages = 1;
+            const limit = 500;
+
+            do {
+                const url = new URL('/api/trimestral/list', window.location.origin);
+                url.searchParams.set('page', String(page));
+                url.searchParams.set('limit', String(limit));
+                if (TRIM_Q) url.searchParams.set('q', TRIM_Q);
+
+                const response = await fetch(url.toString(), { credentials: 'include' });
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result?.error || 'No se pudieron consultar todos los registros para exportar');
+                }
+
+                allRows.push(...(result.data || []));
+                pages = Math.max(1, Number(result.pages || 1));
+                page += 1;
+            } while (page <= pages);
+
+            const dataRows = allRows.map((registro, index) => {
+                const obj = buildTrimestralExportObject(registro, index);
+                const cells = headers.map(header => normalizeExportCellText(obj[header] ?? ''));
                 return { cells, obj };
             });
 
@@ -6733,7 +6800,15 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             if (overlay) overlay.classList.add('active');
             if (loadingText) loadingText.textContent = `📥 Exportando a ${String(format).toUpperCase()}...`;
 
-            const { headers, dataRows } = getTableData();
+            let exportPayload;
+            try {
+                exportPayload = await getAllTrimestralTableData();
+            } catch (apiError) {
+                console.warn('Fallo exportación completa por API, usando tabla visible:', apiError);
+                exportPayload = getVisibleTableData();
+            }
+
+            const { headers, dataRows } = exportPayload;
             const rowsCells = dataRows.map(r => r.cells);
             const today = new Date().toISOString().split('T')[0];
 
