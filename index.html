@@ -3161,11 +3161,11 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
                     </div>
 
-<!-- Solo administradores: carga masiva vía sistema SABG -->
-<input type="file" id="excelFile" accept=".csv,.xlsx,.xls" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
+<!-- Solo administradores: carga masiva vía sistema SABG (solo CSV) -->
+<input type="file" id="excelFile" accept=".csv" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
 <div id="excelUploadBox" class="admin-only" style="display:none; gap:14px; align-items:center;">
     <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">
-        📎 Seleccionar carga de sistema SABG
+        📎 Seleccionar carga CSV del sistema SABG
     </label>
 </div>
 
@@ -5706,7 +5706,7 @@ try { localStorage.removeItem(RESUME_KEY); } catch (_) {}
                 console.warn(`⚠️ Carga parcial: ${ok} insertados / ${fail} con error.`);
             }
         } else {
-            alert('ℹ️ Por ahora, la carga masiva soporta usuarios (exportado desde sistema SABG).\n\n1) En sistema SABG: Archivo → Guardar como → usuarios\n2) Súbelo aquí y se registrará fila por fila.');
+            alert('ℹ️ La carga masiva soporta únicamente archivos .csv del sistema SABG.');
         }
     } finally {
         
