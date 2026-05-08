@@ -2,6 +2,11 @@ import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
 
+const ALLOWED_PDF_HOSTS = new Set([
+  "drive.google.com",
+  "docs.google.com",
+]);
+
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
@@ -44,6 +49,17 @@ export default async function handler(req, res) {
     const url = String(r.rows[0].archivo_pdf_url || "").trim();
     if (!url) {
       return res.status(404).json({ ok: false, error: "La evidencia no tiene URL de PDF" });
+    }
+
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return res.status(400).json({ ok: false, error: "La evidencia tiene una URL inválida" });
+    }
+
+    if (!ALLOWED_PDF_HOSTS.has(parsedUrl.hostname)) {
+      return res.status(403).json({ ok: false, error: "La URL del PDF no pertenece a un origen permitido" });
     }
 
     return res.redirect(302, url);
