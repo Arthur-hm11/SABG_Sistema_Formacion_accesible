@@ -4770,8 +4770,34 @@ function syncRoleBodyClasses() {
     document.body.classList.toggle('role-monitor', role === 'monitor');
 }
 
+function updateExportButtonVisibility() {
+    const btn = document.getElementById('btnExportExcelEnlaceVisible');
+    if (!btn) return;
+
+    const roleRaw =
+        (typeof userRole !== 'undefined' && userRole) ? userRole :
+        (localStorage.getItem('SABG_ROL') || '');
+    const role = String(roleRaw || '').toLowerCase().trim();
+
+    if (role === 'enlace') {
+        btn.hidden = true;
+        btn.style.setProperty('display', 'none', 'important');
+        btn.style.setProperty('visibility', 'hidden', 'important');
+        btn.style.setProperty('opacity', '0', 'important');
+        btn.style.setProperty('pointer-events', 'none', 'important');
+        return;
+    }
+
+    btn.hidden = false;
+    btn.style.setProperty('display', 'inline-flex', 'important');
+    btn.style.setProperty('visibility', 'visible', 'important');
+    btn.style.setProperty('opacity', '1', 'important');
+    btn.style.setProperty('pointer-events', 'auto', 'important');
+}
+
 function applyRoleVisibility() {
     syncRoleBodyClasses();
+    updateExportButtonVisibility();
 
     const excelBox = document.getElementById('excelUploadBox');
     if (excelBox) {
@@ -5924,6 +5950,8 @@ async function loginUsuario() {
         } else {
             stopMonitoringAutoRefresh();
         }
+
+        updateExportButtonVisibility();
 
         // Visibilidad estricta de controles admin
         const adminEls = [
