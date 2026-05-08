@@ -1,30 +1,92 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
-import XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
-function buildWorkbook(headers = [], rows = []) {
-  const aoa = [headers, ...rows];
-  const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+async function buildWorkbook(headers = [], rows = []) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "SABG";
+  workbook.created = new Date();
+  workbook.modified = new Date();
 
-  worksheet["!cols"] = headers.map((header, index) => {
-    const values = rows.map((row) => String(row[index] ?? ""));
-    const maxLen = Math.max(String(header ?? "").length, ...values.map((value) => value.length), 12);
-    return { wch: Math.min(maxLen + 2, 48) };
+  const worksheet = workbook.addWorksheet("Registros", {
+    views: [{ state: "frozen", ySplit: 1 }]
   });
 
-  if (headers.length) {
-    worksheet["!autofilter"] = {
-      ref: XLSX.utils.encode_range({
-        s: { c: 0, r: 0 },
-        e: { c: headers.length - 1, r: Math.max(rows.length, 1) }
-      })
-    };
-  }
+  worksheet.addRow(headers);
+  rows.forEach((row) => worksheet.addRow(row));
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Registros");
-  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+  worksheet.columns = headers.map((header, index) => {
+    const values = rows.map((row) => String(row[index] ?? ""));
+    const maxLen = Math.max(String(header ?? "").length, ...values.map((value) => value.length), 12);
+    return {
+      header,
+      key: `col_${index}`,
+      width: Math.min(maxLen + 3, 42)
+    };
+  });
+
+  worksheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: 1, column: headers.length }
+  };
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 24;
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "7A2F4D" }
+    };
+    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cell.border = {
+      top: { style: "thin", color: { argb: "C7B8C0" } },
+      left: { style: "thin", color: { argb: "C7B8C0" } },
+      bottom: { style: "thin", color: { argb: "C7B8C0" } },
+      right: { style: "thin", color: { argb: "C7B8C0" } }
+    };
+  });
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+
+    row.eachCell((cell, colNumber) => {
+      cell.alignment = {
+        vertical: "top",
+        horizontal: colNumber <= 2 ? "center" : "left",
+        wrapText: true
+      };
+      cell.border = {
+        top: { style: "thin", color: { argb: "E6DDE2" } },
+        left: { style: "thin", color: { argb: "E6DDE2" } },
+        bottom: { style: "thin", color: { argb: "E6DDE2" } },
+        right: { style: "thin", color: { argb: "E6DDE2" } }
+      };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: rowNumber % 2 === 0 ? "FFF8FAFC" : "FFFFFFFF" }
+      };
+    });
+  });
+
+  const maybeWideColumns = new Set([
+    "DEPENDENCIA",
+    "INSTITUCIÓN EDUCATIVA",
+    "MODALIDAD",
+    "OBSERVACIONES",
+    "ESTADO DE AVANCE"
+  ]);
+
+  headers.forEach((header, index) => {
+    if (maybeWideColumns.has(header)) {
+      worksheet.getColumn(index + 1).width = Math.max(worksheet.getColumn(index + 1).width || 18, 28);
+    }
+  });
+
+  return workbook.xlsx.writeBuffer();
 }
 
 export default async (req, res) => {
@@ -54,7 +116,7 @@ export default async (req, res) => {
         return res.status(400).json({ error: 'No se recibieron encabezados para exportar' });
       }
 
-      const workbookBuffer = buildWorkbook(headers, rows);
+      const workbookBuffer = await buildWorkbook(headers, rows);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=registros_sabg_${today}.xlsx`);
       return res.status(200).send(workbookBuffer);
@@ -143,7 +205,7 @@ export default async (req, res) => {
         row.created_at || ''
       ]));
 
-      const workbookBuffer = buildWorkbook(headers, rows);
+      const workbookBuffer = await buildWorkbook(headers, rows);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=registros_sabg_${today}.xlsx`);
       return res.status(200).send(workbookBuffer);
