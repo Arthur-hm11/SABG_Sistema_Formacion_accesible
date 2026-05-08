@@ -2,6 +2,7 @@ import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
 
 const WIDTH_OVERRIDES = {
   "N°": 8,
@@ -33,28 +34,60 @@ const WIDTH_OVERRIDES = {
 
 const NUMERIC_HEADERS = new Set(["N°", "AÑO"]);
 const PHONE_HEADERS = new Set(["TELÉFONO", "ENLACE TELÉFONO"]);
+const ZERO_PADDED_HEADERS = new Set(["ID RUSP", "NIVEL TABULAR"]);
+const IGNORED_TEXT_WARNING_HEADERS = new Set(["ID RUSP", "NIVEL TABULAR", "TELÉFONO", "ENLACE TELÉFONO"]);
 
 function normalizeHeader(header) {
   return String(header ?? "").trim().toUpperCase();
 }
 
-function normalizeCellValue(header, rawValue) {
-  if (rawValue === null || rawValue === undefined) return "";
+function normalizeCellPayload(header, rawValue) {
+  if (rawValue === null || rawValue === undefined) return { value: "" };
 
   const value = String(rawValue).trim();
-  if (!value) return "";
+  if (!value) return { value: "" };
 
   const normalizedHeader = normalizeHeader(header);
 
   if (NUMERIC_HEADERS.has(normalizedHeader) && /^\d+$/.test(value)) {
-    return Number(value);
+    return { value: Number(value), numFmt: "0" };
   }
 
   if (PHONE_HEADERS.has(normalizedHeader) && /^\d{7,15}$/.test(value)) {
-    return Number(value);
+    return { value: Number(value), numFmt: "0" };
   }
 
-  return value;
+  if (ZERO_PADDED_HEADERS.has(normalizedHeader) && /^\d+$/.test(value) && value.length <= 15) {
+    return { value: Number(value), numFmt: "0".repeat(value.length) };
+  }
+
+  return { value };
+}
+
+async function applyIgnoredTextWarnings(workbookBuffer, worksheet, headers, firstDataRowNumber) {
+  const ranges = headers
+    .map((header, index) => ({ header: normalizeHeader(header), index }))
+    .filter(({ header }) => IGNORED_TEXT_WARNING_HEADERS.has(header))
+    .map(({ index }) => {
+      const letter = worksheet.getColumn(index + 1).letter;
+      return `${letter}${firstDataRowNumber}:${letter}1048576`;
+    });
+
+  if (!ranges.length) return workbookBuffer;
+
+  const zip = await JSZip.loadAsync(workbookBuffer);
+  const sheetPath = "xl/worksheets/sheet1.xml";
+  const sheetXml = await zip.file(sheetPath).async("string");
+
+  if (sheetXml.includes("<ignoredErrors>")) {
+    return workbookBuffer;
+  }
+
+  const ignoredErrorsXml = `<ignoredErrors><ignoredError sqref="${ranges.join(" ")}" numberStoredAsText="1"/></ignoredErrors>`;
+  const patchedXml = sheetXml.replace("</worksheet>", `${ignoredErrorsXml}</worksheet>`);
+  zip.file(sheetPath, patchedXml);
+
+  return zip.generateAsync({ type: "nodebuffer" });
 }
 
 async function buildWorkbook(headers = [], rows = []) {
@@ -66,7 +99,7 @@ async function buildWorkbook(headers = [], rows = []) {
   workbook.title = "Registros SABG";
 
   const worksheet = workbook.addWorksheet("Registros", {
-    views: [{ state: "frozen", ySplit: 1 }]
+    views: [{ state: "frozen", ySplit: 4 }]
   });
   worksheet.properties.defaultRowHeight = 22;
   worksheet.pageSetup = {
@@ -77,11 +110,27 @@ async function buildWorkbook(headers = [], rows = []) {
     fitToHeight: 0
   };
 
+  const titleText = "Sistema para la Promoción de la Formación Académica";
+  const subtitleText = `Exportación de registros | Generado el ${new Date().toLocaleString("es-MX")} | Total: ${rows.length}`;
+
+  worksheet.addRow([titleText]);
+  worksheet.addRow([subtitleText]);
+  worksheet.addRow([]);
   worksheet.addRow(headers);
+  const firstDataRowNumber = 5;
+
   rows.forEach((row) => {
-    const normalizedRow = headers.map((header, index) => normalizeCellValue(header, row[index]));
-    worksheet.addRow(normalizedRow);
+    const excelRow = worksheet.addRow([]);
+    headers.forEach((header, index) => {
+      const payload = normalizeCellPayload(header, row[index]);
+      const cell = excelRow.getCell(index + 1);
+      cell.value = payload.value;
+      if (payload.numFmt) cell.numFmt = payload.numFmt;
+    });
   });
+
+  worksheet.mergeCells(1, 1, 1, headers.length);
+  worksheet.mergeCells(2, 1, 2, headers.length);
 
   worksheet.columns = headers.map((header, index) => {
     const values = rows.map((row) => String(row[index] ?? ""));
@@ -94,11 +143,31 @@ async function buildWorkbook(headers = [], rows = []) {
   });
 
   worksheet.autoFilter = {
-    from: { row: 1, column: 1 },
-    to: { row: 1, column: headers.length }
+    from: { row: 4, column: 1 },
+    to: { row: 4, column: headers.length }
   };
 
-  const headerRow = worksheet.getRow(1);
+  const titleRow = worksheet.getRow(1);
+  titleRow.height = 34;
+  titleRow.getCell(1).font = { bold: true, color: { argb: "FFFFFFFF" }, size: 18, name: "Calibri" };
+  titleRow.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+  titleRow.getCell(1).fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "7A2F4D" }
+  };
+
+  const subtitleRow = worksheet.getRow(2);
+  subtitleRow.height = 22;
+  subtitleRow.getCell(1).font = { italic: true, color: { argb: "FF5A5A5A" }, size: 10, name: "Calibri" };
+  subtitleRow.getCell(1).alignment = { vertical: "middle", horizontal: "left" };
+  subtitleRow.getCell(1).fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFF6F1F4" }
+  };
+
+  const headerRow = worksheet.getRow(4);
   headerRow.height = 28;
   headerRow.eachCell((cell) => {
     cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11, name: "Calibri" };
@@ -117,7 +186,7 @@ async function buildWorkbook(headers = [], rows = []) {
   });
 
   worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return;
+    if (rowNumber <= 4) return;
 
     row.height = 22;
 
@@ -141,20 +210,17 @@ async function buildWorkbook(headers = [], rows = []) {
       cell.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: rowNumber % 2 === 0 ? "FFF8FAFC" : "FFFFFFFF" }
-      };
-
-      if (NUMERIC_HEADERS.has(normalizedHeader) || PHONE_HEADERS.has(normalizedHeader)) {
-        cell.numFmt = "0";
+        fgColor: { argb: rowNumber % 2 === 1 ? "FFF8FAFC" : "FFFFFFFF" }
       }
     });
   });
 
-  worksheet.getRow(1).eachCell((cell) => {
+  worksheet.getRow(4).eachCell((cell) => {
     cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
   });
 
-  return workbook.xlsx.writeBuffer();
+  const workbookBuffer = await workbook.xlsx.writeBuffer();
+  return applyIgnoredTextWarnings(workbookBuffer, worksheet, headers, firstDataRowNumber);
 }
 
 export default async (req, res) => {
