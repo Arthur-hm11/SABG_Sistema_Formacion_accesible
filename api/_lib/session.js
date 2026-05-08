@@ -62,6 +62,12 @@ export function readSabgSession(req) {
 
 let ensureUserSessionColumnsPromise = null;
 
+export function getActiveSessionTtlSeconds() {
+  const raw = parseInt(String(process.env.ACTIVE_SESSION_TTL_SECONDS || ""), 10);
+  if (Number.isFinite(raw) && raw >= 60 && raw <= 3600) return raw;
+  return 5 * 60;
+}
+
 export async function ensureUserSessionColumns() {
   if (!ensureUserSessionColumnsPromise) {
     ensureUserSessionColumnsPromise = pool.query(`
@@ -164,6 +170,20 @@ export async function validateSabgSession(req, res) {
     if (res?.setHeader) res.setHeader("Set-Cookie", clearSabgSessionCookie(req));
     return null;
   }
+
+  await pool.query(
+    `
+      UPDATE public.usuarios
+      SET active_session_expires_at = TO_TIMESTAMP($2)
+      WHERE id = $1
+        AND active_session_id = $3
+    `,
+    [
+      payload.id,
+      Math.floor(Date.now() / 1000) + getActiveSessionTtlSeconds(),
+      sid,
+    ]
+  );
 
   req.sabgSession = payload;
   return payload;

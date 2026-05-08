@@ -6,6 +6,7 @@ import { ensureMonitoringTables, logAuditEvent } from "../_lib/monitoring.js";
 import {
   buildSabgSessionCookie,
   ensureUserSessionColumns,
+  getActiveSessionTtlSeconds,
   getSessionRole,
 } from "../_lib/session.js";
 
@@ -43,7 +44,9 @@ export default async function handler(req, res) {
     }
 
     const normalizedRole = getSessionRole(u);
-    const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 8);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const exp = nowSeconds + (60 * 60 * 8);
+    const activeSessionExp = nowSeconds + getActiveSessionTtlSeconds();
     let sid = null;
 
     if (normalizedRole !== "superadmin") {
@@ -61,7 +64,7 @@ export default async function handler(req, res) {
             )
           RETURNING id
         `,
-        [u.id, sid, exp]
+        [u.id, sid, activeSessionExp]
       );
 
       if ((lockResult.rowCount || 0) === 0) {
