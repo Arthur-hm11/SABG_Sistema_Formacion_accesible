@@ -65,7 +65,7 @@ let ensureUserSessionColumnsPromise = null;
 export function getActiveSessionTtlSeconds() {
   const raw = parseInt(String(process.env.ACTIVE_SESSION_TTL_SECONDS || ""), 10);
   if (Number.isFinite(raw) && raw >= 60 && raw <= 3600) return raw;
-  return 5 * 60;
+  return 3 * 60;
 }
 
 export async function ensureUserSessionColumns() {
