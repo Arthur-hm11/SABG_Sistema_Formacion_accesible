@@ -10,7 +10,7 @@ import {
 } from "./api/_lib/limiters.js";
 import { isAllowedOrigin, normalizeOrigin } from "./api/_lib/cors.js";
 import pool from "./api/_lib/db.js";
-import { getSessionRole, readSabgSession } from "./api/_lib/session.js";
+import { getSessionRole, readSabgSession, validateSabgSession } from "./api/_lib/session.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -99,11 +99,33 @@ app.use("/api/backup/export", sensitiveExportLimiter);
 
 const MONITOR_ALLOWED_API_PATHS = new Set([
   "/api/auth/login",
+  "/api/auth/logout",
   "/api/health",
   "/api/monitor/ping",
   "/api/monitor/summary",
   "/api/audit/log",
 ]);
+
+const SESSION_OPTIONAL_API_PATHS = new Set([
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/health",
+]);
+
+app.use("/api", async (req, res, next) => {
+  const pathOnly = String(req.originalUrl || req.url || "").split("?")[0];
+  if (SESSION_OPTIONAL_API_PATHS.has(pathOnly)) return next();
+
+  if (!String(req.headers.cookie || "").includes("sabg_session=")) return next();
+
+  try {
+    await validateSabgSession(req, res);
+    return next();
+  } catch (error) {
+    console.error("Error validando sesión activa:", error);
+    return res.status(500).json({ success: false, error: "Error interno" });
+  }
+});
 
 app.use("/api", (req, res, next) => {
   const session = readSabgSession(req);
@@ -167,6 +189,7 @@ await mount("post", "/api/trimestral/batchUpdate", "./api/trimestral/batchUpdate
 await mount("post", "/api/trimestral/deleteTest",  "./api/trimestral/deleteTest.js");
 
 await mount("post", "/api/auth/login",             "./api/auth/login.js");
+await mount("post", "/api/auth/logout",            "./api/auth/logout.js");
 await mount("post", "/api/auth/register",          "./api/auth/register.js");
 
 await mount("post", "/api/upload/excel",           "./api/upload/excel.js");

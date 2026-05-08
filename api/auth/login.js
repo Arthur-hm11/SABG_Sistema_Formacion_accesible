@@ -1,9 +1,13 @@
 import crypto from "crypto";
-import { serialize } from "cookie";
 import bcrypt from "bcryptjs";
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { ensureMonitoringTables, logAuditEvent } from "../_lib/monitoring.js";
+import {
+  buildSabgSessionCookie,
+  ensureUserSessionColumns,
+  getSessionRole,
+} from "../_lib/session.js";
 
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
@@ -17,6 +21,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: "Faltan credenciales" });
 
   try {
+    await ensureUserSessionColumns();
+
     const q = `
       SELECT id, usuario, password_hash, nombre, rol, dependencia
       FROM public.usuarios
@@ -36,45 +42,46 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: "Credenciales inválidas" });
     }
 
-    // Sesión SABG (HMAC stateless) -> cookie sabg_session
-    const secret = process.env.SESSION_SECRET || "";
-    if (!secret) return res.status(500).json({ success:false, error:"Error interno" });
+    const normalizedRole = getSessionRole(u);
+    const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 8);
+    let sid = null;
+
+    if (normalizedRole !== "superadmin") {
+      sid = crypto.randomUUID();
+      const lockResult = await pool.query(
+        `
+          UPDATE public.usuarios
+          SET active_session_id = $2,
+              active_session_expires_at = TO_TIMESTAMP($3)
+          WHERE id = $1
+            AND (
+              active_session_id IS NULL
+              OR active_session_expires_at IS NULL
+              OR active_session_expires_at <= NOW()
+            )
+          RETURNING id
+        `,
+        [u.id, sid, exp]
+      );
+
+      if ((lockResult.rowCount || 0) === 0) {
+        return res.status(409).json({
+          success: false,
+          error: "Esta cuenta ya tiene una sesión activa. Debe cerrarla antes de iniciar otra.",
+        });
+      }
+    }
 
     const payload = {
       id: u.id,
       usuario: u.usuario,
       rol: u.rol,
       dependencia: u.dependencia,
-      exp: Math.floor(Date.now()/1000) + (60 * 60 * 8)
+      exp,
     };
+    if (sid) payload.sid = sid;
 
-    const payloadB64 = Buffer.from(JSON.stringify(payload), "utf8")
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-
-    const sig = crypto.createHmac("sha256", secret).update(payloadB64).digest("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-
-    const sabg = `${payloadB64}.${sig}`;
-
-    const isSecureRequest =
-      String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim() === "https" ||
-      req.secure === true ||
-      process.env.RENDER === "true" ||
-      process.env.NODE_ENV === "production";
-
-    const cookie = serialize("sabg_session", sabg, {
-      httpOnly: true,
-      secure: isSecureRequest,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 8,
-    });
-
+    const cookie = buildSabgSessionCookie(req, payload);
     res.setHeader("Set-Cookie", cookie);
 
     try {

@@ -6133,8 +6133,15 @@ async function loginUsuario() {
 }
 
     // Logout
-    function logout() {
+    async function logout() {
         if (confirm('¿Está seguro que desea cerrar sesión?')) {
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
+                });
+            } catch (_) {}
+
             document.getElementById('usuario').value = '';
             document.getElementById('password').value = '';
             
