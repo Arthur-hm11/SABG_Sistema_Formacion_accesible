@@ -1107,6 +1107,13 @@
             box-shadow: 0 5px 15px rgba(107, 44, 64, 0.3);
         }
 
+        select,
+        option,
+        input::placeholder,
+        textarea::placeholder {
+            text-transform: uppercase;
+        }
+
         .field-help {
             color: #64748b;
             font-size: 0.85rem;
@@ -2993,7 +3000,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             </div>
                             <div class="form-group">
                                 <label for="enlace_telefono">Teléfono Institucional con Extensión <span class="required">*</span></label>
-                                <input type="tel" name="enlace_telefono" placeholder="55-0000-0000 ext. 000" required id="enlace_telefono">
+                                <input type="tel" name="enlace_telefono" placeholder="55-0000-0000 EXT. 000" required id="enlace_telefono">
                             </div>
                         </div>
 
@@ -3007,7 +3014,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="trimestre">Trimestre <span class="required">*</span></label>
                                 <select name="trimestre" required id="trimestre">
-                                    <option value="">Seleccione...</option>
+                                    <option value="">SELECCIONE...</option>
                                     <option value="ENERO_MARZO">ENERO - MARZO</option>
                                     <option value="ABRIL_JUNIO">ABRIL - JUNIO</option>
                                     <option value="JULIO_SEPTIEMBRE">JULIO - SEPTIEMBRE</option>
@@ -3015,7 +3022,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             </div>
                             <div class="form-group">
                                 <label for="id_rusp">ID RUSP <span class="required">*</span></label>
-                                <input type="text" name="id_rusp" placeholder="Número de identificación" required id="id_rusp">
+                                <input type="text" name="id_rusp" placeholder="NÚMERO DE IDENTIFICACIÓN" required id="id_rusp">
                             </div>
                             <div class="form-group">
                                 <label for="primer_apellido">Primer Apellido <span class="required">*</span></label>
@@ -3032,12 +3039,12 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             </div>
                             <div class="form-group">
                                 <label for="curp">CURP</label>
-                                <input type="text" name="curp" id="curp" maxlength="18" placeholder="18 caracteres o sin captura" style="text-transform: uppercase;">
+                                <input type="text" name="curp" id="curp" maxlength="18" placeholder="18 CARACTERES O SIN CAPTURA" style="text-transform: uppercase;">
                             </div>
                             <div class="form-group">
                                 <label for="nivel_puesto">Nivel de Puesto <span class="required">*</span></label>
                                 <select name="nivel_puesto" required id="nivel_puesto">
-                                    <option value="">Seleccione...</option>
+                                    <option value="">SELECCIONE...</option>
                                     <option value="PUESTO_OPERATIVO_U_HOMÓLOGO">PUESTO OPERATIVO U HOMÓLOGO</option>
                                     <option value="ENLACE_U_HOMÓLOGO">ENLACE U HOMÓLOGO</option>
                                     <option value="JEFE_DE_DEPARTAMENTO_U_HOMÓLOGO">JEFE DE DEPARTAMENTO U HOMÓLOGO</option>
@@ -3056,7 +3063,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="nivel_tabular">Nivel Tabular <span class="required">*</span></label>
                                 <select name="nivel_tabular" required id="nivel_tabular" disabled>
-                                    <option value="">Primero seleccione Nivel de Puesto</option>
+                                    <option value="">PRIMERO SELECCIONE NIVEL DE PUESTO</option>
                                 </select>
                                 <div id="nivelTabularOtroBox" class="hidden" style="margin-top: 0.75rem;">
                                     <label for="nivel_tabular_otro">Especifique Nivel Tabular <span class="required">*</span></label>
@@ -3065,12 +3072,12 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             </div>
                             <div class="form-group" style="position: relative;">
                                 <label for="dependenciaInput">Dependencia <span class="required">*</span></label>
-                                <input type="text" name="dependencia" id="dependenciaInput" placeholder="Busque o escriba la Dependencia" autocomplete="off" required>
+                                <input type="text" name="dependencia" id="dependenciaInput" placeholder="BUSQUE O ESCRIBA LA DEPENDENCIA" autocomplete="off" required>
                                 <div id="dependenciaSuggestions" class="autocomplete-suggestions"></div>
                             </div>
                             <div class="form-group" style="position: relative;">
                                 <label for="ramoUrInput">Ramo - UR <span class="required">*</span></label>
-                                <input type="text" name="ramo_ur" id="ramoUrInput" placeholder="Se llenará automáticamente al seleccionar la Dependencia" autocomplete="off" readonly required>
+                                <input type="text" name="ramo_ur" id="ramoUrInput" placeholder="SE LLENARÁ AUTOMÁTICAMENTE AL SELECCIONAR LA DEPENDENCIA" autocomplete="off" readonly required>
                                 <div id="ramoUrSuggestions" class="autocomplete-suggestions"></div>
                             </div>
                             <div class="form-group">
@@ -3084,7 +3091,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="nivel_educativo">Nivel Educativo <span class="required">*</span></label>
                                 <select name="nivel_educativo" required id="nivel_educativo">
-                                    <option value="">Seleccione...</option>
+                                    <option value="">SELECCIONE...</option>
                                     <option value="PRIMARIA">PRIMARIA</option>
                                     <option value="SECUNDARIA">SECUNDARIA</option>
                                     <option value="BACHILLERATO">BACHILLERATO</option>
@@ -3096,7 +3103,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="institucion_educativa">Institución Educativa <span class="required">*</span></label>
                                 <select name="institucion_educativa" required id="institucion_educativa" disabled>
-                                    <option value="">Primero seleccione Nivel Educativo</option>
+                                    <option value="">PRIMERO SELECCIONE NIVEL EDUCATIVO</option>
                                 </select>
                                 <div id="institucionEducativaOtroBox" class="hidden" style="margin-top: 0.75rem;">
                                     <label for="institucion_educativa_otro">Especifique Institución Educativa <span class="required">*</span></label>
@@ -3106,7 +3113,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="modalidad">Modalidad <span class="required">*</span></label>
                                 <select name="modalidad" required id="modalidad" disabled>
-                                    <option value="">Primero seleccione Institución Educativa</option>
+                                    <option value="">PRIMERO SELECCIONE INSTITUCIÓN EDUCATIVA</option>
                                 </select>
                                 <div id="modalidadOtroBox" class="hidden" style="margin-top: 0.75rem;">
                                     <label for="modalidad_otro">Especifique Modalidad <span class="required">*</span></label>
@@ -3114,7 +3121,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                         type="text"
                                         id="modalidad_otro"
                                         maxlength="10"
-                                        placeholder="Escriba la modalidad en MAYÚSCULAS. Máximo 10 caracteres."
+                                        placeholder="ESCRIBA LA MODALIDAD EN MAYÚSCULAS. MÁXIMO 10 CARACTERES."
                                         style="text-transform: uppercase;"
                                     >
                                 </div>
@@ -3122,7 +3129,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                             <div class="form-group">
                                 <label for="estado_avance">Estado de Avance <span class="required">*</span></label>
                                 <select name="estado_avance" required id="estado_avance" disabled>
-                                    <option value="">Seleccione primero el trimestre</option>
+                                    <option value="">SELECCIONE PRIMERO EL TRIMESTRE</option>
                                     <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
                                     <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
                                     <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
@@ -3137,7 +3144,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         </div>
                         <div class="form-group">
                             <label for="observaciones">Observaciones</label>
-                            <textarea name="observaciones" rows="4" placeholder="Ingrese observaciones adicionales (opcional)" id="observaciones"></textarea>
+                            <textarea name="observaciones" rows="4" placeholder="INGRESE OBSERVACIONES ADICIONALES (OPCIONAL)" id="observaciones"></textarea>
                         </div>
 
                         <div style="text-align: center; margin-top: 2rem;">
@@ -9203,7 +9210,7 @@ function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
     llenarSelectBasico(
         select,
         opciones,
-        opciones.length ? 'Seleccione...' : 'Primero seleccione Nivel Educativo',
+        opciones.length ? 'SELECCIONE...' : 'PRIMERO SELECCIONE NIVEL EDUCATIVO',
         valorActual
     );
 
@@ -9227,7 +9234,7 @@ function llenarInstitucionEducativa(nivelEducativo, valorActual = '') {
 function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorActual = '') {
     const select = document.getElementById('modalidad');
     if (isInstitucionEducativaOtro(institucionEducativa)) {
-        llenarSelectBasico(select, ['NO APLICA', MODALIDAD_OTRO], 'Seleccione...', valorActual || MODALIDAD_OTRO);
+        llenarSelectBasico(select, ['NO APLICA', MODALIDAD_OTRO], 'SELECCIONE...', valorActual || MODALIDAD_OTRO);
         syncModalidadOtro();
         return;
     }
@@ -9243,7 +9250,7 @@ function llenarModalidadEducativa(nivelEducativo, institucionEducativa, valorAct
     llenarSelectBasico(
         select,
         opciones,
-        opciones.length ? 'Seleccione...' : 'Primero seleccione Institución Educativa',
+        opciones.length ? 'SELECCIONE...' : 'PRIMERO SELECCIONE INSTITUCIÓN EDUCATIVA',
         valorActual
     );
 
@@ -9374,7 +9381,7 @@ function crearSelectCatalogoEducativo(field, row, valorActual) {
 
     const placeholder = document.createElement('option');
     placeholder.value = '';
-    placeholder.textContent = opciones.length ? 'Seleccione...' : 'Seleccione primero el campo vinculado';
+    placeholder.textContent = opciones.length ? 'SELECCIONE...' : 'SELECCIONE PRIMERO EL CAMPO VINCULADO';
     select.appendChild(placeholder);
 
     opciones.forEach((opcion) => {
@@ -9450,7 +9457,7 @@ function llenarNivelTabular(nivelPuesto, valorActual = '') {
 
     const placeholder = document.createElement('option');
     placeholder.value = '';
-    placeholder.textContent = opciones.length ? 'Seleccione...' : 'Primero seleccione Nivel de Puesto';
+    placeholder.textContent = opciones.length ? 'SELECCIONE...' : 'PRIMERO SELECCIONE NIVEL DE PUESTO';
     nivelTabular.appendChild(placeholder);
 
     opciones.forEach((codigo) => {
@@ -9553,7 +9560,7 @@ function initEstadoAvanceVinculado() {
     const sync = () => {
         const hasTrimestre = !!String(trimestre.value || '').trim();
         estado.disabled = !hasTrimestre;
-        if (placeholder) placeholder.textContent = hasTrimestre ? 'Seleccione...' : 'Seleccione primero el trimestre';
+        if (placeholder) placeholder.textContent = hasTrimestre ? 'SELECCIONE...' : 'SELECCIONE PRIMERO EL TRIMESTRE';
         if (!hasTrimestre) estado.value = '';
     };
 
