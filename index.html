@@ -1114,6 +1114,20 @@
             margin-top: 0.4rem;
         }
 
+        .uppercase-warning {
+            display: none;
+            width: 100%;
+            margin-top: 0.35rem;
+            color: #b91c1c;
+            font-size: 0.84rem;
+            line-height: 1.35;
+            font-weight: 600;
+        }
+
+        .uppercase-warning.is-visible {
+            display: block;
+        }
+
         .field-help-attached {
             width: 100%;
             margin-top: 0.75rem;
@@ -9894,6 +9908,99 @@ setTimeout(__setSaveButtonsState, 800);
     }
   };
 })();
+
+function shouldForceUppercaseField(field) {
+  if (!field) return false;
+  const tag = String(field.tagName || '').toUpperCase();
+  const type = String(field.type || '').toLowerCase();
+
+  if (field.hasAttribute('data-allow-mixed-case')) return false;
+  if (field.readOnly || field.disabled) return false;
+  if (tag !== 'INPUT' && tag !== 'TEXTAREA') return false;
+
+  const blockedTypes = new Set(['email', 'password', 'search', 'hidden', 'file', 'number', 'date', 'datetime-local', 'time', 'month', 'week', 'url']);
+  if (blockedTypes.has(type)) return false;
+
+  if (field.id && /correo/i.test(field.id)) return false;
+  if (field.name && /correo/i.test(field.name)) return false;
+  if (field.placeholder && /correo/i.test(field.placeholder)) return false;
+
+  return true;
+}
+
+function getUppercaseWarningNode(field) {
+  if (!field || !field.parentNode) return null;
+  let warning = field.parentNode.querySelector(':scope > .uppercase-warning');
+  if (warning) return warning;
+
+  warning = document.createElement('div');
+  warning.className = 'uppercase-warning';
+  warning.textContent = 'Escriba en MAYÚSCULAS.';
+  field.insertAdjacentElement('afterend', warning);
+  return warning;
+}
+
+function showUppercaseWarning(field) {
+  const warning = getUppercaseWarningNode(field);
+  if (!warning) return;
+  warning.classList.add('is-visible');
+  window.clearTimeout(warning._hideTimer);
+  warning._hideTimer = window.setTimeout(() => {
+    warning.classList.remove('is-visible');
+  }, 2200);
+}
+
+function normalizeUppercaseField(field, { showWarning = false } = {}) {
+  if (!shouldForceUppercaseField(field)) return;
+  const current = String(field.value || '');
+  const upper = current.toUpperCase();
+  if (current !== upper) {
+    field.value = upper;
+    if (showWarning) showUppercaseWarning(field);
+  }
+}
+
+function decorateUppercaseFields(root = document) {
+  const fields = root.querySelectorAll('input, textarea');
+  fields.forEach((field) => {
+    if (!shouldForceUppercaseField(field)) return;
+    field.style.textTransform = 'uppercase';
+    field.setAttribute('autocapitalize', 'characters');
+    field.setAttribute('spellcheck', 'false');
+    normalizeUppercaseField(field);
+  });
+}
+
+document.addEventListener('input', (event) => {
+  const field = event.target;
+  if (!shouldForceUppercaseField(field)) return;
+  normalizeUppercaseField(field, { showWarning: /[a-záéíóúñü]/.test(String(field.value || '')) });
+});
+
+document.addEventListener('blur', (event) => {
+  const field = event.target;
+  if (!shouldForceUppercaseField(field)) return;
+  normalizeUppercaseField(field);
+}, true);
+
+document.addEventListener('DOMContentLoaded', () => {
+  decorateUppercaseFields(document);
+
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (!node || node.nodeType !== 1) return;
+        if (node.matches && (node.matches('input') || node.matches('textarea'))) {
+          decorateUppercaseFields(node.parentNode || document);
+          return;
+        }
+        if (node.querySelectorAll) decorateUppercaseFields(node);
+      });
+    });
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+});
 
 </script>
 </body>
