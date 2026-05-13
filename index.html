@@ -1114,20 +1114,6 @@
             margin-top: 0.4rem;
         }
 
-        .uppercase-warning {
-            display: none;
-            width: 100%;
-            margin-top: 0.35rem;
-            color: #b91c1c;
-            font-size: 0.84rem;
-            line-height: 1.35;
-            font-weight: 600;
-        }
-
-        .uppercase-warning.is-visible {
-            display: block;
-        }
-
         .field-help-attached {
             width: 100%;
             margin-top: 0.75rem;
@@ -9928,35 +9914,12 @@ function shouldForceUppercaseField(field) {
   return true;
 }
 
-function getUppercaseWarningNode(field) {
-  if (!field || !field.parentNode) return null;
-  let warning = field.parentNode.querySelector(':scope > .uppercase-warning');
-  if (warning) return warning;
-
-  warning = document.createElement('div');
-  warning.className = 'uppercase-warning';
-  warning.textContent = 'Escriba en MAYÚSCULAS.';
-  field.insertAdjacentElement('afterend', warning);
-  return warning;
-}
-
-function showUppercaseWarning(field) {
-  const warning = getUppercaseWarningNode(field);
-  if (!warning) return;
-  warning.classList.add('is-visible');
-  window.clearTimeout(warning._hideTimer);
-  warning._hideTimer = window.setTimeout(() => {
-    warning.classList.remove('is-visible');
-  }, 2200);
-}
-
-function normalizeUppercaseField(field, { showWarning = false } = {}) {
+function normalizeUppercaseField(field) {
   if (!shouldForceUppercaseField(field)) return;
   const current = String(field.value || '');
   const upper = current.toUpperCase();
   if (current !== upper) {
     field.value = upper;
-    if (showWarning) showUppercaseWarning(field);
   }
 }
 
@@ -9974,7 +9937,7 @@ function decorateUppercaseFields(root = document) {
 document.addEventListener('input', (event) => {
   const field = event.target;
   if (!shouldForceUppercaseField(field)) return;
-  normalizeUppercaseField(field, { showWarning: /[a-záéíóúñü]/.test(String(field.value || '')) });
+  normalizeUppercaseField(field);
 });
 
 document.addEventListener('blur', (event) => {
