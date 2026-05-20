@@ -9911,6 +9911,9 @@ function shouldForceUppercaseField(field) {
   if (field.readOnly || field.disabled) return false;
   if (tag !== 'INPUT' && tag !== 'TEXTAREA') return false;
 
+  const mixedCaseIds = new Set(['usuario', 'restore_usuario']);
+  if (field.id && mixedCaseIds.has(field.id)) return false;
+
   const blockedTypes = new Set(['email', 'password', 'search', 'hidden', 'file', 'number', 'date', 'datetime-local', 'time', 'month', 'week', 'url']);
   if (blockedTypes.has(type)) return false;
 

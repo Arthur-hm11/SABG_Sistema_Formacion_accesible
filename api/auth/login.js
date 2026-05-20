@@ -18,7 +18,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: "Método no permitido" });
 
   const { usuario, password } = req.body || {};
-  if (!usuario || !password)
+  const usuarioInput = String(usuario || "").trim();
+  if (!usuarioInput || !password)
     return res.status(400).json({ success: false, error: "Faltan credenciales" });
 
   try {
@@ -27,10 +28,11 @@ export default async function handler(req, res) {
     const q = `
       SELECT id, usuario, password_hash, nombre, rol, dependencia
       FROM public.usuarios
-      WHERE usuario = $1
+      WHERE LOWER(TRIM(usuario)) = LOWER($1)
+      ORDER BY CASE WHEN usuario = $1 THEN 0 ELSE 1 END, id ASC
       LIMIT 1
     `;
-    const r = await pool.query(q, [usuario]);
+    const r = await pool.query(q, [usuarioInput]);
 
     if (!r.rows || r.rows.length === 0) {
       return res.status(401).json({ success: false, error: "Credenciales inválidas" });
