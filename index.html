@@ -1461,6 +1461,64 @@
             opacity: 1;
         }
 
+        .estado-historial-btn {
+            margin-top: 0.35rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            border: 1px solid rgba(122, 47, 77, 0.25);
+            background: #fff;
+            color: var(--guinda);
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .estado-historial-btn:hover {
+            background: #f8eef2;
+        }
+
+        .estado-historial-panel {
+            background: #fbf7f8;
+            border: 1px solid #ead7df;
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+            margin: 0.6rem 0;
+        }
+
+        .estado-historial-panel h4 {
+            margin: 0 0 0.75rem 0;
+            color: var(--guinda);
+            font-size: 0.95rem;
+        }
+
+        .estado-historial-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .estado-historial-item {
+            border-left: 3px solid var(--guinda);
+            padding-left: 0.85rem;
+        }
+
+        .estado-historial-item strong {
+            color: #233044;
+            display: block;
+            margin-bottom: 0.18rem;
+        }
+
+        .estado-historial-meta {
+            color: #64748b;
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .estado-historial-motivo {
+            color: #334155;
+            font-size: 0.86rem;
+        }
+
         .editable-disabled {
             cursor: not-allowed;
             opacity: 0.6;
@@ -6492,30 +6550,10 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     function makeEditable(cell) {
         const field = cell.dataset.field;
 
-        // Marcar cambios como pendientes (Guardar en Neon)
-        try {
-            const row = cell.closest("tr");
-            const rid = cell.dataset.id || (row && row.dataset && row.dataset.id);
-            const capture = () => {
-                let v = "";
-                const sel = cell.querySelector("select");
-                const inp = cell.querySelector("input, textarea");
-                if (sel) v = sel.value;
-                else if (inp) v = inp.value;
-                else v = cell.textContent;
-                markPendingEdit(rid, field, (v == null ? "" : String(v)).trim());
-                __setSaveButtonsState();
-            };
-            const sel = cell.querySelector("select");
-            const inp = cell.querySelector("input, textarea");
-            if (sel) sel.addEventListener("change", capture);
-            if (inp) inp.addEventListener("blur", capture);
-        } catch (_) {}
-
-
         // 🔒 Permisos: SOLO admin/superadmin pueden editar (otros: solo OBSERVACIONES)
         const isAdminOrSuper = document.body.classList.contains("role-superadmin") || document.body.classList.contains("role-admin");
-        if (!isAdminOrSuper && field !== "observaciones") {
+        const canEditEstado = field === 'estado_avance' && (isAdminOrSuper || document.body.classList.contains('role-enlace'));
+        if (!isAdminOrSuper && field !== "observaciones" && !canEditEstado) {
             alert("⚠️ Solo administradores pueden editar estas columnas.");
             return;
         }
@@ -6525,6 +6563,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         // - TODOS los usuarios pueden editar SOLO OBSERVACIONES (máx. 150 caracteres)
         // - Cualquier otro campo: SOLO superadmin
         const puedeEditar =
+            canEditEstado ||
             (field === 'observaciones') ||
             (userRole === 'superadmin');
 
@@ -6559,17 +6598,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         }
         else if (field === 'estado_avance') {
             editControl = document.createElement('select');
-            editControl.innerHTML = `
-                <option value="CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS">CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS</option>
-                <option value="PERSONA INTERESADA">PERSONA INTERESADA</option>
-                <option value="PERSONA INSCRITA">PERSONA INSCRITA</option>
-                <option value="PERSONA CURSANDO NIVEL EDUCATIVO">PERSONA CURSANDO NIVEL EDUCATIVO</option>
-                <option value="PERSONA QUE CONCLUYÓ SUS ESTUDIOS">PERSONA QUE CONCLUYÓ SUS ESTUDIOS</option>
-                <option value="PERSONA EN PROCESO DE TITULACIÓN">PERSONA EN PROCESO DE TITULACIÓN</option>
-                <option value="PERSONA QUE DESERTÓ">PERSONA QUE DESERTÓ</option>
-                <option value="PERSONA SUSPENDIDA">PERSONA SUSPENDIDA</option>
-                <option value="OTRA">OTRA</option>
-            `;
+            editControl.innerHTML = ESTADOS_AVANCE_OPCIONES.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
             editControl.value = currentValue;
         }
         else if (field === 'observaciones') {
@@ -6623,6 +6652,10 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             // FIX: si es SELECT, guardar en cuanto cambia
             if (editControl && String(editControl.tagName).toUpperCase() === "SELECT") {
                 editControl.addEventListener("change", function(){
+                    if (field === 'estado_avance') {
+                        saveEstadoAvanceChange(cell, this.value.trim(), currentValue);
+                        return;
+                    }
                     saveEdit(cell, field, this.value.trim(), currentValue);
                 });
             }
@@ -6641,6 +6674,76 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     // =====================================================
     // SAVE EDIT (cola cambios + actualiza UI, sin autosave)
     // =====================================================
+    async function saveEstadoAvanceChange(cell, newValue, oldValue) {
+        const row = cell.closest('tr');
+        const id = (cell && cell.dataset && cell.dataset.id) || (row && row.dataset && row.dataset.id);
+        const currentValue = String(oldValue || '').trim();
+        const nextValue = String(newValue || '').trim();
+
+        const restore = (value) => {
+            cell.classList.remove('editing');
+            const claseEstadoRojo = ["CAMBIO LA INSTITUCION ACADEMICA DE INTERES", "PERSONA QUE DESERTO"].includes(
+                String(value || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toUpperCase()
+            ) ? 'estado-rojo' : '';
+            cell.className = `editable-cell ${claseEstadoRojo}`.trim();
+            cell.innerHTML = renderEstadoAvanceCellContent({ id, estado_avance: value });
+        };
+
+        if (!nextValue || nextValue === currentValue) {
+            restore(currentValue);
+            return;
+        }
+
+        const motivo = String(window.prompt('CAPTURE EL MOTIVO DEL CAMBIO DE ESTADO DE AVANCE:', 'ACTUALIZACIÓN TRIMESTRAL') || '').trim();
+        if (!motivo) {
+            alert('⚠️ Debe capturar el motivo del cambio.');
+            restore(currentValue);
+            return;
+        }
+
+        const confirmado = window.confirm(
+            `¿DESEA CAMBIAR EL ESTADO DE AVANCE?\n\nDE: ${currentValue || '(SIN ESTADO)'}\nA: ${nextValue}\n\nMOTIVO: ${motivo}`
+        );
+
+        if (!confirmado) {
+            restore(currentValue);
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/trimestral/updateEstado', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: Number(id),
+                    estado_avance: nextValue,
+                    motivo
+                })
+            });
+
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'No se pudo actualizar el estado de avance');
+            }
+
+            restore(nextValue);
+
+            const expanded = row?.nextElementSibling?.classList?.contains('estado-history-row');
+            if (expanded) {
+                row.nextElementSibling.remove();
+            }
+
+            alert('✅ ESTADO DE AVANCE ACTUALIZADO CORRECTAMENTE.');
+        } catch (error) {
+            alert(`❌ ${error?.message || 'Error al actualizar el estado de avance.'}`);
+            restore(currentValue);
+        }
+    }
+
     function saveEdit(cell, field, newValue, oldValue){
         try {
             const row = cell.closest('tr');
@@ -8569,8 +8672,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
             <span class="edit-icon">✏️</span>
           </td>
           <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
-            ${registro.estado_avance || ""}
-            <span class="edit-icon">✏️</span>
+            ${renderEstadoAvanceCellContent(registro)}
           </td>
           <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
             ${registro.observaciones || "-"}
@@ -9048,6 +9150,94 @@ function humanizarValorCatalogo(valor) {
     if (!raw) return '';
     return raw.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
 }
+
+const ESTADOS_AVANCE_OPCIONES = [
+    "CAMBIÓ LA INSTITUCIÓN ACADÉMICA DE INTERÉS",
+    "PERSONA INTERESADA",
+    "PERSONA INSCRITA",
+    "PERSONA CURSANDO NIVEL EDUCATIVO",
+    "PERSONA QUE CONCLUYÓ SUS ESTUDIOS",
+    "PERSONA EN PROCESO DE TITULACIÓN",
+    "PERSONA QUE DESERTÓ",
+    "PERSONA SUSPENDIDA",
+    "OTRA"
+];
+
+function renderEstadoAvanceCellContent(registro) {
+    const value = escapeHtml(registro?.estado_avance || "");
+    const rid = Number(registro?.id || 0);
+    return `
+        <div class="estado-actual-wrap">${value}</div>
+        <button type="button" class="estado-historial-btn no-export" onclick="toggleEstadoHistorial(event, ${rid})">VER HISTÓRICO</button>
+        <span class="edit-icon">✏️</span>
+    `;
+}
+
+async function toggleEstadoHistorial(event, registroId) {
+    try {
+        event?.stopPropagation?.();
+        event?.preventDefault?.();
+    } catch (_) {}
+
+    const btn = event?.currentTarget || null;
+    const cell = btn?.closest?.('td');
+    const row = cell?.closest?.('tr');
+    if (!row || !registroId) return;
+
+    const nextRow = row.nextElementSibling;
+    if (nextRow && nextRow.classList.contains('estado-history-row')) {
+        nextRow.remove();
+        return;
+    }
+
+    const detailRow = document.createElement('tr');
+    detailRow.className = 'estado-history-row';
+    const detailCell = document.createElement('td');
+    detailCell.colSpan = row.children.length;
+    detailCell.innerHTML = `
+        <div class="estado-historial-panel">
+            <h4>HISTÓRICO DE ESTADO DE AVANCE</h4>
+            <div class="estado-historial-list">CARGANDO...</div>
+        </div>
+    `;
+    detailRow.appendChild(detailCell);
+    row.insertAdjacentElement('afterend', detailRow);
+
+    try {
+        const response = await fetch(`/api/trimestral/estadoHistory?id=${encodeURIComponent(registroId)}`, {
+            credentials: 'include'
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'No se pudo cargar el histórico');
+        }
+
+        const list = detailCell.querySelector('.estado-historial-list');
+        list.innerHTML = '';
+
+        if (!Array.isArray(result.data) || !result.data.length) {
+            list.innerHTML = '<div class="estado-historial-item"><strong>SIN HISTÓRICO DISPONIBLE</strong></div>';
+            return;
+        }
+
+        result.data.forEach((item) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'estado-historial-item';
+            const anterior = item?.estado_anterior ? `DE: ${escapeHtml(item.estado_anterior)} -> ` : '';
+            wrapper.innerHTML = `
+                <strong>${anterior}A: ${escapeHtml(item?.estado_nuevo || '-')}</strong>
+                <div class="estado-historial-meta">${escapeHtml(formatFechaMx(item?.changed_at) || '-')} | ${escapeHtml(item?.usuario || 'SIN USUARIO')}</div>
+                <div class="estado-historial-motivo">MOTIVO: ${escapeHtml(item?.motivo || '-')}</div>
+            `;
+            list.appendChild(wrapper);
+        });
+    } catch (error) {
+        const list = detailCell.querySelector('.estado-historial-list');
+        list.innerHTML = `<div class="estado-historial-item"><strong>NO SE PUDO CARGAR EL HISTÓRICO</strong><div class="estado-historial-motivo">${escapeHtml(error?.message || 'Error desconocido')}</div></div>`;
+    }
+}
+
+window.toggleEstadoHistorial = toggleEstadoHistorial;
 
 const INSTITUCION_EDUCATIVA_OTRO = 'OTRO';
 const MODALIDAD_OTRO = 'OTRO';

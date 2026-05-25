@@ -2,6 +2,7 @@ import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
 import { logAuditEvent } from "../_lib/monitoring.js";
+import { insertEstadoHistorial } from "../_lib/estadoHistorial.js";
 
 function norm(v) {
   if (v === undefined || v === null) return null;
@@ -198,6 +199,20 @@ export default async function handler(req, res) {
       RETURNING *`,
       values
     );
+
+    try {
+      await insertEstadoHistorial(pool, {
+        registroId: result.rows?.[0]?.id,
+        estadoAnterior: null,
+        estadoNuevo: norm(data.estado_avance),
+        motivo: "REGISTRO INICIAL",
+        usuario: session.usuario || data.usuario_registro || "SIN_USUARIO",
+        rol: session.rol || null,
+        dependencia: norm(data.dependencia),
+      });
+    } catch (historyError) {
+      console.error("No se pudo guardar el histórico inicial de estado:", historyError);
+    }
 
     try {
       await logAuditEvent({

@@ -1,6 +1,7 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
+import { insertEstadoHistorial } from "../_lib/estadoHistorial.js";
 
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
@@ -46,6 +47,31 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       const value = e?.value ?? null;
 
       if (!id || !ALLOWED.has(field)) continue;
+
+      if (field === "estado_avance") {
+        const currentRes = await client.query(
+          `SELECT estado_avance, dependencia FROM public.registros_trimestral WHERE id = $1 LIMIT 1`,
+          [id]
+        );
+        const current = currentRes.rows?.[0];
+        if (!current) continue;
+        const currentValue = String(current.estado_avance || "").trim();
+        const nextValue = String(value || "").trim();
+        if (!nextValue || currentValue === nextValue) continue;
+
+        await client.query(`UPDATE public.registros_trimestral SET ${field} = $1 WHERE id = $2`, [value, id]);
+        await insertEstadoHistorial(client, {
+          registroId: id,
+          estadoAnterior: currentValue || null,
+          estadoNuevo: nextValue,
+          motivo: String(e?.motivo || "ACTUALIZACIÓN ADMINISTRATIVA").trim().slice(0, 200),
+          usuario: session.usuario || "SIN_USUARIO",
+          rol: session.rol || null,
+          dependencia: current.dependencia || null,
+        });
+        updated++;
+        continue;
+      }
 
       const q = `UPDATE public.registros_trimestral SET ${field} = $1 WHERE id = $2`;
       await client.query(q, [value, id]);
