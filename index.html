@@ -1485,6 +1485,20 @@
             margin: 0.6rem 0;
         }
 
+        .estado-historial-inline {
+            display: none;
+            width: 100%;
+            margin-top: 0.4rem;
+        }
+
+        .estado-historial-inline.is-open {
+            display: block;
+        }
+
+        .estado-historial-inline .estado-historial-panel {
+            margin: 0;
+        }
+
         .estado-historial-panel h4 {
             margin: 0 0 0.75rem 0;
             color: var(--guinda);
@@ -6755,11 +6769,6 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
             restore(nextValue);
 
-            const expanded = row?.nextElementSibling?.classList?.contains('estado-history-row');
-            if (expanded) {
-                row.nextElementSibling.remove();
-            }
-
             alert('✅ ESTADO DE AVANCE ACTUALIZADO CORRECTAMENTE.');
         } catch (error) {
             alert(`❌ ${error?.message || 'Error al actualizar el estado de avance.'}`);
@@ -9192,6 +9201,7 @@ function renderEstadoAvanceCellContent(registro) {
     return `
         <div class="estado-actual-wrap">${value}</div>
         <button type="button" class="estado-historial-btn no-export" onclick="toggleEstadoHistorial(event, ${rid})">VER HISTÓRICO</button>
+        <div class="estado-historial-inline" data-historial-inline="${rid}"></div>
         <span class="edit-icon">✏️</span>
     `;
 }
@@ -9204,27 +9214,31 @@ async function toggleEstadoHistorial(event, registroId) {
 
     const btn = event?.currentTarget || null;
     const cell = btn?.closest?.('td');
-    const row = cell?.closest?.('tr');
-    if (!row || !registroId) return;
+    if (!cell || !registroId) return;
 
-    const nextRow = row.nextElementSibling;
-    if (nextRow && nextRow.classList.contains('estado-history-row')) {
-        nextRow.remove();
+    const inlineContainer = cell.querySelector(`[data-historial-inline="${registroId}"]`);
+    if (!inlineContainer) return;
+
+    document.querySelectorAll('.estado-historial-inline.is-open').forEach((panel) => {
+        if (panel !== inlineContainer) {
+            panel.classList.remove('is-open');
+            panel.innerHTML = '';
+        }
+    });
+
+    if (inlineContainer.classList.contains('is-open')) {
+        inlineContainer.classList.remove('is-open');
+        inlineContainer.innerHTML = '';
         return;
     }
 
-    const detailRow = document.createElement('tr');
-    detailRow.className = 'estado-history-row';
-    const detailCell = document.createElement('td');
-    detailCell.colSpan = row.children.length;
-    detailCell.innerHTML = `
+    inlineContainer.classList.add('is-open');
+    inlineContainer.innerHTML = `
         <div class="estado-historial-panel">
             <h4>HISTÓRICO DE ESTADO DE AVANCE</h4>
             <div class="estado-historial-list">CARGANDO...</div>
         </div>
     `;
-    detailRow.appendChild(detailCell);
-    row.insertAdjacentElement('afterend', detailRow);
 
     try {
         const response = await fetch(`/api/trimestral/estadoHistory?id=${encodeURIComponent(registroId)}`, {
@@ -9235,7 +9249,7 @@ async function toggleEstadoHistorial(event, registroId) {
             throw new Error(result.error || 'No se pudo cargar el histórico');
         }
 
-        const list = detailCell.querySelector('.estado-historial-list');
+        const list = inlineContainer.querySelector('.estado-historial-list');
         list.innerHTML = '';
 
         if (!Array.isArray(result.data) || !result.data.length) {
@@ -9255,7 +9269,7 @@ async function toggleEstadoHistorial(event, registroId) {
             list.appendChild(wrapper);
         });
     } catch (error) {
-        const list = detailCell.querySelector('.estado-historial-list');
+        const list = inlineContainer.querySelector('.estado-historial-list');
         list.innerHTML = `<div class="estado-historial-item"><strong>NO SE PUDO CARGAR EL HISTÓRICO</strong><div class="estado-historial-motivo">${escapeHtml(error?.message || 'Error desconocido')}</div></div>`;
     }
 }
