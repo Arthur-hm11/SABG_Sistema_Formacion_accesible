@@ -6552,7 +6552,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
         // 🔒 Permisos: SOLO admin/superadmin pueden editar (otros: solo OBSERVACIONES)
         const isAdminOrSuper = document.body.classList.contains("role-superadmin") || document.body.classList.contains("role-admin");
-        const canEditEstado = field === 'estado_avance' && (isAdminOrSuper || document.body.classList.contains('role-enlace'));
+        const canEditEstado = field === 'estado_avance' && isAdminOrSuper;
         if (!isAdminOrSuper && field !== "observaciones" && !canEditEstado) {
             alert("⚠️ Solo administradores pueden editar estas columnas.");
             return;
@@ -6568,6 +6568,10 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             (userRole === 'superadmin');
 
         if (!puedeEditar) {
+            if (field === 'estado_avance') {
+                alert('⚠️ Solo ADMINISTRADOR y SUPERADMINISTRADOR pueden modificar el ESTADO DE AVANCE. El enlace solo puede consultar el histórico.');
+                return;
+            }
             alert('⚠️ Solo se puede editar la columna OBSERVACIONES.');
             return;
         }
