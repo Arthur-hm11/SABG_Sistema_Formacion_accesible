@@ -9260,11 +9260,10 @@ async function toggleEstadoHistorial(event, registroId) {
         result.data.forEach((item) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'estado-historial-item';
-            const anterior = item?.estado_anterior ? `DE: ${escapeHtml(item.estado_anterior)} -> ` : '';
+            const estadoAnterior = String(item?.estado_anterior || '').trim();
+            const estadoNuevo = escapeHtml(item?.estado_nuevo || '-');
             wrapper.innerHTML = `
-                <strong>${anterior}A: ${escapeHtml(item?.estado_nuevo || '-')}</strong>
-                <div class="estado-historial-meta">${escapeHtml(formatFechaMx(item?.changed_at) || '-')} | ${escapeHtml(item?.usuario || 'SIN USUARIO')}</div>
-                <div class="estado-historial-motivo">MOTIVO: ${escapeHtml(item?.motivo || '-')}</div>
+                <strong>${estadoAnterior ? `${escapeHtml(estadoAnterior)} → ${estadoNuevo}` : estadoNuevo}</strong>
             `;
             list.appendChild(wrapper);
         });
