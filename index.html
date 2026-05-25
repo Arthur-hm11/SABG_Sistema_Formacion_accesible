@@ -6576,8 +6576,8 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             return;
         }
 
-        // 🔓 Para OBSERVACIONES: permitir edición incluso si el control global está bloqueado
-        if (field !== 'observaciones' && edicionBloqueada) {
+        // 🔓 Para OBSERVACIONES y ESTADO DE AVANCE: permitir edición incluso si el control global está bloqueado
+        if (field !== 'observaciones' && field !== 'estado_avance' && edicionBloqueada) {
             alert('🔒 La edición está bloqueada. Por favor, desbloquee la edición primero.');
             return;
         }
@@ -6586,7 +6586,9 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             return;
         }
 
-        const currentValue = cell.textContent.trim().replace('✏️', '').trim();
+        const currentValue = field === 'estado_avance'
+            ? (cell.querySelector('.estado-actual-wrap')?.textContent || '').trim()
+            : cell.textContent.trim().replace('✏️', '').trim();
         cell.classList.add('editing');
 
         let editControl;
