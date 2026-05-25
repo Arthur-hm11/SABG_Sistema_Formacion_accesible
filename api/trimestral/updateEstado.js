@@ -9,6 +9,11 @@ function norm(v) {
   return s === "" ? null : s;
 }
 
+function isEnlaceRole(roleRaw) {
+  const role = String(roleRaw || "").toLowerCase().trim();
+  return role === "enlace" || role.startsWith("enlace");
+}
+
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
@@ -25,9 +30,14 @@ export default async function handler(req, res) {
   if (!session) return res.status(401).json({ success: false, error: "Unauthorized" });
 
   const isAdmin = isAdminSession(session);
+  const isEnlace = isEnlaceRole(session?.rol);
   const registroId = Number(req.body?.id);
   const nuevoEstado = norm(req.body?.estado_avance);
   const motivo = norm(req.body?.motivo);
+
+  if (!isAdmin && !isEnlace) {
+    return res.status(403).json({ success: false, error: "No autorizado" });
+  }
 
   if (!registroId || !nuevoEstado) {
     return res.status(400).json({ success: false, error: "Datos incompletos" });

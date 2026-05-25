@@ -4798,6 +4798,11 @@ function isAdminRoleValue(roleRaw) {
     return role === 'admin' || role === 'superadmin' || role === 'administrador';
 }
 
+function isEnlaceRoleValue(roleRaw) {
+    const role = String(roleRaw || '').toLowerCase().trim();
+    return role === 'enlace' || role.startsWith('enlace');
+}
+
 function isAdminUser() {
     // Evita ReferenceError si 'userRole' no existe en el scope global
     const roleRaw =
@@ -4831,7 +4836,7 @@ function syncRoleBodyClasses() {
     const role = String(roleRaw || '').toLowerCase().trim();
     document.body.classList.toggle('role-superadmin', role === 'superadmin');
     document.body.classList.toggle('role-admin', isAdminRoleValue(role));
-    document.body.classList.toggle('role-enlace', role === 'enlace');
+    document.body.classList.toggle('role-enlace', isEnlaceRoleValue(role));
     document.body.classList.toggle('role-monitor', role === 'monitor');
 }
 
@@ -4844,7 +4849,7 @@ function updateExportButtonVisibility() {
         (localStorage.getItem('SABG_ROL') || '');
     const role = String(roleRaw || '').toLowerCase().trim();
 
-    if (role === 'enlace') {
+    if (isEnlaceRoleValue(role)) {
         btn.hidden = true;
         btn.style.setProperty('display', 'none', 'important');
         btn.style.setProperty('visibility', 'hidden', 'important');
@@ -6036,7 +6041,7 @@ async function loginUsuario() {
             try {
                 document.body.classList.toggle("role-superadmin", userRole === "superadmin");
                 document.body.classList.toggle("role-admin", isAdminRoleValue(userRole));
-                document.body.classList.toggle("role-enlace", userRole === "enlace");
+                document.body.classList.toggle("role-enlace", isEnlaceRoleValue(userRole));
             } catch (_) {}
 
         });
@@ -8114,7 +8119,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         const roleRaw =
             (typeof userRole !== 'undefined' && userRole) ? userRole :
             (localStorage.getItem('SABG_ROL') || '');
-        return String(roleRaw || '').toLowerCase().trim() === 'enlace';
+        return isEnlaceRoleValue(roleRaw);
     }
 
     function getCurrentUserDependencia() {
