@@ -25,9 +25,6 @@ export default async function handler(req, res) {
   if (!session) return res.status(401).json({ success: false, error: "Unauthorized" });
 
   const isAdmin = isAdminSession(session);
-  if (!isAdmin) {
-    return res.status(403).json({ success: false, error: "Solo administradores pueden modificar el estado de avance" });
-  }
   const registroId = Number(req.body?.id);
   const nuevoEstado = norm(req.body?.estado_avance);
   const motivo = norm(req.body?.motivo);
@@ -53,14 +50,28 @@ export default async function handler(req, res) {
     client = await pool.connect();
     await client.query("BEGIN");
 
+    const params = [registroId];
+    let whereExtra = "";
+
+    if (!isAdmin) {
+      const dependencia = norm(session.dependencia);
+      if (!dependencia) {
+        await client.query("ROLLBACK");
+        return res.status(403).json({ success: false, error: "Dependencia no autorizada" });
+      }
+      params.push(dependencia);
+      whereExtra = ` AND UPPER(BTRIM(dependencia)) = UPPER(BTRIM($2))`;
+    }
+
     const registroRes = await client.query(
       `
         SELECT id, estado_avance, dependencia
         FROM public.registros_trimestral
         WHERE id = $1
+        ${whereExtra}
         LIMIT 1
       `,
-      [registroId]
+      params
     );
 
     if (!registroRes.rows.length) {
