@@ -9257,7 +9257,16 @@ async function toggleEstadoHistorial(event, registroId) {
             return;
         }
 
-        result.data.forEach((item) => {
+        const orderedItems = [...result.data].sort((a, b) => {
+            const timeA = a?.changed_at ? new Date(a.changed_at).getTime() : 0;
+            const timeB = b?.changed_at ? new Date(b.changed_at).getTime() : 0;
+            if (timeA !== timeB) return timeB - timeA;
+            const idA = Number(a?.id || 0);
+            const idB = Number(b?.id || 0);
+            return idB - idA;
+        });
+
+        orderedItems.forEach((item) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'estado-historial-item';
             const estadoAnterior = String(item?.estado_anterior || '').trim();
