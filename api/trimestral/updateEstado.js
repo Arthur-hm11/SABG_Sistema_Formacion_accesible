@@ -14,6 +14,10 @@ function isEnlaceRole(roleRaw) {
   return role === "enlace" || role.startsWith("enlace");
 }
 
+function hasForbiddenHistoryField(value) {
+  return /(historico|historial|history|estado_historico|cambios_historico)/i.test(String(value || ""));
+}
+
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
@@ -37,6 +41,10 @@ export default async function handler(req, res) {
 
   if (!isAdmin && !isEnlace) {
     return res.status(403).json({ success: false, error: "No autorizado" });
+  }
+
+  if (Object.keys(req.body || {}).some(hasForbiddenHistoryField)) {
+    return res.status(400).json({ success: false, error: "Payload no permitido" });
   }
 
   if (!registroId || !nuevoEstado) {

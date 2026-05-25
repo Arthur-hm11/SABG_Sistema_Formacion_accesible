@@ -3,6 +3,21 @@ import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
 import { insertEstadoHistorial } from "../_lib/estadoHistorial.js";
 
+function norm(v) {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
+}
+
+function isEnlaceRole(roleRaw) {
+  const role = String(roleRaw || "").toLowerCase().trim();
+  return role === "enlace" || role.startsWith("enlace");
+}
+
+function hasForbiddenHistoryField(value) {
+  return /(historico|historial|history|estado_historico|cambios_historico)/i.test(String(value || ""));
+}
+
 export default async function handler(req, res) {
   const pre = applyCors(req, res);
   if (pre) return;
@@ -16,7 +31,9 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
 
   const session = readSabgSession(req);
   if (!session) return res.status(401).json({ success: false, error: "Unauthorized" });
-  if (!isAdminSession(session)) return res.status(403).json({ success: false, error: "No autorizado" });
+  const isAdmin = isAdminSession(session);
+  const isEnlace = isEnlaceRole(session?.rol);
+  if (!isAdmin && !isEnlace) return res.status(403).json({ success: false, error: "No autorizado" });
 
   let client;
   try {
@@ -28,6 +45,10 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       return res.status(400).json({ success: false, error: "Máximo 500 cambios por guardado" });
     }
 
+    if (Object.keys(req.body || {}).some(hasForbiddenHistoryField)) {
+      return res.status(400).json({ success: false, error: "Payload no permitido" });
+    }
+
     const ALLOWED = new Set([
       "nivel_educativo",
       "institucion_educativa",
@@ -35,6 +56,7 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       "estado_avance",
       "observaciones"
     ]);
+    const ENLACE_ALLOWED = new Set(["observaciones"]);
 
     // La transaccion debe correr sobre el mismo cliente del pool.
     client = await pool.connect();
@@ -46,7 +68,8 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       const field = String(e?.field || "");
       const value = e?.value ?? null;
 
-      if (!id || !ALLOWED.has(field)) continue;
+      if (!id || !ALLOWED.has(field) || hasForbiddenHistoryField(field)) continue;
+      if (isEnlace && !ENLACE_ALLOWED.has(field)) continue;
 
       if (field === "estado_avance") {
         const currentRes = await client.query(
@@ -70,6 +93,20 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
           dependencia: current.dependencia || null,
         });
         updated++;
+        continue;
+      }
+
+      if (isEnlace) {
+        const dependencia = norm(session?.dependencia);
+        if (!dependencia) continue;
+        const q = `
+          UPDATE public.registros_trimestral
+          SET ${field} = $1
+          WHERE id = $2
+            AND UPPER(BTRIM(dependencia)) = UPPER(BTRIM($3))
+        `;
+        const result = await client.query(q, [value, id, dependencia]);
+        if (result.rowCount > 0) updated++;
         continue;
       }
 
