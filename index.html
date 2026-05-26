@@ -5436,7 +5436,9 @@ function showBulkReportModal(aggregateReport, extra={}){
     let errorsHtml = '';
     if (showErrors){
       const rows = errors.slice(0, 50).map((e, idx)=>{
-        const msg = (e && (e.message || e.error)) ? (e.message || e.error) : JSON.stringify(e);
+        const baseMsg = (e && (e.message || e.error)) ? (e.message || e.error) : JSON.stringify(e);
+        const detailMsg = e?.detalle ? ` | ${e.detalle}` : '';
+        const msg = `${baseMsg || ''}${detailMsg}`;
         const curp = e?.curp ?? '';
         const tri = e?.trimestre ?? '';
         const rusp = e?.id_rusp ?? '';

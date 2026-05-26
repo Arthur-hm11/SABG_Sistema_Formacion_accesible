@@ -132,29 +132,25 @@ export async function ensureRegistrosTrimestralSchema(db) {
   `);
 
   const uniqueCurpConstraints = await executor.query(`
-    SELECT c.conname
+    SELECT c.conname, pg_get_constraintdef(c.oid) AS definition
     FROM pg_constraint c
     JOIN pg_class t ON c.conrelid = t.oid
     JOIN pg_namespace n ON n.oid = t.relnamespace
     WHERE n.nspname = 'public'
       AND t.relname = 'registros_trimestral'
       AND c.contype = 'u'
-      AND EXISTS (
-        SELECT 1
-        FROM unnest(c.conkey) AS key(attnum)
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = key.attnum
-        WHERE a.attname = 'curp'
-      )
   `);
 
   for (const row of uniqueCurpConstraints.rows || []) {
+    const definition = String(row.definition || "");
+    if (!/\bcurp\b/i.test(definition)) continue;
     const conname = String(row.conname || "").replace(/"/g, "");
     if (!conname) continue;
     await executor.query(`ALTER TABLE public.registros_trimestral DROP CONSTRAINT IF EXISTS "${conname}"`);
   }
 
   const uniqueCurpIndexes = await executor.query(`
-    SELECT idx.relname AS indexname
+    SELECT idx.relname AS indexname, pg_get_indexdef(i.indexrelid) AS definition
     FROM pg_class tbl
     JOIN pg_namespace ns ON ns.oid = tbl.relnamespace
     JOIN pg_index i ON i.indrelid = tbl.oid
@@ -167,15 +163,11 @@ export async function ensureRegistrosTrimestralSchema(db) {
         FROM pg_constraint c
         WHERE c.conindid = i.indexrelid
       )
-      AND EXISTS (
-        SELECT 1
-        FROM unnest(i.indkey) AS key(attnum)
-        JOIN pg_attribute a ON a.attrelid = tbl.oid AND a.attnum = key.attnum
-        WHERE a.attname = 'curp'
-      )
   `);
 
   for (const row of uniqueCurpIndexes.rows || []) {
+    const definition = String(row.definition || "");
+    if (!/\bcurp\b/i.test(definition)) continue;
     const indexname = String(row.indexname || "").replace(/"/g, "");
     if (!indexname) continue;
     await executor.query(`DROP INDEX IF EXISTS public."${indexname}"`);
