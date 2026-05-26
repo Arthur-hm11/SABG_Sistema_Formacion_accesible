@@ -8,7 +8,7 @@
 
     <style>
         * {
-            margin: 0 0 0 2px;
+            margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
@@ -32,6 +32,7 @@
             background: linear-gradient(135deg, #6B2C40 0%, #8B3A52 25%, #A0475E 50%, #D4C4A8 100%);
             background-attachment: fixed;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         /* Login Screen */
@@ -808,9 +809,10 @@
         }
 /* Container */
         .container {
-            max-width: 1600px;
-            margin: 2rem auto;
-            padding: 2rem;
+            width: min(97vw, 1920px);
+            max-width: 1920px;
+            margin: clamp(1rem, 2vw, 2rem) auto;
+            padding: clamp(1rem, 1.8vw, 2rem);
             position: relative;
             z-index: 10;
         }
@@ -835,7 +837,7 @@
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 2rem;
+            padding: clamp(1.25rem, 1.8vw, 2rem);
             margin-bottom: 2rem;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
@@ -1208,7 +1210,9 @@
             overflow-x: auto;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin: 2rem 0;
+            margin: 1.5rem 0;
+            width: 100%;
+            background: rgba(255,255,255,0.98);
         }
 
         table {
@@ -1216,6 +1220,84 @@
             border-collapse: collapse;
             background: white;
             min-width: 1200px;
+        }
+
+        .tabla-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .tabla-toolbar {
+            display: grid;
+            grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr);
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .tabla-toolbar .search-box {
+            width: 100%;
+            max-width: none !important;
+        }
+
+        .tabla-hint {
+            font-size: 12px;
+            margin: 0 0 1rem 0;
+            color: #555;
+            background: #fff7ed;
+            border: 1px solid #fdba74;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        .tabla-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .tabla-actions .btn {
+            margin: 0;
+        }
+
+        .tabla-actions .status-text {
+            margin-left: 4px;
+            color: #64748b;
+            font-size: 13px;
+            flex: 1 1 220px;
+            min-width: 220px;
+        }
+
+        .tabla-upload-row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                width: min(99vw, 1920px);
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .tabla-toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .tabla-actions .status-text {
+                flex-basis: 100%;
+                min-width: 0;
+                margin-left: 0;
+            }
         }
 
         thead {
@@ -3280,28 +3362,29 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                 </div>
                 <!-- TAB: TABLA DE REGISTROS (Solo visible para Super Admin) -->
                 <div id="tabla" class="tab-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                        <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>                    </div>
-                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
-                        <select id="filterAnioTrimestral" class="search-box" style="max-width:240px;">
+                    <div class="tabla-header">
+                        <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
+                    </div>
+                    <div class="tabla-toolbar">
+                        <select id="filterAnioTrimestral" class="search-box">
                             <option value="">TODOS LOS AÑOS</option>
                         </select>
                         <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
                     </div>
-                    <div style="font-size:12px; margin:8px 0 12px 0; color:#555; background:#fff7ed; border:1px solid #fdba74; padding:8px 12px; border-radius:8px;">👉 Para revisar el registro completo, favor de arrastrar la barra de desplazamiento hacia la derecha.</div>
+                    <div class="tabla-hint">👉 Para revisar el registro completo, favor de arrastrar la barra de desplazamiento hacia la derecha.</div>
                    <div id="exportButtonsTrimestral" style="margin: 0 0 1rem 0 !important; display:block !important; visibility:visible !important; opacity:1 !important;">
-                    <div style="display:flex !important; align-items:center !important; gap:12px !important; flex-wrap:wrap !important; margin-bottom:10px !important;">
+                    <div class="tabla-actions" style="display:flex !important; align-items:center !important; gap:12px !important; flex-wrap:wrap !important; margin-bottom:10px !important;">
                         <button type="button" id="btnExportExcelEnlaceVisible" class="btn btn-success" onclick="exportData('excel')" style="display:inline-flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
                             📥 Descargar información
                         </button>
                         <button id="btnGuardarNeon" type="button" class="btn btn-success admin-only" onclick="guardarCambiosNeon(event)" style="display:inline-block;" disabled>💾 Guardar cambios</button>
                         <button class="btn btn-danger admin-only" id="btnEliminarRegistrosTrimestral" type="button" onclick="eliminarRegistrosTrimestralSeleccionados()" style="display:none;">🗑️ Eliminar seleccionados</button>
-                        <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
+                        <span id="saveNeonStatus" class="status-text" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
                     </div>
 
 <!-- Solo administradores: carga masiva vía sistema SABG (.csv o .xlsx) -->
 <input type="file" id="excelFile" accept=".csv,.xlsx" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
-<div id="excelUploadBox" class="admin-only" style="display:none; gap:14px; align-items:center;">
+<div id="excelUploadBox" class="admin-only tabla-upload-row" style="display:none; gap:14px; align-items:center;">
     <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">
         📎 Seleccionar carga CSV/XLSX del sistema SABG
     </label>
