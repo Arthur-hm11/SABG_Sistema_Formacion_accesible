@@ -48,7 +48,7 @@ export const HEADER_ALIASES = {
   nivel_educativo: ["nivel_educativo", "nivel_de_estudios", "nivel_estudios"],
   institucion_educativa: ["institucion_educativa", "institucion educativa", "institucion", "escuela"],
   modalidad: ["modalidad"],
-  estado_avance: ["estado_avance", "avance", "estatus"],
+  estado_avance: ["estado_avance", "estado_de_avance", "estado de avance", "avance", "estatus"],
   persona_reportada_por: ["persona_reportada_por", "persona reportada por"],
   reporte_institucion_educativa: [
     "reporte_de_institucion_educativa_respuesta_oficio_28_11_2025",
