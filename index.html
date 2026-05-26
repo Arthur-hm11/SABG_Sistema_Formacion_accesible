@@ -5385,7 +5385,7 @@ function showBulkReportModal(aggregateReport, extra={}){
     const dup = Number(rep.duplicates_omitted || 0);
     const empty = Number(rep.empty_discarded || 0);
     const missingCurp = Number(rep.curp_missing_allowed || 0);
-    const invalidCurp = Number(rep.curp_invalid_skipped || 0);
+    const invalidCurp = Number(rep.curp_invalid_preserved || rep.curp_invalid_skipped || 0);
     const errorsCount = Number(rep.errors_count || 0);
     const received = Number(rep.received || 0);
     const processed = Number(rep.processed || 0);
@@ -5419,9 +5419,9 @@ function showBulkReportModal(aggregateReport, extra={}){
     kpis.className = 'bulk-kpis';
     kpis.innerHTML = `
       <div class="bulk-kpi"><div class="label">Insertados</div><div class="value">${inserted}</div><div class="hint">Registros guardados en la tabla</div></div>
-      <div class="bulk-kpi"><div class="label">Duplicados omitidos</div><div class="value">${dup}</div><div class="hint">Requiere UNIQUE (curp, trimestre) WHERE curp IS NOT NULL</div></div>
+      <div class="bulk-kpi"><div class="label">Duplicados omitidos</div><div class="value">${dup}</div><div class="hint">Solo aparecerá si la base rechaza filas repetidas</div></div>
       <div class="bulk-kpi"><div class="label">CURP sin dato aceptada</div><div class="value">${missingCurp}</div><div class="hint">NULL / SIN CURP se guardan y quedan reportadas</div></div>
-      <div class="bulk-kpi"><div class="label">CURP inválida omitida</div><div class="value">${invalidCurp}</div><div class="hint">Filas con CURP mal capturada no se guardan</div></div>
+      <div class="bulk-kpi"><div class="label">CURP no estándar conservada</div><div class="value">${invalidCurp}</div><div class="hint">Filas con CURP distinta al formato ideal sí se guardan tal como vienen</div></div>
       <div class="bulk-kpi"><div class="label">Filas vacías descartadas</div><div class="value">${empty}</div><div class="hint">Filas sin datos (solo espacios / títulos)</div></div>
       <div class="bulk-kpi"><div class="label">Errores</div><div class="value">${errorsCount}</div><div class="hint">Si hay, revisa detalle abajo</div></div>
       <div class="bulk-kpi"><div class="label">Recibidos</div><div class="value">${received}</div><div class="hint">Filas recibidas del frontend</div></div>
@@ -5481,7 +5481,7 @@ function showBulkReportModal(aggregateReport, extra={}){
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <span class="bulk-report-badge ${statusClass}">Insertados: ${inserted}</span>
         ${dup ? `<span class="bulk-report-badge">Omitidos por duplicado: ${dup}</span>` : ''}
-        ${invCurp ? `<span class="bulk-report-badge">CURP inválida→NULL: ${invCurp}</span>` : ''}
+        ${invalidCurp ? `<span class="bulk-report-badge">CURP no estándar conservada: ${invalidCurp}</span>` : ''}
         ${empty ? `<span class="bulk-report-badge">Filas vacías: ${empty}</span>` : ''}
         ${errorsCount ? `<span class="bulk-report-badge err">Errores: ${errorsCount}</span>` : ''}
       </div>

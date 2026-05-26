@@ -70,7 +70,6 @@ export const HEADER_ALIASES = {
   enlace_telefono: ["enlace_telefono", "telefono_enlace", "tel_enlace", "telefono del enlace"],
 };
 
-// CURP seguro (varchar 18)
 function classifyCurp(curpVal) {
   const s = upperOrNull(curpVal);
   if (!s) return { status: "missing", value: null };
@@ -91,8 +90,8 @@ function classifyCurp(curpVal) {
   if (allowedMissing.has(s)) return { status: "missing", value: null };
 
   const compact = s.replace(/[^A-Z0-9]/g, "");
-  if (compact.length !== 18) return { status: "invalid", value: null };
-  if (!/^[A-Z0-9]{18}$/.test(compact)) return { status: "invalid", value: null };
+  if (compact.length !== 18) return { status: "invalid", value: clip(s, 100) };
+  if (!/^[A-Z0-9]{18}$/.test(compact)) return { status: "invalid", value: clip(s, 100) };
   return { status: "valid", value: compact };
 }
 
@@ -196,9 +195,8 @@ export async function bulkInsertRows(rawRows = [], db = pool) {
     empty_discarded: 0,
     processed: 0,
     curp_missing_allowed: 0,
-    curp_invalid_skipped: 0,
+    curp_invalid_preserved: 0,
     inserted: 0,
-    duplicates_omitted: 0,
     errors_count: 0,
     errors: [],
   };
@@ -248,18 +246,7 @@ export async function bulkInsertRows(rawRows = [], db = pool) {
     if (curpInfo.status === "missing") {
       report.curp_missing_allowed += 1;
     } else if (curpInfo.status === "invalid") {
-      report.curp_invalid_skipped += 1;
-      report.errors_count += 1;
-      report.errors.push({
-        trimestre: raw?.trimestre ?? null,
-        curp: raw?.curp ?? null,
-        id_rusp: raw?.id_rusp ?? null,
-        nombre: raw?.nombre ?? null,
-        primer_apellido: raw?.primer_apellido ?? null,
-        segundo_apellido: raw?.segundo_apellido ?? null,
-        message: "CURP inválida. La fila no se guardó.",
-      });
-      continue;
+      report.curp_invalid_preserved += 1;
     }
 
     const anioSeguro =
@@ -334,27 +321,23 @@ export async function bulkInsertRows(rawRows = [], db = pool) {
     const sql = `
       INSERT INTO registros_trimestral (${cols.join(",")})
       VALUES ${placeholders.join(",")}
-      ON CONFLICT DO NOTHING
     `;
 
     try {
       const result = await db.query(sql, values);
       const inserted = result.rowCount || 0;
       report.inserted += inserted;
-      report.duplicates_omitted += batch.length - inserted;
     } catch (e) {
       for (const r of batch) {
         try {
           const singleSql = `
             INSERT INTO registros_trimestral (${cols.join(",")})
             VALUES (${cols.map((_, idx) => `$${idx + 1}`).join(",")})
-            ON CONFLICT DO NOTHING
           `;
           const singleVals = cols.map((c) => r[c] ?? null);
           const singleRes = await db.query(singleSql, singleVals);
           const inserted = singleRes.rowCount || 0;
           report.inserted += inserted;
-          report.duplicates_omitted += 1 - inserted;
         } catch (singleError) {
           report.errors_count += 1;
           if (report.errors.length < 50) {
@@ -362,6 +345,8 @@ export async function bulkInsertRows(rawRows = [], db = pool) {
               message: "No se pudo insertar la fila",
               trimestre: r.trimestre ?? null,
               id_rusp: r.id_rusp ?? null,
+              curp: r.curp ?? null,
+              detalle: singleError?.message || null,
             });
           }
         }
