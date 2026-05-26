@@ -6822,22 +6822,6 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             return;
         }
 
-        const motivo = String(window.prompt('CAPTURE EL MOTIVO DEL CAMBIO DE ESTADO DE AVANCE:', 'ACTUALIZACIÓN TRIMESTRAL') || '').trim();
-        if (!motivo) {
-            alert('⚠️ Debe capturar el motivo del cambio.');
-            restore(currentValue);
-            return;
-        }
-
-        const confirmado = window.confirm(
-            `¿DESEA CAMBIAR EL ESTADO DE AVANCE?\n\nDE: ${currentValue || '(SIN ESTADO)'}\nA: ${nextValue}\n\nMOTIVO: ${motivo}`
-        );
-
-        if (!confirmado) {
-            restore(currentValue);
-            return;
-        }
-
         try {
             const response = await fetch('/api/trimestral/updateEstado', {
                 method: 'POST',
@@ -6845,8 +6829,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: Number(id),
-                    estado_avance: nextValue,
-                    motivo
+                    estado_avance: nextValue
                 })
             });
 

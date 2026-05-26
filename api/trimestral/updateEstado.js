@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   const isEnlace = isEnlaceRole(session?.rol);
   const registroId = Number(req.body?.id);
   const nuevoEstado = norm(req.body?.estado_avance);
-  const motivo = norm(req.body?.motivo);
+  const motivo = norm(req.body?.motivo) || "ACTUALIZACIÓN DE ESTADO";
 
   if (!isAdmin && !isEnlace) {
     return res.status(403).json({ success: false, error: "No autorizado" });
@@ -53,10 +53,6 @@ export default async function handler(req, res) {
 
   if (!ESTADOS_AVANCE_VALIDOS.has(nuevoEstado)) {
     return res.status(400).json({ success: false, error: "Estado de avance inválido" });
-  }
-
-  if (!motivo) {
-    return res.status(400).json({ success: false, error: "Debes capturar el motivo del cambio" });
   }
 
   if (motivo.length > 200) {
