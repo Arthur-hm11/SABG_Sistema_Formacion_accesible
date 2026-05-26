@@ -3,6 +3,7 @@ import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
 import { logAuditEvent } from "../_lib/monitoring.js";
 import { insertEstadoHistorial } from "../_lib/estadoHistorial.js";
+import { ensureRegistrosTrimestralSchema, normalizeExtendedFields } from "../_lib/registrosSchema.js";
 
 function norm(v) {
   if (v === undefined || v === null) return null;
@@ -85,6 +86,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    await ensureRegistrosTrimestralSchema(pool);
     const data = req.body || {};
     const isAdmin = isAdminSession(session);
     if (!isAdmin) {
@@ -165,12 +167,15 @@ export default async function handler(req, res) {
       clip(data.enlace_segundo_apellido, 100),
       clip(data.enlace_correo, 200),
       clip(data.enlace_telefono, 50),
+      null,
       clip(String(data.anio ?? ""), 4),
       clip(data.trimestre, 50),
       clip(data.id_rusp, 100),
       clip(data.primer_apellido, 100),
       clip(data.segundo_apellido, 100),
       clip(data.nombre, 200),
+      null,
+      null,
       curpClean,
       clip(data.nivel_puesto, 200),
       clip(data.nivel_tabular, 50),
@@ -182,20 +187,46 @@ export default async function handler(req, res) {
       norm(data.institucion_educativa),
       norm(data.modalidad),
       norm(data.estado_avance),
+      null,
+      null,
+      null,
       observacionesClean,
       clip(data.usuario_registro, 100),
     ];
 
+    const extended = normalizeExtendedFields({
+      anio: data.anio,
+      trimestre: data.trimestre,
+      primer_apellido: data.primer_apellido,
+      segundo_apellido: data.segundo_apellido,
+      nombre: data.nombre,
+      nombre_completo: data.nombre_completo,
+      sexo: data.sexo,
+      persona_reportada_por: data.persona_reportada_por,
+      reporte_institucion_educativa: data.reporte_institucion_educativa,
+      ruta_2026: data.ruta_2026,
+      nivel_educativo: data.nivel_educativo,
+      periodo_ruta: data.periodo_ruta,
+    });
+
+    values[5] = clip(extended.periodo_ruta, 20);
+    values[12] = clip(extended.nombre_completo, 300);
+    values[13] = clip(extended.sexo, 30);
+    values[25] = clip(extended.persona_reportada_por, 120);
+    values[26] = clip(extended.reporte_institucion_educativa, 200);
+    values[27] = clip(extended.ruta_2026, 250);
+
     const result = await pool.query(
       `INSERT INTO registros_trimestral (
         enlace_nombre, enlace_primer_apellido, enlace_segundo_apellido,
-        enlace_correo, enlace_telefono, anio, trimestre, id_rusp,
-        primer_apellido, segundo_apellido, nombre, curp,
+        enlace_correo, enlace_telefono, periodo_ruta, anio, trimestre, id_rusp,
+        primer_apellido, segundo_apellido, nombre, nombre_completo, sexo, curp,
         nivel_puesto, nivel_tabular, ramo_ur, dependencia,
         correo_institucional, telefono_institucional,
         nivel_educativo, institucion_educativa, modalidad,
-        estado_avance, observaciones, usuario_registro
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
+        estado_avance, persona_reportada_por, reporte_institucion_educativa, ruta_2026,
+        observaciones, usuario_registro
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
       RETURNING *`,
       values
     );

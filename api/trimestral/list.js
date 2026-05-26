@@ -1,6 +1,7 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
+import { ensureRegistrosTrimestralSchema } from "../_lib/registrosSchema.js";
 
 function toInt(v, def) {
   const n = parseInt(String(v ?? ""), 10);
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
 
     const dependencia = cleanLike(req.query?.dependencia);
     const trimestre = cleanLike(req.query?.trimestre);
+    const anio = cleanLike(req.query?.anio);
     const q = cleanLike(req.query?.q);
 
     // WHERE dinámico (parametrizado)
@@ -63,6 +65,10 @@ export default async function handler(req, res) {
       params.push(`%${trimestre}%`);
       where.push(`trimestre ILIKE $${params.length}`);
     }
+    if (anio) {
+      params.push(anio);
+      where.push(`BTRIM(anio) = BTRIM($${params.length})`);
+    }
 
     // búsqueda general opcional (nombre / apellidos / curp / rusp / correo)
     if (q) {
@@ -75,10 +81,38 @@ export default async function handler(req, res) {
         OR curp ILIKE ${p}
         OR id_rusp ILIKE ${p}
         OR correo_institucional ILIKE ${p}
+        OR nombre_completo ILIKE ${p}
+        OR sexo ILIKE ${p}
+        OR persona_reportada_por ILIKE ${p}
+        OR reporte_institucion_educativa ILIKE ${p}
+        OR ruta_2026 ILIKE ${p}
       )`);
     }
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    await ensureRegistrosTrimestralSchema(pool);
+
+    const scopeWhere = [];
+    const scopeParams = [];
+    if (!isAdmin) {
+      scopeParams.push(sessionDependencia);
+      scopeWhere.push(`UPPER(BTRIM(dependencia)) = UPPER(BTRIM($${scopeParams.length}))`);
+    }
+    scopeWhere.push(`anio IS NOT NULL`);
+    scopeWhere.push(`BTRIM(anio) <> ''`);
+    const scopeWhereSql = `WHERE ${scopeWhere.join(" AND ")}`;
+
+    const yearsRes = await pool.query(
+      `
+        SELECT DISTINCT anio
+        FROM registros_trimestral
+        ${scopeWhereSql}
+        ORDER BY anio DESC
+      `,
+      scopeParams
+    );
+    const availableYears = (yearsRes.rows || []).map((row) => String(row.anio || "").trim()).filter(Boolean);
 
     // total
     const totalRes = await pool.query(
@@ -111,6 +145,7 @@ export default async function handler(req, res) {
       pages,
       total,
       count: result.rows.length,
+      availableYears,
       data: result.rows,
     });
   } catch (error) {

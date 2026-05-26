@@ -3225,6 +3225,48 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                     <option value="OTRA">OTRA</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label for="periodo_ruta">Periodo RUTA</label>
+                                <input type="text" name="periodo_ruta" id="periodo_ruta" placeholder="SE GENERA AUTOMÁTICAMENTE" autocomplete="off" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="sexo">Sexo</label>
+                                <select name="sexo" id="sexo">
+                                    <option value="">SELECCIONE...</option>
+                                    <option value="MUJER">MUJER</option>
+                                    <option value="HOMBRE">HOMBRE</option>
+                                    <option value="SIN INFORMACIÓN">SIN INFORMACIÓN</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="persona_reportada_por">Persona Reportada Por</label>
+                                <select name="persona_reportada_por" id="persona_reportada_por">
+                                    <option value="">SELECCIONE...</option>
+                                    <option value="DEPENDENCIA">DEPENDENCIA</option>
+                                    <option value="DEPENDENCIA E INSTITUCIÓN ACADÉMICA">DEPENDENCIA E INSTITUCIÓN ACADÉMICA</option>
+                                    <option value="INSTITUCIÓN ACADÉMICA">INSTITUCIÓN ACADÉMICA</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reporte_institucion_educativa">Reporte de Institución Educativa</label>
+                                <select name="reporte_institucion_educativa" id="reporte_institucion_educativa">
+                                    <option value="">SELECCIONE...</option>
+                                    <option value="1. PERSONA EN PROCESO DE INSCRIPCIÓN">1. PERSONA EN PROCESO DE INSCRIPCIÓN</option>
+                                    <option value="2. PERSONA QUE CURSA NIVEL EDUCATIVO">2. PERSONA QUE CURSA NIVEL EDUCATIVO</option>
+                                    <option value="3. PERSONA CON CRÉDITOS DEL 100%">3. PERSONA CON CRÉDITOS DEL 100%</option>
+                                    <option value="4. PERSONA QUE OBTUVO CERTIFICADO DEL NIVEL ACADÉMICO">4. PERSONA QUE OBTUVO CERTIFICADO DEL NIVEL ACADÉMICO</option>
+                                    <option value="5. PERSONA QUE PRESENTA BAJA TEMPORAL">5. PERSONA QUE PRESENTA BAJA TEMPORAL</option>
+                                    <option value="6. PERSONA QUE PRESENTA BAJA DEFINITIVA">6. PERSONA QUE PRESENTA BAJA DEFINITIVA</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="nombre_completo">Nombre Completo</label>
+                                <input type="text" name="nombre_completo" id="nombre_completo" placeholder="SE GENERA AUTOMÁTICAMENTE" autocomplete="off" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="ruta_2026">Registro Único de Trayectoria Académica (RUTA 2026)</label>
+                                <textarea name="ruta_2026" rows="2" id="ruta_2026" placeholder="SE GENERA AUTOMÁTICAMENTE" readonly></textarea>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="observaciones">Observaciones</label>
@@ -3240,7 +3282,12 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                 <div id="tabla" class="tab-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                         <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>                    </div>
-                    <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
+                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
+                        <select id="filterAnioTrimestral" class="search-box" style="max-width:240px;">
+                            <option value="">TODOS LOS AÑOS</option>
+                        </select>
+                        <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
+                    </div>
                     <div style="font-size:12px; margin:8px 0 12px 0; color:#555; background:#fff7ed; border:1px solid #fdba74; padding:8px 12px; border-radius:8px;">👉 Para revisar el registro completo, favor de arrastrar la barra de desplazamiento hacia la derecha.</div>
                    <div id="exportButtonsTrimestral" style="margin: 0 0 1rem 0 !important; display:block !important; visibility:visible !important; opacity:1 !important;">
                     <div style="display:flex !important; align-items:center !important; gap:12px !important; flex-wrap:wrap !important; margin-bottom:10px !important;">
@@ -3252,11 +3299,11 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         <span id="saveNeonStatus" style="margin-left:10px; color:#64748b; font-size:13px;"></span>
                     </div>
 
-<!-- Solo administradores: carga masiva vía sistema SABG (solo CSV) -->
-<input type="file" id="excelFile" accept=".csv" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
+<!-- Solo administradores: carga masiva vía sistema SABG (.csv o .xlsx) -->
+<input type="file" id="excelFile" accept=".csv,.xlsx" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" onchange="uploadExcel()" />
 <div id="excelUploadBox" class="admin-only" style="display:none; gap:14px; align-items:center;">
     <label class="btn btn-success admin-only" for="excelFile" style="margin:0; cursor:pointer;">
-        📎 Seleccionar carga CSV del sistema SABG
+        📎 Seleccionar carga CSV/XLSX del sistema SABG
     </label>
 </div>
 
@@ -3269,12 +3316,15 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                     <th class="no-export">SEL</th>
 
                                     <th>N°</th>
+                                    <th>PERIODO RUTA</th>
                                     <th>AÑO</th>
                                     <th>TRIMESTRE</th>
                                     <th>ID RUSP</th>
                                     <th>PRIMER APELLIDO</th>
                                     <th>SEGUNDO APELLIDO</th>
                                     <th>NOMBRE(S)</th>
+                                    <th>NOMBRE COMPLETO</th>
+                                    <th>SEXO</th>
                                     <th>CURP</th>
                                     <th>NIVEL DE PUESTO</th>
                                     <th>NIVEL TABULAR</th>
@@ -3286,6 +3336,9 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                                     <th>INSTITUCIÓN EDUCATIVA</th>
                                     <th>MODALIDAD</th>
                                     <th>ESTADO DE AVANCE</th>
+                                    <th>PERSONA REPORTADA POR</th>
+                                    <th>REPORTE DE INSTITUCIÓN EDUCATIVA</th>
+                                    <th>RUTA 2026</th>
                                     <th>OBSERVACIONES</th>
                                     <th>ENLACE NOMBRE(S)</th>
                                     <th>ENLACE PRIMER APELLIDO</th>
@@ -5235,6 +5288,7 @@ function fileSignature(file) {
   if (!file) return null;
   return `${file.name}__${file.size}__${file.lastModified}`;
 }
+
 // ===== UI: Modal de reporte de carga masiva (bonito y trazable) =====
 (function ensureBulkReportStyles(){
   if (document.getElementById('bulkReportStyles')) return;
@@ -5492,12 +5546,33 @@ async function uploadExcel() {
         const loadingText = document.querySelector('.loading-text');
         if (loadingText) loadingText.textContent = '📥 Procesando archivo...';
 
-        if (filename.endsWith('.csv')) {
+        if (filename.endsWith('.xlsx')) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/upload/excel', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) {
+                throw new Error(result?.message || result?.error || 'No se pudo procesar el archivo XLSX.');
+            }
+
+            if (typeof cargarRegistrosTrimestral === 'function') {
+                await cargarRegistrosTrimestral();
+            }
+
+            showBulkReportModal(result.report || {}, { raw: JSON.stringify(result).slice(0, 2000) });
+            console.log('✅ Carga XLSX completada.');
+        } else if (filename.endsWith('.csv')) {
             const text = await file.text();
             const rows = parseCSV(text);
 
             if (!rows || rows.length < 2) {
-                alert('⚠️ El usuarios no tiene registros (o está vacío).');
+                alert('⚠️ El archivo no tiene registros o está vacío.');
                 return;
             }
 
@@ -5518,6 +5593,12 @@ async function uploadExcel() {
                 'institucion_educativa','institucion','escuela',
                 'modalidad',
                 'estado_avance','avance','estatus',
+                'periodo_ruta','periodo ruta',
+                'nombre_completo','nombre completo',
+                'sexo',
+                'persona_reportada_por','persona reportada por',
+                'reporte_de_institucion_educativa','reporte de institucion educativa','respuesta oficio 28/11/2025',
+                'ruta_2026','ruta 2026','registro_unico_de_trayectoria_academica','registro_unico_de_trayectoria_academica_ruta_2026',
                 'observaciones','obs','comentarios',
                 'enlace_nombre','enlace_primer_apellido','enlace_segundo_apellido','enlace_correo','enlace_telefono',
                 'nivel_puesto','nivel_tabular','ramo_ur','dependencia'
@@ -5566,8 +5647,13 @@ async function uploadExcel() {
                 institucion_educativa: ['institucion_educativa', 'institucion', 'escuela'],
                 modalidad: ['modalidad'],
                 estado_avance: ['estado_avance', 'avance', 'estatus'],
-                observaciones: ['observaciones', 'obs', 'comentarios']
-            ,
+                periodo_ruta: ['periodo_ruta', 'periodo ruta'],
+                nombre_completo: ['nombre_completo', 'nombre completo'],
+                sexo: ['sexo'],
+                persona_reportada_por: ['persona_reportada_por', 'persona reportada por'],
+                reporte_institucion_educativa: ['reporte_de_institucion_educativa', 'reporte de institucion educativa', 'respuesta oficio 28/11/2025'],
+                ruta_2026: ['ruta_2026', 'ruta 2026', 'registro_unico_de_trayectoria_academica', 'registro_unico_de_trayectoria_academica_ruta_2026'],
+                observaciones: ['observaciones', 'obs', 'comentarios'],
                 enlace_nombre: ['enlace_nombre', 'enlace nombre', 'nombre_enlace', 'enlace'],
                 enlace_primer_apellido: ['enlace_primer_apellido', 'enlace primer apellido', 'primer_apellido_enlace', 'apellido_paterno_enlace'],
                 enlace_segundo_apellido: ['enlace_segundo_apellido', 'enlace segundo apellido', 'segundo_apellido_enlace', 'apellido_materno_enlace'],
@@ -5802,7 +5888,7 @@ try { localStorage.removeItem(RESUME_KEY); } catch (_) {}
                 console.warn(`⚠️ Carga parcial: ${ok} insertados / ${fail} con error.`);
             }
         } else {
-            alert('ℹ️ La carga masiva soporta únicamente archivos .csv del sistema SABG.');
+            alert('ℹ️ La carga masiva soporta archivos .csv o .xlsx del sistema SABG.');
         }
     } finally {
         
@@ -6885,12 +6971,15 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
         const buildTrimestralExportObject = (registro, index) => ({
             'N°': index + 1,
+            'PERIODO RUTA': registro.periodo_ruta || '',
             'AÑO': registro.anio || registro['año'] || '',
             'TRIMESTRE': registro.trimestre || '',
             'ID RUSP': registro.id_rusp || '',
             'PRIMER APELLIDO': registro.primer_apellido || '',
             'SEGUNDO APELLIDO': registro.segundo_apellido || '',
             'NOMBRE(S)': registro.nombre || '',
+            'NOMBRE COMPLETO': registro.nombre_completo || computeNombreCompletoValue(registro.primer_apellido, registro.segundo_apellido, registro.nombre),
+            'SEXO': registro.sexo || '',
             'CURP': registro.curp || '',
             'NIVEL DE PUESTO': humanizarValorCatalogo(registro.nivel_puesto) || '',
             'NIVEL TABULAR': humanizarValorCatalogo(registro.nivel_tabular) || '',
@@ -6902,6 +6991,9 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             'INSTITUCIÓN EDUCATIVA': humanizarValorCatalogo(registro.institucion_educativa) || '',
             'MODALIDAD': humanizarValorCatalogo(registro.modalidad) || '',
             'ESTADO DE AVANCE': registro.estado_avance || '',
+            'PERSONA REPORTADA POR': registro.persona_reportada_por || '',
+            'REPORTE DE INSTITUCIÓN EDUCATIVA': registro.reporte_institucion_educativa || '',
+            'RUTA 2026': registro.ruta_2026 || computeRuta2026Value(registro.nivel_educativo, registro.reporte_institucion_educativa),
             'OBSERVACIONES': registro.observaciones || '-',
             'ENLACE NOMBRE(S)': registro.enlace_nombre || '',
             'ENLACE PRIMER APELLIDO': registro.enlace_primer_apellido || '',
@@ -6928,6 +7020,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
                 url.searchParams.set('page', String(page));
                 url.searchParams.set('limit', String(limit));
                 if (TRIM_Q) url.searchParams.set('q', TRIM_Q);
+                if (TRIM_YEAR) url.searchParams.set('anio', TRIM_YEAR);
 
                 const response = await fetch(url.toString(), { credentials: 'include' });
                 const result = await response.json().catch(() => ({}));
@@ -8286,6 +8379,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 let TRIM_PAGE = 1;
 let TRIM_LIMIT = 50;
 let TRIM_Q = "";
+let TRIM_YEAR = "";
 
 function initTrimestralSearchGlobal() {
   try {
@@ -8321,8 +8415,47 @@ function initTrimestralSearchGlobal() {
   } catch (_) {}
 }
 
+function syncAnioFilterOptions(years = []) {
+  const select = document.getElementById('filterAnioTrimestral');
+  if (!select) return;
+
+  const normalized = Array.from(new Set((Array.isArray(years) ? years : [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)))
+    .sort((a, b) => b.localeCompare(a, 'es'));
+
+  const current = String(TRIM_YEAR || select.value || '').trim();
+  select.innerHTML = '<option value="">TODOS LOS AÑOS</option>';
+
+  normalized.forEach((year) => {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    select.appendChild(option);
+  });
+
+  if (current && normalized.includes(current)) {
+    select.value = current;
+  } else {
+    select.value = '';
+  }
+}
+
+function initTrimestralYearFilter() {
+  const select = document.getElementById('filterAnioTrimestral');
+  if (!select) return;
+
+  const run = () => {
+    TRIM_YEAR = String(select.value || '').trim();
+    cargarRegistrosTrimestral(1, TRIM_Q ? 5000 : 50, TRIM_Q);
+  };
+
+  select.addEventListener('change', run);
+}
+
 window.addEventListener("load", () => {
   initTrimestralSearchGlobal();
+  initTrimestralYearFilter();
 });
 
 
@@ -8642,6 +8775,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
     const sep = base.includes("?") ? "&" : "?";
     let url = `${base}${sep}page=${encodeURIComponent(TRIM_PAGE)}&limit=${encodeURIComponent(TRIM_LIMIT)}`;
     if (TRIM_Q) url += `&q=${encodeURIComponent(TRIM_Q)}`;
+    if (TRIM_YEAR) url += `&anio=${encodeURIComponent(TRIM_YEAR)}`;
 
     const response = await fetch(url);
     const result = await response.json().catch(() => ({}));
@@ -8654,6 +8788,7 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
     if (response.ok && result.success) {
       const tbody = document.querySelector("#registrosTable tbody");
       tbody.innerHTML = "";
+      syncAnioFilterOptions(result.availableYears || []);
 
       __trimSelected.clear();
       const master = document.getElementById('chkAllRegistrosTrimestral');
@@ -8678,12 +8813,15 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
               </td>`
             : `<td class="no-export">-</td>`}
           <td>${globalIndex}</td>
+          <td>${registro.periodo_ruta || ""}</td>
           <td>${registro.anio || registro['año'] || ''}</td>
           <td>${registro.trimestre || ""}</td>
           <td>${registro.id_rusp || ""}</td>
           <td>${registro.primer_apellido || ""}</td>
           <td>${registro.segundo_apellido || ""}</td>
           <td>${registro.nombre || ""}</td>
+          <td>${registro.nombre_completo || computeNombreCompletoValue(registro.primer_apellido, registro.segundo_apellido, registro.nombre) || ""}</td>
+          <td>${registro.sexo || ""}</td>
           <td>${registro.curp || ""}</td>
           <td>${humanizarValorCatalogo(registro.nivel_puesto) || ""}</td>
           <td>${humanizarValorCatalogo(registro.nivel_tabular) || ""}</td>
@@ -8706,6 +8844,9 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
           <td class="editable-cell ${claseEstadoRojo}" data-field="estado_avance" onclick="makeEditable(this)" role="button" tabindex="0">
             ${renderEstadoAvanceCellContent(registro)}
           </td>
+          <td>${registro.persona_reportada_por || ""}</td>
+          <td>${registro.reporte_institucion_educativa || ""}</td>
+          <td>${registro.ruta_2026 || computeRuta2026Value(registro.nivel_educativo, registro.reporte_institucion_educativa) || ""}</td>
           <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
             ${registro.observaciones || "-"}
             <span class="edit-icon">✏️</span>
@@ -8816,10 +8957,13 @@ async function guardarRegistroTrimestral() {
         enlace_telefono: formData.get('enlace_telefono'),
         anio: formData.get('anio'),
         trimestre: formData.get('trimestre'),
+        periodo_ruta: document.getElementById('periodo_ruta')?.value || '',
         id_rusp: formData.get('id_rusp'),
         primer_apellido: formData.get('primer_apellido'),
         segundo_apellido: formData.get('segundo_apellido'),
         nombre: formData.get('nombre'),
+        nombre_completo: document.getElementById('nombre_completo')?.value || '',
+        sexo: formData.get('sexo'),
         curp: curpMissingAllowed ? null : curpValue,
         nivel_puesto: nivelPuesto,
         nivel_tabular: nivelTabular,
@@ -8831,6 +8975,9 @@ async function guardarRegistroTrimestral() {
         institucion_educativa: institucionEducativa,
         modalidad,
         estado_avance: formData.get('estado_avance'),
+        persona_reportada_por: formData.get('persona_reportada_por'),
+        reporte_institucion_educativa: formData.get('reporte_institucion_educativa'),
+        ruta_2026: document.getElementById('ruta_2026')?.value || '',
         observaciones,
         usuario_registro: userName
     };
@@ -9194,6 +9341,98 @@ const ESTADOS_AVANCE_OPCIONES = [
     "PERSONA SUSPENDIDA",
     "OTRA"
 ];
+
+const PERIODO_RUTA_POR_TRIMESTRE = {
+    ENERO_MARZO: '1',
+    ABRIL_JUNIO: '2',
+    JULIO_SEPTIEMBRE: '3',
+    OCTUBRE_DICIEMBRE: '4'
+};
+
+const RUTA_2026_PREFIJOS = {
+    PRIMARIA: '█░░░░░ 1. PRIMARIA',
+    SECUNDARIA: '██░░░░ 2. SECUNDARIA',
+    BACHILLERATO: '███░░░ 3. BACHILLERATO',
+    LICENCIATURA: '████░░ 4. LICENCIATURA',
+    MAESTRIA: '█████░ 5. MAESTRIA',
+    DOCTORADO: '██████ 6. DOCTORADO'
+};
+
+function computePeriodoRutaValue(anio, trimestre) {
+    const year = String(anio || '').trim();
+    const trimestreKey = normalizarCatalogo(trimestre);
+    const periodo = PERIODO_RUTA_POR_TRIMESTRE[trimestreKey] || '';
+    return (year && periodo) ? `${periodo}_${year}` : '';
+}
+
+function computeNombreCompletoValue(primerApellido, segundoApellido, nombre) {
+    return [primerApellido, segundoApellido, nombre]
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .join(' ');
+}
+
+function computeRuta2026Value(nivelEducativo, reporteInstitucionEducativa) {
+    const prefijo = RUTA_2026_PREFIJOS[normalizarCatalogo(nivelEducativo)] || '';
+    const reporte = String(reporteInstitucionEducativa || '').trim();
+    return (prefijo && reporte) ? `${prefijo} | ${reporte}` : '';
+}
+
+function syncCamposRutaDerivados() {
+    const anio = document.getElementById('anio');
+    const trimestre = document.getElementById('trimestre');
+    const primerApellido = document.querySelector('input[name="primer_apellido"]');
+    const segundoApellido = document.querySelector('input[name="segundo_apellido"]');
+    const nombre = document.querySelector('input[name="nombre"]');
+    const nivelEducativo = document.getElementById('nivel_educativo');
+    const reporteInstitucion = document.getElementById('reporte_institucion_educativa');
+
+    const periodoRuta = document.getElementById('periodo_ruta');
+    const nombreCompleto = document.getElementById('nombre_completo');
+    const ruta2026 = document.getElementById('ruta_2026');
+
+    if (periodoRuta) {
+        periodoRuta.value = computePeriodoRutaValue(anio?.value, trimestre?.value);
+    }
+    if (nombreCompleto) {
+        nombreCompleto.value = computeNombreCompletoValue(
+            primerApellido?.value,
+            segundoApellido?.value,
+            nombre?.value
+        );
+    }
+    if (ruta2026) {
+        ruta2026.value = computeRuta2026Value(
+            nivelEducativo?.value,
+            reporteInstitucion?.value
+        );
+    }
+}
+
+function initCamposRutaDerivados() {
+    [
+        'anio',
+        'trimestre',
+        'nivel_educativo',
+        'reporte_institucion_educativa'
+    ].forEach((id) => {
+        document.getElementById(id)?.addEventListener('change', syncCamposRutaDerivados);
+    });
+
+    [
+        'primer_apellido',
+        'segundo_apellido',
+        'nombre'
+    ].forEach((name) => {
+        document.querySelector(`input[name="${name}"]`)?.addEventListener('input', syncCamposRutaDerivados);
+    });
+
+    document.getElementById('trimestralForm')?.addEventListener('reset', () => {
+        setTimeout(syncCamposRutaDerivados, 0);
+    });
+
+    syncCamposRutaDerivados();
+}
 
 function renderEstadoAvanceCellContent(registro) {
     const value = escapeHtml(registro?.estado_avance || "");
@@ -9708,6 +9947,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initNivelPuestoTabularVinculado();
     initEducacionVinculada();
     initEstadoAvanceVinculado();
+    initCamposRutaDerivados();
     applyRoleVisibility();
 
     // Carga masiva: cuando el admin seleccione archivo, cargar automáticamente
