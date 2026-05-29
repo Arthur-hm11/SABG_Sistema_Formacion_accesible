@@ -54,7 +54,9 @@ res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
       "institucion_educativa",
       "modalidad",
       "estado_avance",
-      "observaciones"
+      "observaciones",
+      "reporte_institucion_educativa",
+      "ruta_2026"
     ]);
     const ENLACE_ALLOWED = new Set(["observaciones"]);
 

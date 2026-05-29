@@ -6764,8 +6764,13 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         // ✅ Regla solicitada:
         // - TODOS los usuarios pueden editar SOLO OBSERVACIONES (máx. 150 caracteres)
         // - Cualquier otro campo: SOLO superadmin
+        const canEditAdminOnlyFields =
+            isAdminOrSuper &&
+            (field === 'reporte_institucion_educativa' || field === 'ruta_2026');
+
         const puedeEditar =
             canEditEstado ||
+            canEditAdminOnlyFields ||
             (field === 'observaciones') ||
             (userRole === 'superadmin');
 
@@ -6807,6 +6812,23 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         else if (field === 'estado_avance') {
             editControl = document.createElement('select');
             editControl.innerHTML = ESTADOS_AVANCE_OPCIONES.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
+            editControl.value = currentValue;
+        }
+        else if (field === 'reporte_institucion_educativa') {
+            const opcionesReporte = [
+                '',
+                '1. PERSONA EN PROCESO DE INSCRIPCIÓN',
+                '2. PERSONA QUE CURSA NIVEL EDUCATIVO',
+                '3. PERSONA CON CRÉDITOS DEL 100%',
+                '4. PERSONA QUE OBTUVO CERTIFICADO DEL NIVEL ACADÉMICO',
+                '5. PERSONA QUE PRESENTA BAJA TEMPORAL',
+                '6. PERSONA QUE PRESENTA BAJA DEFINITIVA'
+            ];
+            editControl = document.createElement('select');
+            editControl.innerHTML = opcionesReporte.map((item) => {
+                const label = item || 'SELECCIONE...';
+                return `<option value="${escapeHtml(item)}">${escapeHtml(label)}</option>`;
+            }).join('');
             editControl.value = currentValue;
         }
         else if (field === 'observaciones') {
@@ -8913,8 +8935,14 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
             ${renderEstadoAvanceCellContent(registro)}
           </td>
           <td>${registro.persona_reportada_por || ""}</td>
-          <td>${registro.reporte_institucion_educativa || ""}</td>
-          <td>${registro.ruta_2026 || computeRuta2026Value(registro.nivel_educativo, registro.reporte_institucion_educativa) || ""}</td>
+          <td class="editable-cell" data-field="reporte_institucion_educativa" onclick="makeEditable(this)" role="button" tabindex="0">
+            ${registro.reporte_institucion_educativa || ""}
+            <span class="edit-icon">✏️</span>
+          </td>
+          <td class="editable-cell" data-field="ruta_2026" onclick="makeEditable(this)" role="button" tabindex="0">
+            ${registro.ruta_2026 || computeRuta2026Value(registro.nivel_educativo, registro.reporte_institucion_educativa) || ""}
+            <span class="edit-icon">✏️</span>
+          </td>
           <td class="editable-cell" data-field="observaciones" onclick="makeEditable(this)" role="button" tabindex="0">
             ${registro.observaciones || "-"}
             <span class="edit-icon">✏️</span>
