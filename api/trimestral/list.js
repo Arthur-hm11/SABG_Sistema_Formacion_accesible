@@ -80,6 +80,7 @@ export default async function handler(req, res) {
         OR segundo_apellido ILIKE ${p}
         OR curp ILIKE ${p}
         OR id_rusp ILIKE ${p}
+        OR dependencia ILIKE ${p}
         OR correo_institucional ILIKE ${p}
         OR nombre_completo ILIKE ${p}
         OR sexo ILIKE ${p}
