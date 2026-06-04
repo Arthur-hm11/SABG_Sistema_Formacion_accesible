@@ -77,8 +77,6 @@ function classifyCurp(curpVal) {
   const allowedMissing = new Set([
     "SIN CURP",
     "S/CURP",
-    "SIN INFORMACION",
-    "SIN INFORMACIÓN",
     "NO CUENTA CON CURP",
     "N/A",
     "NO APLICA",
