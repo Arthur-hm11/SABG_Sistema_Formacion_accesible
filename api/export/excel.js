@@ -36,6 +36,7 @@ const NUMERIC_HEADERS = new Set(["N°", "AÑO"]);
 const PHONE_HEADERS = new Set(["TELÉFONO", "ENLACE TELÉFONO"]);
 const ZERO_PADDED_HEADERS = new Set(["ID RUSP", "NIVEL TABULAR"]);
 const IGNORED_TEXT_WARNING_HEADERS = new Set(["ID RUSP", "NIVEL TABULAR", "TELÉFONO", "ENLACE TELÉFONO"]);
+const UNDERSCORE_EXPORT_HEADERS = new Set(["INSTITUCIÓN EDUCATIVA"]);
 
 function normalizeHeader(header) {
   return String(header ?? "").trim().toUpperCase();
@@ -48,6 +49,10 @@ function normalizeCellPayload(header, rawValue) {
   if (!value) return { value: "" };
 
   const normalizedHeader = normalizeHeader(header);
+
+  if (UNDERSCORE_EXPORT_HEADERS.has(normalizedHeader)) {
+    return { value: value.replace(/\s+/g, "_") };
+  }
 
   if (NUMERIC_HEADERS.has(normalizedHeader) && /^\d+$/.test(value)) {
     return { value: Number(value), numFmt: "0" };
