@@ -93,13 +93,13 @@ async function maybeExportCsv(accounts) {
   await fs.writeFile(outputPath, toCsv(accounts), "utf8");
 }
 
-function batchWhereSql() {
+function batchWhereSql(curpParam = "$1") {
   return `
     rol = 'enlace'
     AND nombre = 'ENLACE'
     AND primer_apellido = 'DEPENDENCIA'
     AND segundo_apellido = 'SABG'
-    AND curp LIKE $1
+    AND curp LIKE ${curpParam}
   `;
 }
 
@@ -117,7 +117,7 @@ async function applyAccounts(accounts, batchTag) {
       `
         SELECT id, dependencia, usuario, rol
         FROM public.usuarios
-        WHERE ${batchWhereSql()}
+        WHERE ${batchWhereSql("$1")}
         ORDER BY dependencia
       `,
       [batchCurpLike]
@@ -134,7 +134,7 @@ async function applyAccounts(accounts, batchTag) {
         SELECT id, usuario, dependencia, rol
         FROM public.usuarios
         WHERE UPPER(usuario) = ANY($1::text[])
-          AND NOT (${batchWhereSql()})
+          AND NOT (${batchWhereSql("$2")})
       `,
       [usernames, batchCurpLike]
     );
@@ -151,7 +151,7 @@ async function applyAccounts(accounts, batchTag) {
           SET usuario = $1,
               password_hash = $2
           WHERE dependencia = $3
-            AND ${batchWhereSql()}
+            AND ${batchWhereSql("$4")}
         `,
         [acc.usuario, passwordHash, acc.dependencia, batchCurpLike]
       );
