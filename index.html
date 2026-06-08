@@ -6291,7 +6291,7 @@ async function loginUsuario() {
             }, 60000);
         } catch (e) {}
 
-        alert(`✅ ¡Bienvenido ${data.nombre}!`);
+        alert(`✅ ¡Bienvenido ${getHeaderDisplayName()}!`);
 
     } catch (error) {
         // Nunca alert(objeto)
