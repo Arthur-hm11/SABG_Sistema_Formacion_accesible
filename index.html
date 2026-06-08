@@ -5027,9 +5027,36 @@ function updateExportButtonVisibility() {
     btn.style.setProperty('pointer-events', 'auto', 'important');
 }
 
+function getHeaderDisplayName() {
+    const roleRaw =
+        (typeof userRole !== 'undefined' && userRole) ? userRole :
+        (localStorage.getItem('SABG_ROL') || '');
+    const dependencia =
+        (typeof userDependencia !== 'undefined' && userDependencia) ? userDependencia :
+        (localStorage.getItem('SABG_DEPENDENCIA') || '');
+    const nombre =
+        (typeof userName !== 'undefined' && userName) ? userName :
+        (localStorage.getItem('SABG_NOMBRE') || '');
+
+    if (isEnlaceRoleValue(roleRaw)) {
+        return String(dependencia || nombre || 'Usuario').trim();
+    }
+
+    return String(nombre || dependencia || 'Usuario').trim();
+}
+
+function updateHeaderIdentity() {
+    const userNameEl = document.getElementById('userName');
+    if (userNameEl) userNameEl.textContent = `👤 ${getHeaderDisplayName()}`;
+
+    const userRoleEl = document.getElementById('userRole');
+    if (userRoleEl) userRoleEl.textContent = '';
+}
+
 function applyRoleVisibility() {
     syncRoleBodyClasses();
     updateExportButtonVisibility();
+    updateHeaderIdentity();
 
     const excelBox = document.getElementById('excelUploadBox');
     if (excelBox) {
@@ -6204,10 +6231,7 @@ async function loginUsuario() {
         try { auditLog('LOGIN', 'OK', { usuario: (data.usuario || usuario) }); } catch(e) {}
 
         // UI
-        const userNameEl = document.getElementById('userName');
-        if (userNameEl) userNameEl.textContent = `👤 ${data.nombre}`;
-        const userRoleEl = document.getElementById('userRole');
-        if (userRoleEl) userRoleEl.textContent = '';
+        updateHeaderIdentity();
 
         document.getElementById('loginScreen')?.classList.add('hidden');
         resetToInicioView();
@@ -6450,6 +6474,7 @@ async function loginUsuario() {
             localStorage.removeItem('SABG_ROL');
             localStorage.removeItem('SABG_DEPENDENCIA');
             document.body.classList.remove('role-admin', 'role-superadmin', 'role-monitor', 'role-enlace');
+            updateHeaderIdentity();
             stopMonitorHeartbeat();
             stopMonitoringAutoRefresh();
             try {
@@ -8823,6 +8848,7 @@ function sendUserToLoginFromExpiredSession() {
     localStorage.removeItem('SABG_ROL');
     localStorage.removeItem('SABG_DEPENDENCIA');
     document.body.classList.remove('role-admin', 'role-superadmin', 'role-enlace', 'role-monitor');
+    updateHeaderIdentity();
     stopMonitorHeartbeat();
     stopMonitoringAutoRefresh();
     resetToInicioView();
