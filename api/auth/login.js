@@ -1,7 +1,12 @@
 import crypto from "crypto";
-import { serialize } from "cookie";
 import bcrypt from "bcryptjs";
 import pool from "../_lib/db.js";
+import {
+  buildSabgSessionCookie,
+  ensureUserSessionColumns,
+  getActiveSessionTtlSeconds,
+  getSessionRole,
+} from "../_lib/session.js";
 
 export default async function handler(req, res) {
   // CORS
@@ -63,38 +68,38 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: "Credenciales inválidas" });
     }
 
-    // Sesión SABG (HMAC stateless) -> cookie sabg_session
-    const secret = process.env.SESSION_SECRET || "";
-    if (!secret) return res.status(500).json({ success:false, error:"Falta SESSION_SECRET" });
+    await ensureUserSessionColumns();
+
+    const role = getSessionRole(u);
+    const ttlSeconds = getActiveSessionTtlSeconds();
+    const sid = role === "superadmin" ? null : crypto.randomUUID();
+
+    if (sid) {
+      await pool.query(
+        `
+          UPDATE public.usuarios
+          SET active_session_id = $2,
+              active_session_expires_at = TO_TIMESTAMP($3)
+          WHERE id = $1
+        `,
+        [
+          u.id,
+          sid,
+          Math.floor(Date.now() / 1000) + ttlSeconds,
+        ]
+      );
+    }
 
     const payload = {
       id: u.id,
       usuario: u.usuario,
       rol: u.rol,
       dependencia: u.dependencia,
-      exp: Math.floor(Date.now()/1000) + (60 * 60 * 8)
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 8),
+      ...(sid ? { sid } : {}),
     };
 
-    const payloadB64 = Buffer.from(JSON.stringify(payload), "utf8")
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-
-    const sig = crypto.createHmac("sha256", secret).update(payloadB64).digest("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-
-    const sabg = `${payloadB64}.${sig}`;
-
-    const cookie = serialize("sabg_session", sabg, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 8,
-    });
+    const cookie = buildSabgSessionCookie(req, payload, 60 * 60 * 8);
 
     res.setHeader("Set-Cookie", cookie);
 
