@@ -8390,6 +8390,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         if (!depInput || !ramoInput) return;
 
         const isEnlace = isEnlaceUser();
+        const isSuper = isSuperAdmin();
         const dependenciaSesion = getCurrentUserDependencia();
 
         if (isEnlace && dependenciaSesion) {
@@ -8411,14 +8412,26 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         }
 
         clearDependenciaRamoInputs();
-        depInput.readOnly = false;
-        depInput.removeAttribute('readonly');
-        depInput.style.background = '';
-        depInput.style.cursor = '';
+        if (isSuper) {
+            depInput.readOnly = false;
+            depInput.removeAttribute('readonly');
+            depInput.style.background = '';
+            depInput.style.cursor = '';
+            ramoInput.readOnly = false;
+            ramoInput.removeAttribute('readonly');
+            ramoInput.style.background = '';
+            ramoInput.style.cursor = '';
+            return;
+        }
+
+        depInput.readOnly = true;
+        depInput.setAttribute('readonly', 'readonly');
+        depInput.style.background = '#f8fafc';
+        depInput.style.cursor = 'not-allowed';
         ramoInput.readOnly = true;
         ramoInput.setAttribute('readonly', 'readonly');
-        ramoInput.style.background = '';
-        ramoInput.style.cursor = '';
+        ramoInput.style.background = '#f8fafc';
+        ramoInput.style.cursor = 'not-allowed';
     }
 
     function initAutocomplete() {
