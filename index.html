@@ -8370,6 +8370,19 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         ).trim();
     }
 
+    function clearDependenciaRamoInputs() {
+        const depInput = document.getElementById('dependenciaInput');
+        const ramoInput = document.getElementById('ramoUrInput');
+        const depSuggestions = document.getElementById('dependenciaSuggestions');
+
+        if (depInput) depInput.value = '';
+        if (ramoInput) ramoInput.value = '';
+        if (depSuggestions) {
+            depSuggestions.classList.remove('show');
+            depSuggestions.innerHTML = '';
+        }
+    }
+
     function applyEnlaceDependenciaLock() {
         const depInput = document.getElementById('dependenciaInput');
         const ramoInput = document.getElementById('ramoUrInput');
@@ -8397,6 +8410,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             return;
         }
 
+        clearDependenciaRamoInputs();
         depInput.readOnly = false;
         depInput.removeAttribute('readonly');
         depInput.style.background = '';
