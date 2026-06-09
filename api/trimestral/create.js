@@ -99,6 +99,10 @@ export default async function handler(req, res) {
       }
       data.dependencia = session.dependencia;
       data.usuario_registro = session.usuario || data.usuario_registro;
+      data.persona_reportada_por = null;
+      data.reporte_institucion_educativa = null;
+      data.nombre_completo = null;
+      data.ruta_2026 = null;
     }
 
     // Validar datos requeridos del formulario
