@@ -41,7 +41,7 @@ const NIVEL_RUTA_PREFIX = {
   DOCTORADO: "██████ 6. DOCTORADO",
 };
 
-export const SEXO_OPCIONES = ["MUJER", "HOMBRE", "SIN INFORMACIÓN"];
+export const SEXO_OPCIONES = ["MUJER", "HOMBRE", "OTRO"];
 
 export const PERSONA_REPORTADA_POR_OPCIONES = [
   "DEPENDENCIA",
