@@ -8,13 +8,30 @@ const rateLimitJson = (message) => ({
 
 const skipOptions = (req) => req.method === "OPTIONS";
 
-// General API protection: generous enough for normal use, blocks bursts/scans.
+function getRequestPath(req) {
+  return String(req?.originalUrl || req?.url || req?.path || "").split("?")[0];
+}
+
+function skipGeneralApiLimit(req) {
+  if (skipOptions(req)) return true;
+  const path = getRequestPath(req);
+  return (
+    path === "/api/auth/login" ||
+    path === "/auth/login" ||
+    path === "/api/health" ||
+    path === "/health"
+  );
+}
+
+// General API protection:
+// - Keep brute-force protection on /api/auth/login in the dedicated auth limiter.
+// - Be more tolerant for real multi-user traffic behind a shared government/public IP.
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 600,
+  max: 3000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: skipOptions,
+  skip: skipGeneralApiLimit,
   message: rateLimitJson("Demasiadas solicitudes. Intenta nuevamente más tarde."),
 });
 

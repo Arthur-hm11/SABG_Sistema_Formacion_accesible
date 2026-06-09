@@ -28,51 +28,43 @@ export default async function handler(req, res) {
   const deep = String(req.query?.deep || "").trim() === "1";
   const checks = {
     server: "ok",
-    database: deep ? "unknown" : "skipped",
+    database: "unknown",
   };
 
-  if (!deep) {
-    return res.status(200).json({
-      ok: true,
-      checks,
-      uptimeSeconds: Math.round(process.uptime()),
-      responseMs: Date.now() - started,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
   let session = null;
-  try {
-    session = await validateSabgSession(req, res);
-  } catch (error) {
-    console.error("Error validando sesión para deep health:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Error validando la sesión",
-      checks: {
-        server: "ok",
-        database: "hidden",
-      },
-      responseMs: Date.now() - started,
-      timestamp: new Date().toISOString(),
-    });
+  if (deep) {
+    try {
+      session = await validateSabgSession(req, res);
+    } catch (error) {
+      console.error("Error validando sesión para deep health:", error);
+      return res.status(500).json({
+        ok: false,
+        error: "Error validando la sesión",
+        checks: {
+          server: "ok",
+          database: "hidden",
+        },
+        responseMs: Date.now() - started,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (!session || (!isAdminSession(session) && !isMonitorSession(session))) {
+      return res.status(!session ? 401 : 403).json({
+        ok: false,
+        error: "No autorizado para ver el estado profundo del sistema",
+        checks: {
+          server: "ok",
+          database: "hidden",
+        },
+        responseMs: Date.now() - started,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
-  if (!session || (!isAdminSession(session) && !isMonitorSession(session))) {
-    return res.status(!session ? 401 : 403).json({
-      ok: false,
-      error: "No autorizado para ver el estado profundo del sistema",
-      checks: {
-        server: "ok",
-        database: "hidden",
-      },
-      responseMs: Date.now() - started,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
   try {
-    await withTimeout(pool.query("SELECT 1 AS ok"), 3000);
+    await withTimeout(pool.query("SELECT 1 AS ok"), deep ? 3000 : 2500);
     checks.database = "ok";
 
     return res.status(200).json({
