@@ -2795,9 +2795,9 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         <li>Seguimiento trimestral del estado de avance educativo</li>
                         <li>Carga mensual de evidencias documentales en formato PDF</li>
                         <li>Panel de revisión y validación para la DCEVE</li>
-                        <li>Control de permisos por roles (Enlace, Super Admin)</li>
+                        <li>Control de permisos por roles y niveles de autorización</li>
                         <li>Actualización automática de estados y registros</li>
-                        <li>Exportación de datos en múltiples formatos</li>
+                        <li>Exportación de datos en formato Excel</li>
                         <li>Notificaciones de estados desactualizados</li>
                         <li>Integración con Google Drive para almacenamiento</li>
                         <li>Búsqueda y filtrado avanzado en tablas</li>
@@ -2812,7 +2812,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                 
                 <!-- Panel Admin (solo visible para Super Admin) -->
                 <div id="adminPanelTrimestral" class="admin-panel hidden">
-                <h3>⚙️ Panel de Control - </h3>
+                <h3>⚙️ Panel de Control DCEVE</h3>
                 <div class="admin-controls">
                     <button class="btn btn-success" onclick="desbloquearEdicion()">
                         🔓 Desbloquear Edición
@@ -3545,7 +3545,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     
                     <!-- Panel Admin (solo visible para Super Admin) -->
                     <div id="adminPanelEvidencias" class="admin-panel hidden">
-                        <h3>⚙️ Panel de Control - </h3>
+                        <h3>⚙️ Panel de Control DCEVE</h3>
                         <div class="admin-controls">
                             <button class="btn btn-warning" onclick="togglePanelRevision()">
                                 👁️ Mostrar/Ocultar Panel de Revisión
@@ -3774,7 +3774,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                     <ul>
                         <li>Muestra accesos recientes, actividad por dependencia y conteos generales del sistema.</li>
                         <li>Las personas activas se calculan por latido reciente del navegador; no exponen CURP ni contraseñas.</li>
-                        <li>Diseñado para cuentas de monitoreo y superadministración.</li>
+                        <li>Diseñado para cuentas de monitoreo.</li>
                     </ul>
                 </div>
 
