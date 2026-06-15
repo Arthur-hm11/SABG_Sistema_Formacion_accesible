@@ -1215,6 +1215,13 @@
             background: rgba(255,255,255,0.98);
         }
 
+        .table-container.sticky-scroll-table {
+            max-height: min(68vh, 900px);
+            overflow: auto;
+            scrollbar-gutter: stable both-edges;
+            overscroll-behavior: contain;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -3392,7 +3399,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
 
 
                 </div>
-                    <div class="table-container">
+                    <div class="table-container sticky-scroll-table" id="registrosTableContainer">
                         <table id="registrosTable">
                             <thead>
                                 <tr>
