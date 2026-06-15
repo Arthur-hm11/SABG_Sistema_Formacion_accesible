@@ -17,12 +17,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const LOCAL_PROXY_PROD_API =
-  String(process.env.LOCAL_PROXY_PROD_API || "").trim().toLowerCase() === "true" &&
-  process.env.RENDER !== "true";
-const LOCAL_PROXY_PROD_API_ORIGIN = String(
-  process.env.LOCAL_PROXY_PROD_API_ORIGIN || "https://sabg-sistema-formacion.onrender.com"
-).trim().replace(/\/+$/, "");
 
 function toInt(value, fallback, min, max) {
   const n = parseInt(String(value ?? ""), 10);
@@ -30,97 +24,7 @@ function toInt(value, fallback, min, max) {
   return Math.min(Math.max(n, min), max);
 }
 
-async function readRawRequestBody(req) {
-  const chunks = [];
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks);
-}
-
 app.disable("x-powered-by");
-
-if (LOCAL_PROXY_PROD_API && LOCAL_PROXY_PROD_API_ORIGIN) {
-  app.use("/api", async (req, res, next) => {
-    try {
-      const target = new URL(String(req.originalUrl || req.url || ""), LOCAL_PROXY_PROD_API_ORIGIN);
-      const headers = new Headers();
-
-      for (const [key, value] of Object.entries(req.headers || {})) {
-        if (value == null) continue;
-        const lowerKey = String(key).toLowerCase();
-        if (
-          lowerKey === "host" ||
-          lowerKey === "content-length" ||
-          lowerKey === "connection" ||
-          lowerKey === "content-encoding" ||
-          lowerKey === "transfer-encoding"
-        ) {
-          continue;
-        }
-        if (Array.isArray(value)) {
-          value.forEach((item) => headers.append(key, String(item)));
-        } else {
-          headers.set(key, String(value));
-        }
-      }
-
-      const method = String(req.method || "GET").toUpperCase();
-      const init = {
-        method,
-        headers,
-        redirect: "manual",
-      };
-
-      if (method !== "GET" && method !== "HEAD") {
-        const rawBody = await readRawRequestBody(req);
-        if (rawBody.length > 0) init.body = rawBody;
-      }
-
-      const upstream = await fetch(target, init);
-      const upstreamBuffer = Buffer.from(await upstream.arrayBuffer());
-
-      res.status(upstream.status);
-
-      upstream.headers.forEach((value, key) => {
-        const lowerKey = String(key).toLowerCase();
-        if (
-          lowerKey === "set-cookie" ||
-          lowerKey === "content-length" ||
-          lowerKey === "content-encoding" ||
-          lowerKey === "transfer-encoding" ||
-          lowerKey === "access-control-allow-origin" ||
-          lowerKey === "access-control-allow-credentials" ||
-          lowerKey === "access-control-allow-methods" ||
-          lowerKey === "access-control-allow-headers"
-        ) {
-          return;
-        }
-        res.setHeader(key, value);
-      });
-
-      const upstreamCookies = typeof upstream.headers.getSetCookie === "function"
-        ? upstream.headers.getSetCookie()
-        : [];
-      if (upstreamCookies.length > 0) {
-        const rewrittenCookies = upstreamCookies.map((cookie) =>
-          String(cookie)
-            .replace(/;\s*Secure/gi, "")
-            .replace(/;\s*Domain=[^;]+/gi, "")
-        );
-        res.setHeader("Set-Cookie", rewrittenCookies);
-      }
-
-      return res.send(upstreamBuffer);
-    } catch (error) {
-      console.error("Error proxy local /api -> producción:", error);
-      return res.status(502).json({
-        success: false,
-        error: "No fue posible conectar el local con la API de producción",
-      });
-    }
-  });
-}
 
 // Trust proxy (Render/Cloudflare) so req.ip works for rate limiting
 app.set("trust proxy", 1);
