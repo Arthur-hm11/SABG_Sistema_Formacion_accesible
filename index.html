@@ -1870,6 +1870,57 @@
             margin: 0.5rem 0;
         }
 
+        .footer-support {
+            max-width: 980px;
+            margin: 1.5rem auto 0;
+            padding-top: 1.2rem;
+            border-top: 1px solid rgba(232, 220, 196, 0.22);
+        }
+
+        .footer-support-title {
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .footer-support-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .footer-support-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(232, 220, 196, 0.14);
+            border-radius: 12px;
+            padding: 0.95rem 1rem;
+        }
+
+        .footer-support-item strong {
+            display: block;
+            color: #ffffff;
+            font-size: 0.95rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .footer-support-item span,
+        .footer-support-item a {
+            display: block;
+            color: #E8DCC4;
+            font-size: 0.92rem;
+            line-height: 1.45;
+            text-decoration: none;
+            word-break: break-word;
+        }
+
+        .footer-support-item a:hover {
+            color: #ffffff;
+        }
+
         /* Hidden class */
         .hidden {
             display: none !important;
@@ -4092,6 +4143,23 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
         <p style="font-size: 1.2rem; font-weight: bold;">Gobierno de México</p>
         <p>Secretaría Anticorrupción y Buen Gobierno</p>
         <p>Sistema de Promoción de la Formación Académica</p>
+        <div class="footer-support">
+            <p class="footer-support-title">Soporte técnico</p>
+            <div class="footer-support-list">
+                <div class="footer-support-item">
+                    <strong>MTRA. ARELI ÁNGEL SÁNCHEZ</strong>
+                    <span>55 2000 3000 ext. 4351</span>
+                </div>
+                <div class="footer-support-item">
+                    <strong>ING. ARTURO HERNÁNDEZ MANZANAREZ</strong>
+                    <a href="mailto:asesor112_uprhapf@buengobierno.gob.mx">asesor112_uprhapf@buengobierno.gob.mx</a>
+                </div>
+                <div class="footer-support-item">
+                    <strong>LIC. L. EDALY ARCINIEGA MARTÍNEZ</strong>
+                    <a href="mailto:asesor-upsp39@buengobierno.gob.mx">asesor-upsp39@buengobierno.gob.mx</a>
+                </div>
+            </div>
+        </div>
         <p style="margin-top: 1rem; color: #94a3b8;">© 2025 - Todos los derechos reservados</p>
     </footer>
         
