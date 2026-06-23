@@ -6242,6 +6242,8 @@ async function loginUsuario() {
         localStorage.setItem('SABG_ROL', data.rol || '');
         localStorage.setItem('SABG_DEPENDENCIA', data.dependencia || '');
 
+        clearTrimestralFormState();
+
         // Aplicar permisos visuales por rol
         applyRoleVisibility();
         applyEnlaceDependenciaLock();
@@ -6496,6 +6498,7 @@ async function loginUsuario() {
             updateHeaderIdentity();
             stopMonitorHeartbeat();
             stopMonitoringAutoRefresh();
+            clearTrimestralFormState();
             try {
                 __dceveDirty.clear();
                 __dceveSelected.clear();
@@ -8388,6 +8391,30 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             depSuggestions.classList.remove('show');
             depSuggestions.innerHTML = '';
         }
+    }
+
+    function clearTrimestralFormState() {
+        const form = document.getElementById('trimestralForm');
+        if (!form) return;
+
+        form.reset();
+        clearDependenciaRamoInputs();
+
+        const ramoSuggestions = document.getElementById('ramoUrSuggestions');
+        if (ramoSuggestions) {
+            ramoSuggestions.classList.remove('show');
+            ramoSuggestions.innerHTML = '';
+        }
+
+        try { llenarInstitucionEducativa('', ''); } catch (_) {}
+        try { llenarModalidadEducativa('', '', ''); } catch (_) {}
+        try { llenarNivelTabular('', ''); } catch (_) {}
+        try { syncInstitucionEducativaOtro(); } catch (_) {}
+        try { syncModalidadOtro(); } catch (_) {}
+        try { syncNivelPuestoOtro(); } catch (_) {}
+        try { syncNivelTabularOtro(); } catch (_) {}
+        try { syncCamposRutaDerivados(); } catch (_) {}
+        try { applyEnlaceDependenciaLock(); } catch (_) {}
     }
 
     function applyEnlaceDependenciaLock() {
