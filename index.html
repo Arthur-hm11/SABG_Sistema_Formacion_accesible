@@ -6408,7 +6408,7 @@ async function loginUsuario() {
     // Validar formato CURP
     const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9]{2}$/;
     if (!curpPattern.test(curp)) {
-        alert("❌ Formato de CURP inválido\n\nFormato correcto:\n• 4 letras\n• 6 números\n• H o M\n• 5 letras\n• 2 caracteres (letras o números)\n\nEjemplo: SALR990312MDFLPC06");
+        alert("❌ CURP inválida\n\nVerifica que tenga 18 caracteres y esté capturada correctamente.");
         document.getElementById("reg_curp").focus();
         return;
     }
@@ -9106,7 +9106,7 @@ async function guardarRegistroTrimestral() {
     const curpMissingAllowed = !curpValue || ['SIN CURP', 'S/CURP', 'SIN INFORMACION', 'SIN INFORMACIÓN', 'NO CUENTA CON CURP', 'N/A', 'NO APLICA', 'NA', 'NULL', '-', '0'].includes(curpValue);
 
     if (!curpMissingAllowed && (curpValue.length !== 18 || !curpPattern.test(curpValue))) {
-        alert('⚠️ La CURP debe tener 18 caracteres y un formato válido, o dejarse sin capturar con justificación en observaciones.');
+        alert('⚠️ CURP inválida. Verifica que tenga 18 caracteres y el formato correcto, o déjala sin captura con justificación en observaciones.');
         document.getElementById('curp')?.focus();
         return;
     }
