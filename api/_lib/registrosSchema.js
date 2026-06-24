@@ -15,6 +15,16 @@ function clip(value, max) {
   return text.length > max ? text.slice(0, max) : text;
 }
 
+function isObjectMarker(value) {
+  return /^\[object\s+[^\]]+\]$/i.test(String(value || "").trim());
+}
+
+function cleanExtendedText(value) {
+  const text = norm(value);
+  if (!text) return null;
+  return isObjectMarker(text) ? null : text;
+}
+
 function normalizeCatalogValue(value) {
   return String(value || "")
     .normalize("NFD")
@@ -79,17 +89,29 @@ export function computeNombreCompleto(primerApellido, segundoApellido, nombre, e
 }
 
 export function computeRuta2026(nivelEducativo, reporteInstitucionEducativa, explicitValue = null) {
-  const explicit = norm(explicitValue);
+  const explicit = cleanExtendedText(explicitValue);
   if (explicit) return explicit;
 
   const nivelKey = normalizeCatalogValue(nivelEducativo);
   const prefix = NIVEL_RUTA_PREFIX[nivelKey];
-  const reporte = norm(reporteInstitucionEducativa);
+  const reporte = cleanExtendedText(reporteInstitucionEducativa);
   if (!prefix || !reporte) return null;
   return `${prefix} | ${reporte}`;
 }
 
+export function extractReporteInstitucionEducativa(ruta2026) {
+  const ruta = cleanExtendedText(ruta2026);
+  if (!ruta || !ruta.includes("|")) return null;
+  const reporte = ruta.split("|").slice(1).join("|").trim();
+  return reporte || null;
+}
+
 export function normalizeExtendedFields(input = {}) {
+  const personaReportadaPor = cleanExtendedText(input.persona_reportada_por);
+  const reporteInstitucion =
+    cleanExtendedText(input.reporte_institucion_educativa) ||
+    extractReporteInstitucionEducativa(input.ruta_2026);
+
   return {
     periodo_ruta: computePeriodoRuta(input.anio, input.trimestre, input.periodo_ruta),
     nombre_completo: computeNombreCompleto(
@@ -99,12 +121,12 @@ export function normalizeExtendedFields(input = {}) {
       input.nombre_completo
     ),
     sexo: clip(cleanUpper(input.sexo), 30),
-    persona_reportada_por: clip(input.persona_reportada_por, 120),
-    reporte_institucion_educativa: clip(input.reporte_institucion_educativa, 200),
+    persona_reportada_por: clip(personaReportadaPor, 120),
+    reporte_institucion_educativa: clip(reporteInstitucion, 200),
     ruta_2026: clip(
       computeRuta2026(
         input.nivel_educativo,
-        input.reporte_institucion_educativa,
+        reporteInstitucion,
         input.ruta_2026
       ),
       250

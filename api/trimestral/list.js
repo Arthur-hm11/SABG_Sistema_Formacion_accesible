@@ -1,7 +1,7 @@
 import pool from "../_lib/db.js";
 import { applyCors } from "../_lib/cors.js";
 import { readSabgSession, isAdminSession } from "../_lib/session.js";
-import { ensureRegistrosTrimestralSchema } from "../_lib/registrosSchema.js";
+import { ensureRegistrosTrimestralSchema, normalizeExtendedFields } from "../_lib/registrosSchema.js";
 
 function toInt(v, def) {
   const n = parseInt(String(v ?? ""), 10);
@@ -137,6 +137,16 @@ export default async function handler(req, res) {
 
     const result = await pool.query(dataSql, params);
 
+    const rows = (result.rows || []).map((row) => {
+      const extended = normalizeExtendedFields(row);
+      return {
+        ...row,
+        persona_reportada_por: extended.persona_reportada_por,
+        reporte_institucion_educativa: extended.reporte_institucion_educativa,
+        ruta_2026: extended.ruta_2026,
+      };
+    });
+
     const pages = limit > 0 ? Math.ceil(total / limit) : 1;
 
     return res.status(200).json({
@@ -145,9 +155,9 @@ export default async function handler(req, res) {
       limit,
       pages,
       total,
-      count: result.rows.length,
+      count: rows.length,
       availableYears,
-      data: result.rows,
+      data: rows,
     });
   } catch (error) {
     console.error("Error /api/trimestral/list:", error);

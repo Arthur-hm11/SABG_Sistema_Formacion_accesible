@@ -34,10 +34,13 @@ function cellToText(value) {
   if (value instanceof Date) return value.toISOString();
   if (typeof value === "object") {
     if (typeof value.text === "string") return value.text;
-    if (typeof value.result === "string" || typeof value.result === "number") return String(value.result);
+    if (value.result !== undefined && value.result !== null) return cellToText(value.result);
     if (Array.isArray(value.richText)) {
       return value.richText.map((item) => item?.text || "").join("");
     }
+    if (value.hyperlink && !value.text) return cellToText(value.hyperlink);
+    if (value.value !== undefined && value.value !== null) return cellToText(value.value);
+    return "";
   }
   return String(value);
 }
