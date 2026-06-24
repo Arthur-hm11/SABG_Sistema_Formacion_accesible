@@ -5177,6 +5177,9 @@ function applyRoleVisibility() {
 
 let __monitorHeartbeatTimer = null;
 let __monitorSummaryTimer = null;
+let __activeSessionGuardTimer = null;
+let __activeSessionGuardPending = false;
+const ACTIVE_SESSION_GUARD_MS = 10000;
 
 function getCurrentVisibleSectionId() {
     const activeMain = document.querySelector('.main-section.active');
@@ -5224,6 +5227,76 @@ function stopMonitorHeartbeat() {
         // silencioso
     }
 }
+
+function shouldEnforceSingleSessionGuard() {
+    const storedUser = localStorage.getItem('SABG_USUARIO');
+    const role = String(localStorage.getItem('SABG_ROL') || userRole || '').toLowerCase().trim();
+    if (!storedUser) return false;
+    return role !== 'superadmin';
+}
+
+function getActiveSessionGuardVerifyUrl() {
+    const role = String(localStorage.getItem('SABG_ROL') || userRole || '').toLowerCase().trim();
+    if (role === 'monitor') return '/api/monitor/summary';
+    return '/api/trimestral/list?page=1&limit=1';
+}
+
+async function verifyActiveSessionGuard() {
+    if (__activeSessionGuardPending || !shouldEnforceSingleSessionGuard()) return;
+    __activeSessionGuardPending = true;
+
+    try {
+        const response = await fetch(getActiveSessionGuardVerifyUrl(), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            credentials: 'include',
+            cache: 'no-store'
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            sendUserToLoginFromExpiredSession();
+        }
+    } catch (_) {
+        // silencioso: una falla temporal de red no debe cerrar la sesión
+    } finally {
+        __activeSessionGuardPending = false;
+    }
+}
+
+function startActiveSessionGuard() {
+    try {
+        stopActiveSessionGuard();
+        if (!shouldEnforceSingleSessionGuard()) return;
+        void verifyActiveSessionGuard();
+        __activeSessionGuardTimer = setInterval(() => {
+            void verifyActiveSessionGuard();
+        }, ACTIVE_SESSION_GUARD_MS);
+    } catch (_) {
+        // silencioso
+    }
+}
+
+function stopActiveSessionGuard() {
+    try {
+        if (__activeSessionGuardTimer) clearInterval(__activeSessionGuardTimer);
+        __activeSessionGuardTimer = null;
+        __activeSessionGuardPending = false;
+    } catch (_) {
+        // silencioso
+    }
+}
+
+window.addEventListener('focus', () => {
+    if (shouldEnforceSingleSessionGuard()) {
+        void verifyActiveSessionGuard();
+    }
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && shouldEnforceSingleSessionGuard()) {
+        void verifyActiveSessionGuard();
+    }
+});
 
 function formatDateTimeMX(value) {
     if (!value) return '—';
@@ -6325,6 +6398,7 @@ async function loginUsuario() {
         document.getElementById('loginScreen')?.classList.add('hidden');
         resetToInicioView();
         startMonitorHeartbeat();
+        startActiveSessionGuard();
         if (canViewMonitoringUI()) {
             startMonitoringAutoRefresh();
         } else {
@@ -6565,8 +6639,11 @@ async function loginUsuario() {
             document.body.classList.remove('role-admin', 'role-superadmin', 'role-monitor', 'role-enlace');
             updateHeaderIdentity();
             stopMonitorHeartbeat();
+            stopActiveSessionGuard();
             stopMonitoringAutoRefresh();
             clearTrimestralFormState();
+            window.__pendingNeonEdits = [];
+            try { __setSaveButtonsState(); } catch (_) {}
             try {
                 __dceveDirty.clear();
                 __dceveSelected.clear();
@@ -8991,7 +9068,16 @@ function sendUserToLoginFromExpiredSession() {
     document.body.classList.remove('role-admin', 'role-superadmin', 'role-enlace', 'role-monitor');
     updateHeaderIdentity();
     stopMonitorHeartbeat();
+    stopActiveSessionGuard();
     stopMonitoringAutoRefresh();
+    clearTrimestralFormState();
+    window.__pendingNeonEdits = [];
+    try { __setSaveButtonsState(); } catch (_) {}
+    try {
+      __dceveDirty.clear();
+      __dceveSelected.clear();
+      updateRevisionDceveVisibility();
+    } catch (_) {}
     resetToInicioView();
     document.getElementById('loginScreen')?.classList.remove('hidden');
     showTrimestralNotice('Tu sesión venció por inactividad. Inicia sesión nuevamente.', 'warn', 9000);
@@ -10233,10 +10319,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (localStorage.getItem('SABG_USUARIO')) {
-        startMonitorHeartbeat();
-        if (canViewMonitoringUI()) startMonitoringAutoRefresh();
+        void bootstrapSessionFromStorage();
     }
 });
+
+async function bootstrapSessionFromStorage() {
+    try {
+        const storedUser = localStorage.getItem('SABG_USUARIO');
+        const storedRole = localStorage.getItem('SABG_ROL') || '';
+        if (!storedUser) return;
+
+        const isMonitor = String(storedRole).toLowerCase().trim() === 'monitor';
+        const verifyUrl = isMonitor
+            ? '/api/monitor/summary'
+            : '/api/trimestral/list?page=1&limit=1';
+
+        const response = await fetch(verifyUrl, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            credentials: 'include'
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            sendUserToLoginFromExpiredSession();
+            return;
+        }
+
+        const result = await response.json().catch(() => ({}));
+        const isOk = isMonitor ? !!result?.success : !!result?.success;
+        if (!response.ok || !isOk) {
+            sendUserToLoginFromExpiredSession();
+            return;
+        }
+
+        updateHeaderIdentity();
+        document.getElementById('loginScreen')?.classList.add('hidden');
+        clearTrimestralFormState();
+        applyRoleVisibility();
+        applyEnlaceDependenciaLock();
+        resetToInicioView();
+        startMonitorHeartbeat();
+        startActiveSessionGuard();
+        if (canViewMonitoringUI()) {
+            startMonitoringAutoRefresh();
+        } else {
+            stopMonitoringAutoRefresh();
+        }
+        updateExportButtonVisibility();
+    } catch (error) {
+        console.warn('No se pudo restaurar la sesión desde almacenamiento local:', error);
+        sendUserToLoginFromExpiredSession();
+    }
+}
 // === GUARDADO MASIVO A NEON (solo admin) ===
 window.__pendingNeonEdits = window.__pendingNeonEdits || [];
 
