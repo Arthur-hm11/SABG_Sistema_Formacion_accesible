@@ -5179,7 +5179,13 @@ let __monitorHeartbeatTimer = null;
 let __monitorSummaryTimer = null;
 let __activeSessionGuardTimer = null;
 let __activeSessionGuardPending = false;
+let __sessionHeartbeatTimer = null;
+let __sessionIdleTimer = null;
+let __sessionIdlePending = false;
+let __lastRealUserActivityAt = Date.now();
 const ACTIVE_SESSION_GUARD_MS = 10000;
+const SESSION_HEARTBEAT_MS = 60000;
+const SESSION_IDLE_MS = 30 * 60 * 1000;
 
 function getCurrentVisibleSectionId() {
     const activeMain = document.querySelector('.main-section.active');
@@ -5199,7 +5205,8 @@ async function sendMonitorHeartbeat() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-SABG-Session-Touch': 'background'
             },
             body: JSON.stringify({ route: getCurrentVisibleSectionId() })
         });
@@ -5229,10 +5236,7 @@ function stopMonitorHeartbeat() {
 }
 
 function shouldEnforceSingleSessionGuard() {
-    const storedUser = localStorage.getItem('SABG_USUARIO');
-    const role = String(localStorage.getItem('SABG_ROL') || userRole || '').toLowerCase().trim();
-    if (!storedUser) return false;
-    return role !== 'superadmin';
+    return !!localStorage.getItem('SABG_USUARIO');
 }
 
 function getActiveSessionGuardVerifyUrl() {
@@ -5248,13 +5252,16 @@ async function verifyActiveSessionGuard() {
     try {
         const response = await fetch(getActiveSessionGuardVerifyUrl(), {
             method: 'GET',
-            headers: { 'Accept': 'application/json' },
+            headers: {
+                'Accept': 'application/json',
+                'X-SABG-Session-Touch': 'background'
+            },
             credentials: 'include',
             cache: 'no-store'
         });
 
         if (response.status === 401 || response.status === 403) {
-            sendUserToLoginFromExpiredSession();
+            sendUserToLoginFromExpiredSession(getSessionExpiryMessage(response));
         }
     } catch (_) {
         // silencioso: una falla temporal de red no debe cerrar la sesión
@@ -5298,6 +5305,125 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+function getSessionExpiryMessage(response) {
+    try {
+        const status = String(response?.headers?.get('x-sabg-session-status') || '').trim().toLowerCase();
+        const rawLockSeconds = Number(response?.headers?.get('x-sabg-lock-seconds') || '0');
+
+        if (status === 'inactive_locked') {
+            const minutes = Math.max(1, Math.ceil((Number.isFinite(rawLockSeconds) && rawLockSeconds > 0 ? rawLockSeconds : 180) / 60));
+            if (minutes === 1) {
+                return 'Tu sesión se cerró por inactividad. La cuenta estará disponible en 1 minuto.';
+            }
+            return `Tu sesión se cerró por inactividad. La cuenta estará disponible en ${minutes} minutos.`;
+        }
+    } catch (_) {
+        // silencioso
+    }
+
+    return 'Tu sesión ya no está activa. Inicia sesión nuevamente.';
+}
+
+function isAuthenticatedSessionActive() {
+    return !!localStorage.getItem('SABG_USUARIO');
+}
+
+function noteRealUserActivity() {
+    if (!isAuthenticatedSessionActive()) return;
+    __lastRealUserActivityAt = Date.now();
+    scheduleSessionIdleExpiry();
+}
+
+function stopSessionLifecycle() {
+    try {
+        if (__sessionHeartbeatTimer) clearInterval(__sessionHeartbeatTimer);
+        if (__sessionIdleTimer) clearTimeout(__sessionIdleTimer);
+        __sessionHeartbeatTimer = null;
+        __sessionIdleTimer = null;
+        __sessionIdlePending = false;
+    } catch (_) {
+        // silencioso
+    }
+}
+
+async function expireSessionForInactivity() {
+    if (__sessionIdlePending || !isAuthenticatedSessionActive()) return;
+    __sessionIdlePending = true;
+
+    try {
+        await fetch('/api/auth/expire-idle', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-SABG-Session-Touch': 'background'
+            },
+            credentials: 'include'
+        });
+    } catch (_) {
+        // silencioso
+    } finally {
+        __sessionIdlePending = false;
+        sendUserToLoginFromExpiredSession('Tu sesión se cerró por inactividad. La cuenta estará disponible en 3 minutos.');
+    }
+}
+
+function scheduleSessionIdleExpiry() {
+    try {
+        if (__sessionIdleTimer) clearTimeout(__sessionIdleTimer);
+        if (!isAuthenticatedSessionActive()) return;
+
+        const elapsed = Date.now() - __lastRealUserActivityAt;
+        const remaining = Math.max(1000, SESSION_IDLE_MS - elapsed);
+        __sessionIdleTimer = setTimeout(() => {
+            void expireSessionForInactivity();
+        }, remaining);
+    } catch (_) {
+        // silencioso
+    }
+}
+
+async function sendSessionHeartbeat() {
+    try {
+        if (!isAuthenticatedSessionActive()) return;
+        if (document.visibilityState === 'hidden') return;
+        if (Date.now() - __lastRealUserActivityAt > SESSION_HEARTBEAT_MS) return;
+
+        const response = await fetch('/api/auth/heartbeat', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-SABG-Session-Touch': '1'
+            },
+            credentials: 'include',
+            cache: 'no-store'
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            sendUserToLoginFromExpiredSession(getSessionExpiryMessage(response));
+        }
+    } catch (_) {
+        // silencioso
+    }
+}
+
+function startSessionLifecycle() {
+    try {
+        stopSessionLifecycle();
+        __lastRealUserActivityAt = Date.now();
+        scheduleSessionIdleExpiry();
+        void sendSessionHeartbeat();
+        __sessionHeartbeatTimer = setInterval(() => {
+            void sendSessionHeartbeat();
+        }, SESSION_HEARTBEAT_MS);
+    } catch (_) {
+        // silencioso
+    }
+}
+
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach((eventName) => {
+    window.addEventListener(eventName, noteRealUserActivity, { passive: true });
+});
+
 function formatDateTimeMX(value) {
     if (!value) return '—';
     try {
@@ -5322,8 +5448,15 @@ async function loadMonitoringSummary() {
     try {
         const response = await fetch('/api/monitor/summary', {
             method: 'GET',
-            headers: { 'Accept': 'application/json' }
+            headers: {
+                'Accept': 'application/json',
+                'X-SABG-Session-Touch': 'background'
+            }
         });
+        if (response.status === 401 || response.status === 403) {
+            sendUserToLoginFromExpiredSession(getSessionExpiryMessage(response));
+            return;
+        }
         const data = await response.json();
 
         if (!response.ok || !data?.success) {
@@ -6399,6 +6532,7 @@ async function loginUsuario() {
         resetToInicioView();
         startMonitorHeartbeat();
         startActiveSessionGuard();
+        startSessionLifecycle();
         if (canViewMonitoringUI()) {
             startMonitoringAutoRefresh();
         } else {
@@ -6450,7 +6584,7 @@ async function loginUsuario() {
             if (window.__rtTrimestralInterval) clearInterval(window.__rtTrimestralInterval);
             window.__rtTrimestralInterval = setInterval(() => {
                 const u = localStorage.getItem('SABG_USUARIO');
-                if (u && !isMonitorUser()) cargarRegistrosTrimestral();
+                if (u && !isMonitorUser()) cargarRegistrosTrimestral(TRIM_PAGE, TRIM_LIMIT, TRIM_Q, { background: true });
             }, 60000);
         } catch (e) {}
 
@@ -6640,6 +6774,7 @@ async function loginUsuario() {
             updateHeaderIdentity();
             stopMonitorHeartbeat();
             stopActiveSessionGuard();
+            stopSessionLifecycle();
             stopMonitoringAutoRefresh();
             clearTrimestralFormState();
             window.__pendingNeonEdits = [];
@@ -9050,7 +9185,7 @@ function showTrimestralNotice(message, type = 'info', timeout = 6500) {
   } catch (_) {}
 }
 
-function sendUserToLoginFromExpiredSession() {
+function sendUserToLoginFromExpiredSession(message = 'Tu sesión ya no está activa. Inicia sesión nuevamente.') {
   try {
     if (window.__rtTrimestralInterval) {
       clearInterval(window.__rtTrimestralInterval);
@@ -9069,6 +9204,7 @@ function sendUserToLoginFromExpiredSession() {
     updateHeaderIdentity();
     stopMonitorHeartbeat();
     stopActiveSessionGuard();
+    stopSessionLifecycle();
     stopMonitoringAutoRefresh();
     clearTrimestralFormState();
     window.__pendingNeonEdits = [];
@@ -9080,7 +9216,7 @@ function sendUserToLoginFromExpiredSession() {
     } catch (_) {}
     resetToInicioView();
     document.getElementById('loginScreen')?.classList.remove('hidden');
-    showTrimestralNotice('Tu sesión venció por inactividad. Inicia sesión nuevamente.', 'warn', 9000);
+    showTrimestralNotice(message, 'warn', 9000);
   } catch (_) {}
 }
 
@@ -9099,10 +9235,11 @@ function scheduleTrimestralRetryOnOnline() {
   }, { once: true });
 }
 
-async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q = TRIM_Q) {
+async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q = TRIM_Q, options = {}) {
   TRIM_PAGE = Math.max(1, Number(page) || 1);
   TRIM_LIMIT = Math.max(1, Number(limit) || 50);
   TRIM_Q = String(q ?? TRIM_Q ?? "").trim();
+  const isBackground = !!options?.background;
 
   // Si hay busqueda, mostrar TODO en una sola vista
   if (TRIM_Q) {
@@ -9120,11 +9257,20 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
     if (TRIM_Q) url += `&q=${encodeURIComponent(TRIM_Q)}`;
     if (TRIM_YEAR) url += `&anio=${encodeURIComponent(TRIM_YEAR)}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: isBackground
+        ? {
+            'Accept': 'application/json',
+            'X-SABG-Session-Touch': 'background'
+          }
+        : {
+            'Accept': 'application/json'
+          }
+    });
     const result = await response.json().catch(() => ({}));
 
     if (response.status === 401 || response.status === 403) {
-      sendUserToLoginFromExpiredSession();
+      sendUserToLoginFromExpiredSession(getSessionExpiryMessage(response));
       return;
     }
 
@@ -10341,14 +10487,14 @@ async function bootstrapSessionFromStorage() {
         });
 
         if (response.status === 401 || response.status === 403) {
-            sendUserToLoginFromExpiredSession();
+            sendUserToLoginFromExpiredSession(getSessionExpiryMessage(response));
             return;
         }
 
         const result = await response.json().catch(() => ({}));
         const isOk = isMonitor ? !!result?.success : !!result?.success;
         if (!response.ok || !isOk) {
-            sendUserToLoginFromExpiredSession();
+            sendUserToLoginFromExpiredSession(getSessionExpiryMessage(response));
             return;
         }
 
@@ -10360,6 +10506,7 @@ async function bootstrapSessionFromStorage() {
         resetToInicioView();
         startMonitorHeartbeat();
         startActiveSessionGuard();
+        startSessionLifecycle();
         if (canViewMonitoringUI()) {
             startMonitoringAutoRefresh();
         } else {
