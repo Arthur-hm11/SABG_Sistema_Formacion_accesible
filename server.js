@@ -100,6 +100,8 @@ app.use("/api/backup/export", sensitiveExportLimiter);
 const MONITOR_ALLOWED_API_PATHS = new Set([
   "/api/auth/login",
   "/api/auth/logout",
+  "/api/auth/heartbeat",
+  "/api/auth/expire-idle",
   "/api/health",
   "/api/monitor/ping",
   "/api/monitor/summary",
@@ -192,6 +194,8 @@ await mount("post", "/api/trimestral/deleteTest",  "./api/trimestral/deleteTest.
 
 await mount("post", "/api/auth/login",             "./api/auth/login.js");
 await mount("post", "/api/auth/logout",            "./api/auth/logout.js");
+await mount("post", "/api/auth/heartbeat",         "./api/auth/heartbeat.js");
+await mount("post", "/api/auth/expire-idle",       "./api/auth/expire-idle.js");
 await mount("post", "/api/auth/register",          "./api/auth/register.js");
 
 await mount("post", "/api/upload/excel",           "./api/upload/excel.js");
