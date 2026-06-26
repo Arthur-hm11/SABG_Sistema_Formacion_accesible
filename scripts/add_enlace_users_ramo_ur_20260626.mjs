@@ -235,32 +235,34 @@ async function getDbContext(client) {
     batchTag,
     usernameMode,
     highestLegacyEnlUsuario: highestLegacyEnlRes.rows[0]?.usuario || null,
+    nextSequenceStart: anchorRes.rows.length + 1,
   };
 }
 
-function buildPlannedAccounts({ catalog, batchTag, usernameMode, seed }) {
+function buildPlannedAccounts({ catalog, batchTag, usernameMode, seed, nextSequenceStart }) {
   const planned = [];
   const seenUsers = new Set();
   const seenCurps = new Set();
   const seenEmails = new Set();
 
-  for (const row of NEW_ROWS) {
-    const matchIndex = catalog.findIndex(
+  for (let idx = 0; idx < NEW_ROWS.length; idx += 1) {
+    const row = NEW_ROWS[idx];
+    const catalogIndex = catalog.findIndex(
       (item) =>
         normalizeText(item.dependencia) === normalizeText(row.dependencia) &&
         String(item.ramoUr || "").trim().toUpperCase() === row.ramoUr.toUpperCase()
     );
 
-    if (matchIndex === -1) {
+    if (catalogIndex === -1) {
       throw new Error(`No se encontró ${row.ramoUr} -> ${row.dependencia} en el catálogo actualizado`);
     }
 
-    const sequenceNumber = matchIndex + 1;
+    const sequenceNumber = nextSequenceStart + idx;
     const canonicalUsername = buildCanonicalUsername(batchTag, sequenceNumber);
     const usuario =
       usernameMode === "dependencia" ? row.dependencia.toUpperCase() : canonicalUsername;
     const correo = `${canonicalUsername.toLowerCase()}@usuarios.sabg.mx`;
-    const curp = buildCanonicalCurp(batchTag, matchIndex);
+    const curp = buildCanonicalCurp(batchTag, sequenceNumber - 1);
     const password =
       usernameMode === "dependencia"
         ? buildPasswordForDependenciaMode({
@@ -461,6 +463,7 @@ async function main() {
       batchTag: dbContext.batchTag,
       usernameMode: dbContext.usernameMode,
       seed,
+      nextSequenceStart: dbContext.nextSequenceStart,
     });
 
     const dbConflicts = await validateNoDbConflicts(client, planned);
@@ -487,6 +490,7 @@ async function main() {
       detectedUsernameMode: dbContext.usernameMode,
       existingAnchorCount: dbContext.existingAnchorCount,
       highestLegacyEnlUsuario: dbContext.highestLegacyEnlUsuario,
+      nextSequenceStart: dbContext.nextSequenceStart,
       passwordStrategy: seed
         ? "hmac_seed_actual"
         : dbContext.usernameMode === "dependencia"
@@ -580,6 +584,7 @@ async function main() {
           detectedUsernameMode: dbContext.usernameMode,
           existingAnchorCountBefore: dbContext.existingAnchorCount,
           highestLegacyEnlUsuario: dbContext.highestLegacyEnlUsuario,
+          nextSequenceStart: dbContext.nextSequenceStart,
           passwordStrategy: seed
             ? "hmac_seed_actual"
             : dbContext.usernameMode === "dependencia"
