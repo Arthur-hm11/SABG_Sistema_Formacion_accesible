@@ -24,6 +24,14 @@ const OUTPUT_CSV = process.env.EXPORT_CSV || "/tmp/usuarios_enlace_nuevas_11_dep
 const OUTPUT_XLSX = process.env.EXPORT_XLSX || "/tmp/usuarios_enlace_nuevas_11_dependencias_20260626.xlsx";
 const SNAPSHOT_PATH =
   process.env.SNAPSHOT_USERS_PATH || "/tmp/usuarios_snapshot_previos_20260626.json";
+const RETIRE_CONFLICTS_ENABLED = optEnv("RETIRE_EXISTING_DEPENDENCIA_CONFLICTS") === "1";
+const RETIRE_TARGETS = [
+  {
+    id: 30,
+    usuario: "enlace16",
+    dependencia: "COMISIÓN FEDERAL DE ELECTRICIDAD",
+  },
+];
 
 function optEnv(name, fallback = "") {
   return String(process.env[name] ?? fallback).trim();
@@ -307,8 +315,6 @@ function buildPlannedAccounts({ catalog, batchTag, usernameMode, seed, nextSeque
 }
 
 async function validateNoDbConflicts(client, planned) {
-  const conflicts = [];
-
   const usernames = planned.map((row) => row.usuario.toUpperCase());
   const emails = planned.map((row) => row.correo.toLowerCase());
   const curps = planned.map((row) => row.curp);
@@ -327,13 +333,77 @@ async function validateNoDbConflicts(client, planned) {
     [usernames, emails, curps, deps]
   );
 
+  const retirableRows = [];
+  const blockingRows = [];
+
   for (const row of existingRes.rows) {
-    conflicts.push(
-      `Conflicto en usuarios: id=${row.id} usuario=${row.usuario} dependencia=${row.dependencia} rol=${row.rol}`
+    const matchedTarget = RETIRE_TARGETS.find(
+      (target) =>
+        Number(target.id) === Number(row.id) &&
+        normalizeText(target.usuario) === normalizeText(row.usuario) &&
+        normalizeText(target.dependencia) === normalizeText(row.dependencia)
     );
+    if (matchedTarget) {
+      retirableRows.push(row);
+    } else {
+      blockingRows.push(row);
+    }
   }
 
-  return conflicts;
+  return {
+    allRows: existingRes.rows,
+    retirableRows,
+    blockingRows,
+    messages: existingRes.rows.map(
+      (row) =>
+        `Conflicto en usuarios: id=${row.id} usuario=${row.usuario} dependencia=${row.dependencia} rol=${row.rol}`
+    ),
+  };
+}
+
+async function retireConflictingAccounts(client, rows) {
+  const retired = [];
+  for (const row of rows) {
+    const archivedUsuario = `LEGACY_ENLACE_${row.id}_20260626`;
+    const archivedDependencia = `${row.dependencia} [LEGACY 20260626]`;
+    const archivedCorreo = `legacy.enlace.${row.id}.20260626@usuarios.sabg.mx`;
+    const archivedPasswordHash = await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10);
+
+    await client.query(
+      `
+        UPDATE public.user_sessions
+        SET status = 'expired',
+            expired_at = COALESCE(expired_at, NOW()),
+            expires_at = NOW(),
+            updated_at = NOW()
+        WHERE user_id = $1
+          AND status = 'active'
+      `,
+      [row.id]
+    );
+
+    const updateRes = await client.query(
+      `
+        UPDATE public.usuarios
+        SET usuario = $1,
+            password_hash = $2,
+            dependencia = $3,
+            correo = $4,
+            active_session_id = NULL,
+            active_session_expires_at = NULL,
+            locked_until = NOW() + INTERVAL '100 years'
+        WHERE id = $5
+        RETURNING id, usuario, dependencia, correo
+      `,
+      [archivedUsuario, archivedPasswordHash, archivedDependencia, archivedCorreo, row.id]
+    );
+
+    if (Number(updateRes.rowCount || 0) !== 1) {
+      throw new Error(`No se pudo retirar la cuenta legacy conflictiva id=${row.id}`);
+    }
+    retired.push(updateRes.rows[0]);
+  }
+  return retired;
 }
 
 async function writeSnapshot(client) {
@@ -481,7 +551,9 @@ async function main() {
     });
 
     const dryRunReport = {
-      success: dbConflicts.length === 0,
+      success:
+        dbConflicts.blockingRows.length === 0 &&
+        (dbConflicts.retirableRows.length === 0 || RETIRE_CONFLICTS_ENABLED),
       mode: "dry_run",
       noDbChanges: true,
       totalReceived: NEW_ROWS.length,
@@ -507,7 +579,14 @@ async function main() {
         sequenceNumber: row.sequenceNumber,
       })),
       autollenadoChecks,
-      conflicts: dbConflicts,
+      retireConflictsEnabled: RETIRE_CONFLICTS_ENABLED,
+      retirableConflicts: dbConflicts.retirableRows.map((row) => ({
+        id: row.id,
+        usuario: row.usuario,
+        dependencia: row.dependencia,
+        rol: row.rol,
+      })),
+      conflicts: dbConflicts.messages,
     };
 
     if (dryRun) {
@@ -515,12 +594,21 @@ async function main() {
       return;
     }
 
-    if (dbConflicts.length) {
-      throw new Error(`Conflictos detectados: ${dbConflicts.join(" | ")}`);
+    if (dbConflicts.blockingRows.length) {
+      throw new Error(`Conflictos detectados: ${dbConflicts.messages.join(" | ")}`);
+    }
+    if (dbConflicts.retirableRows.length && !RETIRE_CONFLICTS_ENABLED) {
+      throw new Error(
+        `Existen conflictos retirables, pero falta RETIRE_EXISTING_DEPENDENCIA_CONFLICTS=1: ${dbConflicts.messages.join(" | ")}`
+      );
     }
 
     await client.query("BEGIN");
     await writeSnapshot(client);
+
+    const retiredRows = dbConflicts.retirableRows.length
+      ? await retireConflictingAccounts(client, dbConflicts.retirableRows)
+      : [];
 
     const insertedRows = [];
     for (const row of planned) {
@@ -596,6 +684,7 @@ async function main() {
           outputCsv: OUTPUT_CSV,
           outputXlsx: OUTPUT_XLSX,
           autollenadoStoredIn: "index.html",
+          retiredRows,
           autollenadoChecks,
           verifyInsertedCount: Number(verifyCountRes.rows[0]?.total || 0),
           credentialRows: planned.map((row) => ({
