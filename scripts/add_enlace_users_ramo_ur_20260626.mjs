@@ -25,12 +25,6 @@ const OUTPUT_XLSX = process.env.EXPORT_XLSX || "/tmp/usuarios_enlace_nuevas_11_d
 const SNAPSHOT_PATH =
   process.env.SNAPSHOT_USERS_PATH || "/tmp/usuarios_snapshot_previos_20260626.json";
 
-function reqEnv(name, fallback = "") {
-  const value = String(process.env[name] ?? fallback).trim();
-  if (!value) throw new Error(`Falta variable requerida: ${name}`);
-  return value;
-}
-
 function optEnv(name, fallback = "") {
   return String(process.env[name] ?? fallback).trim();
 }
@@ -62,7 +56,14 @@ function buildCanonicalCurp(batchTag, index) {
   return `SABG${batchTag}H${toAlphaBlock(index)}${String((index + 1) % 100).padStart(2, "0")}`.toUpperCase();
 }
 
+function generateHexPassword() {
+  return crypto.randomBytes(4).toString("hex").toUpperCase();
+}
+
 function buildPasswordForDependenciaMode({ dependencia, usuario, batchTag, sequenceNumber, seed }) {
+  if (!seed) {
+    return generateHexPassword();
+  }
   return crypto
     .createHmac("sha256", seed)
     .update(`${dependencia}|${usuario}|${batchTag}|${String(sequenceNumber).padStart(3, "0")}`)
@@ -72,6 +73,9 @@ function buildPasswordForDependenciaMode({ dependencia, usuario, batchTag, seque
 }
 
 function buildPasswordForLegacyEnlMode({ dependencia, canonicalUsername, curp, sequenceNumber, seed }) {
+  if (!seed) {
+    return `SABG-${generateHexPassword()}-${String(sequenceNumber).padStart(3, "0")}`;
+  }
   const digest = crypto
     .createHmac("sha256", seed)
     .update(`${dependencia}|${canonicalUsername}|${curp}`)
@@ -431,7 +435,7 @@ async function main() {
     throw new Error("Usa solo un modo: --dry-run o --apply");
   }
 
-  const seed = reqEnv("ENLACE_PASSWORD_SEED");
+  const seed = optEnv("ENLACE_PASSWORD_SEED");
   const indexPath = path.resolve(process.cwd(), "index.html");
   const inputConflicts = validateInputRows();
   if (inputConflicts.length) {
@@ -483,6 +487,11 @@ async function main() {
       detectedUsernameMode: dbContext.usernameMode,
       existingAnchorCount: dbContext.existingAnchorCount,
       highestLegacyEnlUsuario: dbContext.highestLegacyEnlUsuario,
+      passwordStrategy: seed
+        ? "hmac_seed_actual"
+        : dbContext.usernameMode === "dependencia"
+          ? "hex_8_actual_sin_semilla_en_entorno"
+          : "legacy_sabg_hex_seq_sin_semilla_en_entorno",
       firstUsuario: planned[0]?.usuario || null,
       lastUsuario: planned[planned.length - 1]?.usuario || null,
       rows: planned.map((row) => ({
@@ -571,6 +580,11 @@ async function main() {
           detectedUsernameMode: dbContext.usernameMode,
           existingAnchorCountBefore: dbContext.existingAnchorCount,
           highestLegacyEnlUsuario: dbContext.highestLegacyEnlUsuario,
+          passwordStrategy: seed
+            ? "hmac_seed_actual"
+            : dbContext.usernameMode === "dependencia"
+              ? "hex_8_actual_sin_semilla_en_entorno"
+              : "legacy_sabg_hex_seq_sin_semilla_en_entorno",
           firstUsuario: planned[0]?.usuario || null,
           lastUsuario: planned[planned.length - 1]?.usuario || null,
           snapshotPath: SNAPSHOT_PATH,
