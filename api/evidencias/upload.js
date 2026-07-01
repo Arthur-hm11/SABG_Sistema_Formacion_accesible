@@ -11,6 +11,7 @@ const MESES_EVIDENCIA = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
+const EVIDENCE_HOLIDAYS = [];
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -64,6 +65,129 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+function getMexicoDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = Number(parts.find((part) => part.type === "year")?.value || new Date().getFullYear());
+  const monthIndex = Number(parts.find((part) => part.type === "month")?.value || 1) - 1;
+  const day = Number(parts.find((part) => part.type === "day")?.value || 1);
+  return { year, monthIndex, day };
+}
+
+function createCalendarDate(year, monthIndex, day) {
+  return new Date(Date.UTC(year, monthIndex, day, 12, 0, 0));
+}
+
+function datePartsFromCalendarDate(date) {
+  return {
+    year: date.getUTCFullYear(),
+    monthIndex: date.getUTCMonth(),
+    day: date.getUTCDate(),
+  };
+}
+
+function evidenceDateKey(parts) {
+  return [
+    String(parts.year).padStart(4, "0"),
+    String(parts.monthIndex + 1).padStart(2, "0"),
+    String(parts.day).padStart(2, "0"),
+  ].join("-");
+}
+
+function compareEvidenceParts(a, b) {
+  const aKey = evidenceDateKey(a);
+  const bKey = evidenceDateKey(b);
+  if (aKey < bKey) return -1;
+  if (aKey > bKey) return 1;
+  return 0;
+}
+
+function isEvidenceHoliday(parts) {
+  return EVIDENCE_HOLIDAYS.includes(evidenceDateKey(parts));
+}
+
+function isBusinessDay(date) {
+  const day = date.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  return !isEvidenceHoliday(datePartsFromCalendarDate(date));
+}
+
+function getMonthLength(year, monthIndex) {
+  return new Date(Date.UTC(year, monthIndex + 1, 0, 12, 0, 0)).getUTCDate();
+}
+
+function getFirstBusinessDaysOfMonth(year, monthIndex, count) {
+  const result = [];
+  const totalDays = getMonthLength(year, monthIndex);
+  for (let day = 1; day <= totalDays && result.length < count; day += 1) {
+    const date = createCalendarDate(year, monthIndex, day);
+    if (isBusinessDay(date)) result.push(datePartsFromCalendarDate(date));
+  }
+  return result;
+}
+
+function getLastBusinessDaysOfMonth(year, monthIndex, count) {
+  const result = [];
+  const totalDays = getMonthLength(year, monthIndex);
+  for (let day = totalDays; day >= 1 && result.length < count; day -= 1) {
+    const date = createCalendarDate(year, monthIndex, day);
+    if (isBusinessDay(date)) result.push(datePartsFromCalendarDate(date));
+  }
+  return result;
+}
+
+function getPreviousMonthPeriod(parts) {
+  if (parts.monthIndex === 0) {
+    return { year: parts.year - 1, monthIndex: 11 };
+  }
+  return { year: parts.year, monthIndex: parts.monthIndex - 1 };
+}
+
+function buildEvidencePeriod(year, monthIndex) {
+  return {
+    month: MESES_EVIDENCIA[monthIndex],
+    year: String(year),
+    monthIndex,
+  };
+}
+
+function isWithinJune2026Exception(parts) {
+  const start = { year: 2026, monthIndex: 6, day: 1 };
+  const end = { year: 2026, monthIndex: 6, day: 6 };
+  return compareEvidenceParts(parts, start) >= 0 && compareEvidenceParts(parts, end) <= 0;
+}
+
+function getEnabledEvidencePeriods(date = new Date()) {
+  const nowParts = getMexicoDateParts(date);
+  const enabled = new Map();
+  const addPeriod = (year, monthIndex) => {
+    enabled.set(`${year}-${monthIndex}`, buildEvidencePeriod(year, monthIndex));
+  };
+
+  const firstBusinessDays = getFirstBusinessDaysOfMonth(nowParts.year, nowParts.monthIndex, 3);
+  if (firstBusinessDays.some((parts) => compareEvidenceParts(parts, nowParts) === 0)) {
+    const previousMonth = getPreviousMonthPeriod(nowParts);
+    addPeriod(previousMonth.year, previousMonth.monthIndex);
+  }
+
+  const lastBusinessDays = getLastBusinessDaysOfMonth(nowParts.year, nowParts.monthIndex, 3);
+  if (lastBusinessDays.some((parts) => compareEvidenceParts(parts, nowParts) === 0)) {
+    addPeriod(nowParts.year, nowParts.monthIndex);
+  }
+
+  // Excepción puntual solicitada: junio 2026 sigue habilitado hasta el 06/07/2026.
+  if (isWithinJune2026Exception(nowParts)) {
+    addPeriod(2026, 5);
+  }
+
+  return Array.from(enabled.values());
+}
+
 function getCurrentEvidencePeriod() {
   const parts = new Intl.DateTimeFormat("es-MX", {
     timeZone: "America/Mexico_City",
@@ -76,6 +200,13 @@ function getCurrentEvidencePeriod() {
   const month = MESES_EVIDENCIA.find((item) => normalizeText(item) === normalizeText(rawMonth)) || rawMonth;
 
   return { month, year };
+}
+
+function isEvidencePeriodEnabled(month, year, date = new Date()) {
+  const normalizedMonth = normalizeText(month);
+  return getEnabledEvidencePeriods(date).some((item) =>
+    normalizeText(item.month) === normalizedMonth && String(item.year) === String(year)
+  );
 }
 
 function getSafeUploadError(error) {
@@ -250,14 +381,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const period = getCurrentEvidencePeriod();
+    const currentPeriod = getCurrentEvidencePeriod();
     const requestedMonth = clean(req.body?.mes, 30);
-    const requestedYear = clean(req.body?.anio || period.year, 10);
+    const requestedYear = clean(req.body?.anio || currentPeriod.year, 10);
 
-    if (normalizeText(requestedMonth) !== normalizeText(period.month) || requestedYear !== period.year) {
+    if (!isEvidencePeriodEnabled(requestedMonth, requestedYear)) {
       return res.status(403).json({
         ok: false,
-        error: `Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`,
+        error: "Solo se pueden subir evidencias de meses habilitados para carga.",
       });
     }
 
@@ -324,8 +455,8 @@ export default async function handler(req, res) {
       RETURNING id
       `,
       [
-        period.month,
-        period.year,
+        requestedMonth,
+        requestedYear,
         nombre,
         primerApellido,
         segundoApellido,
@@ -347,8 +478,8 @@ export default async function handler(req, res) {
           evidencia_id: insertRes.rows?.[0]?.id || null,
           cuenta_registro: usuarioRegistro,
           dependencia,
-          mes: period.month,
-          anio: period.year,
+          mes: requestedMonth,
+          anio: requestedYear,
           archivo_pdf_nombre: safeName,
           enlace: {
             nombre,

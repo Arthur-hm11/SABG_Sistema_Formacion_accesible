@@ -10706,23 +10706,159 @@ setTimeout(__setSaveButtonsState, 800);
       .trim();
   }
 
-  function getCurrentEvidencePeriod(){
-    const parts = new Intl.DateTimeFormat("es-MX", {
+  const EVIDENCE_HOLIDAYS = [];
+
+  function getMexicoDateParts(date = new Date()){
+    const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Mexico_City",
-      month: "long",
-      year: "numeric"
-    }).formatToParts(new Date());
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(date);
 
-    const rawMonth = parts.find((part) => part.type === "month")?.value || "";
-    const year = parts.find((part) => part.type === "year")?.value || String(new Date().getFullYear());
-    const normalized = normalizeEvidenceMonth(rawMonth);
-    const month = MESES_EVIDENCIA.find((item) => normalizeEvidenceMonth(item) === normalized) || rawMonth;
-
-    return { month, year };
+    const year = Number(parts.find((part) => part.type === "year")?.value || new Date().getFullYear());
+    const monthIndex = Number(parts.find((part) => part.type === "month")?.value || 1) - 1;
+    const day = Number(parts.find((part) => part.type === "day")?.value || 1);
+    return { year, monthIndex, day };
   }
 
-  function isCurrentEvidenceMonth(month){
-    return normalizeEvidenceMonth(month) === normalizeEvidenceMonth(getCurrentEvidencePeriod().month);
+  function createCalendarDate(year, monthIndex, day){
+    return new Date(Date.UTC(year, monthIndex, day, 12, 0, 0));
+  }
+
+  function datePartsFromCalendarDate(date){
+    return {
+      year: date.getUTCFullYear(),
+      monthIndex: date.getUTCMonth(),
+      day: date.getUTCDate()
+    };
+  }
+
+  function evidenceDateKey(parts){
+    return [
+      String(parts.year).padStart(4, "0"),
+      String(parts.monthIndex + 1).padStart(2, "0"),
+      String(parts.day).padStart(2, "0")
+    ].join("-");
+  }
+
+  function compareEvidenceParts(a, b){
+    const aKey = evidenceDateKey(a);
+    const bKey = evidenceDateKey(b);
+    if (aKey < bKey) return -1;
+    if (aKey > bKey) return 1;
+    return 0;
+  }
+
+  function isEvidenceHoliday(parts){
+    return EVIDENCE_HOLIDAYS.includes(evidenceDateKey(parts));
+  }
+
+  function isBusinessDay(date){
+    const day = date.getUTCDay();
+    if (day === 0 || day === 6) return false;
+    return !isEvidenceHoliday(datePartsFromCalendarDate(date));
+  }
+
+  function getMonthLength(year, monthIndex){
+    return new Date(Date.UTC(year, monthIndex + 1, 0, 12, 0, 0)).getUTCDate();
+  }
+
+  function getFirstBusinessDaysOfMonth(year, monthIndex, count){
+    const result = [];
+    const totalDays = getMonthLength(year, monthIndex);
+    for (let day = 1; day <= totalDays && result.length < count; day += 1) {
+      const date = createCalendarDate(year, monthIndex, day);
+      if (isBusinessDay(date)) result.push(datePartsFromCalendarDate(date));
+    }
+    return result;
+  }
+
+  function getLastBusinessDaysOfMonth(year, monthIndex, count){
+    const result = [];
+    const totalDays = getMonthLength(year, monthIndex);
+    for (let day = totalDays; day >= 1 && result.length < count; day -= 1) {
+      const date = createCalendarDate(year, monthIndex, day);
+      if (isBusinessDay(date)) result.push(datePartsFromCalendarDate(date));
+    }
+    return result;
+  }
+
+  function getPreviousMonthPeriod(parts){
+    if (parts.monthIndex === 0) {
+      return { year: parts.year - 1, monthIndex: 11 };
+    }
+    return { year: parts.year, monthIndex: parts.monthIndex - 1 };
+  }
+
+  function buildEvidencePeriod(year, monthIndex){
+    return {
+      month: MESES_EVIDENCIA[monthIndex],
+      year: String(year),
+      monthIndex
+    };
+  }
+
+  function isWithinJune2026Exception(parts){
+    const start = { year: 2026, monthIndex: 6, day: 1 };
+    const end = { year: 2026, monthIndex: 6, day: 6 };
+    return compareEvidenceParts(parts, start) >= 0 && compareEvidenceParts(parts, end) <= 0;
+  }
+
+  function getEnabledEvidencePeriods(date = new Date()){
+    const nowParts = getMexicoDateParts(date);
+    const enabled = new Map();
+    const addPeriod = (year, monthIndex) => {
+      enabled.set(`${year}-${monthIndex}`, buildEvidencePeriod(year, monthIndex));
+    };
+
+    const firstBusinessDays = getFirstBusinessDaysOfMonth(nowParts.year, nowParts.monthIndex, 3);
+    if (firstBusinessDays.some((parts) => compareEvidenceParts(parts, nowParts) === 0)) {
+      const previousMonth = getPreviousMonthPeriod(nowParts);
+      addPeriod(previousMonth.year, previousMonth.monthIndex);
+    }
+
+    const lastBusinessDays = getLastBusinessDaysOfMonth(nowParts.year, nowParts.monthIndex, 3);
+    if (lastBusinessDays.some((parts) => compareEvidenceParts(parts, nowParts) === 0)) {
+      addPeriod(nowParts.year, nowParts.monthIndex);
+    }
+
+    // Excepción puntual solicitada: junio 2026 sigue habilitado hasta el 06/07/2026.
+    if (isWithinJune2026Exception(nowParts)) {
+      addPeriod(2026, 5);
+    }
+
+    return Array.from(enabled.values());
+  }
+
+  function getCurrentEvidencePeriod(){
+    const nowParts = getMexicoDateParts(new Date());
+    return buildEvidencePeriod(nowParts.year, nowParts.monthIndex);
+  }
+
+  function getEvidencePeriodForMonth(month, date = new Date()){
+    const enabledPeriods = getEnabledEvidencePeriods(date);
+    const normalizedMonth = normalizeEvidenceMonth(month);
+    const enabledMatch = enabledPeriods.find((item) => normalizeEvidenceMonth(item.month) === normalizedMonth);
+    if (enabledMatch) return enabledMatch;
+
+    const nowParts = getMexicoDateParts(date);
+    const monthIndex = MESES_EVIDENCIA.findIndex((item) => normalizeEvidenceMonth(item) === normalizedMonth);
+    if (monthIndex < 0) return { month, year: String(nowParts.year), monthIndex: -1 };
+
+    const previousMonth = getPreviousMonthPeriod(nowParts);
+    if (monthIndex === previousMonth.monthIndex && nowParts.monthIndex === 0) {
+      return buildEvidencePeriod(previousMonth.year, monthIndex);
+    }
+
+    return buildEvidencePeriod(nowParts.year, monthIndex);
+  }
+
+  function isEvidencePeriodEnabled(month, year, date = new Date()){
+    const normalizedMonth = normalizeEvidenceMonth(month);
+    return getEnabledEvidencePeriods(date).some((item) =>
+      normalizeEvidenceMonth(item.month) === normalizedMonth && String(item.year) === String(year)
+    );
   }
 
   function getMonthFromCard(card, index){
@@ -10742,35 +10878,36 @@ setTimeout(__setSaveButtonsState, 800);
   }
 
   function updateMonthCardsAvailability(){
-    const period = getCurrentEvidencePeriod();
+    const enabledPeriods = getEnabledEvidencePeriods();
     const cards = Array.from(document.querySelectorAll(".month-card"));
 
     cards.forEach((card, index) => {
       const month = getMonthFromCard(card, index);
-      const isActive = normalizeEvidenceMonth(month) === normalizeEvidenceMonth(period.month);
+      const period = getEvidencePeriodForMonth(month);
+      const isActive = isEvidencePeriodEnabled(period.month, period.year);
       const yearLabel = card.querySelector("p");
 
       if (yearLabel) yearLabel.textContent = period.year;
-      card.dataset.mes = month;
+      card.dataset.mes = period.month;
       card.dataset.anio = period.year;
       card.classList.toggle("month-active", isActive);
       card.classList.toggle("month-disabled", !isActive);
       card.setAttribute("aria-disabled", isActive ? "false" : "true");
-      card.setAttribute("title", isActive ? "Mes activo para cargar evidencias" : `Bloqueado. Mes activo: ${period.month} ${period.year}`);
+      card.setAttribute("title", isActive ? "Mes activo para cargar evidencias" : "Bloqueado. Fuera del periodo habilitado.");
       setMonthCardStatus(card, isActive ? "Mes activo" : "Bloqueado");
     });
   }
 
-  // 1) Guardar mes seleccionado y bloquear meses que no sean el actual
+  // 1) Guardar mes seleccionado y bloquear meses que no estén habilitados
   window.__evidenciaMes = window.__evidenciaMes || "";
   window.__evidenciaAnio = window.__evidenciaAnio || "";
   const _open = window.openMonthModal;
   window.openMonthModal = function(month){
-    const period = getCurrentEvidencePeriod();
+    const period = getEvidencePeriodForMonth(month);
     updateMonthCardsAvailability();
 
-    if (!isCurrentEvidenceMonth(month)) {
-      alert(`Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`);
+    if (!isEvidencePeriodEnabled(period.month, period.year)) {
+      alert("Solo se pueden subir evidencias de meses habilitados para carga.");
       return;
     }
 
@@ -10838,13 +10975,16 @@ setTimeout(__setSaveButtonsState, 800);
       const segundoApellido = (inputs[2]?.value || "").trim();
       const correo = (inputs[3]?.value || "").trim();
       const file = document.getElementById("pdfFile")?.files?.[0] || null;
-      const period = getCurrentEvidencePeriod();
+      const period = {
+        month: window.__evidenciaMes || getCurrentEvidencePeriod().month,
+        year: window.__evidenciaAnio || getCurrentEvidencePeriod().year
+      };
 
       if (!nombre || !primerApellido || !correo) throw new Error("Completa los datos requeridos del Enlace.");
       if (!file) throw new Error("Selecciona un archivo PDF.");
       if (!String(file.name||"").toLowerCase().endsWith(".pdf")) throw new Error("Solo se permiten archivos PDF.");
-      if (!isCurrentEvidenceMonth(window.__evidenciaMes)) {
-        throw new Error(`Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`);
+      if (!isEvidencePeriodEnabled(period.month, period.year)) {
+        throw new Error("Solo se pueden subir evidencias de meses habilitados para carga.");
       }
 
       const overlay = document.getElementById("loadingOverlay");
