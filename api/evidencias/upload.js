@@ -501,8 +501,8 @@ export default async function handler(req, res) {
       fileId: uploadRes.data.id,
       link: uploadRes.data.webViewLink,
       name: safeName,
-      mes: period.month,
-      anio: period.year,
+      mes: requestedMonth,
+      anio: requestedYear,
     });
   } catch (e) {
     // Multer size limit
