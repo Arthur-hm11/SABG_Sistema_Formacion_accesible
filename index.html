@@ -7011,29 +7011,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     function makeEditable(cell) {
         const field = cell.dataset.field;
 
-        // 🔒 Permisos: SOLO admin/superadmin pueden editar (otros: solo OBSERVACIONES)
-        const isAdminOrSuper = document.body.classList.contains("role-superadmin") || document.body.classList.contains("role-admin");
-        const canEditEstado = field === 'estado_avance' && (isAdminOrSuper || document.body.classList.contains('role-enlace'));
-        if (!isAdminOrSuper && field !== "observaciones" && !canEditEstado) {
-            alert("⚠️ Solo administradores pueden editar estas columnas.");
-            return;
-        }
-
-
-        // ✅ Regla solicitada:
-        // - TODOS los usuarios pueden editar SOLO OBSERVACIONES (máx. 150 caracteres)
-        // - Cualquier otro campo: SOLO superadmin
-        const canEditAdminOnlyFields =
-            isAdminOrSuper &&
-            (field === 'reporte_institucion_educativa' || field === 'ruta_2026');
-
-        const puedeEditar =
-            canEditEstado ||
-            canEditAdminOnlyFields ||
-            (field === 'observaciones') ||
-            (userRole === 'superadmin');
-
-        if (!puedeEditar) {
+        if (!canCurrentUserEditTableField(field)) {
             if (field === 'estado_avance') {
                 alert('⚠️ No tienes permisos para modificar el ESTADO DE AVANCE.');
                 return;
@@ -7054,7 +7032,10 @@ const tabs = document.querySelectorAll('#trimestral .tab');
 
         const currentValue = field === 'estado_avance'
             ? (cell.querySelector('.estado-actual-wrap')?.textContent || '').trim()
-            : cell.textContent.trim().replace('✏️', '').trim();
+            : (() => {
+                const rawValue = cell.textContent.trim().replace('✏️', '').trim();
+                return field === 'observaciones' && rawValue === '-' ? '' : rawValue;
+            })();
         cell.classList.add('editing');
 
         let editControl;
@@ -7071,6 +7052,33 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         else if (field === 'estado_avance') {
             editControl = document.createElement('select');
             editControl.innerHTML = ESTADOS_AVANCE_OPCIONES.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
+            editControl.value = currentValue;
+        }
+        else if (field === 'trimestre') {
+            const trimestreOpciones = ['', 'ENERO_MARZO', 'ABRIL_JUNIO', 'JULIO_SEPTIEMBRE', 'OCTUBRE_DICIEMBRE'];
+            editControl = document.createElement('select');
+            editControl.innerHTML = trimestreOpciones.map((item) => {
+                const label = item ? humanizarValorCatalogo(item) : 'SELECCIONE...';
+                return `<option value="${escapeHtml(item)}">${escapeHtml(label)}</option>`;
+            }).join('');
+            editControl.value = currentValue;
+        }
+        else if (field === 'sexo') {
+            const sexoOpciones = ['', 'MUJER', 'HOMBRE', 'OTRO'];
+            editControl = document.createElement('select');
+            editControl.innerHTML = sexoOpciones.map((item) => {
+                const label = item || 'SELECCIONE...';
+                return `<option value="${escapeHtml(item)}">${escapeHtml(label)}</option>`;
+            }).join('');
+            editControl.value = currentValue;
+        }
+        else if (field === 'persona_reportada_por') {
+            const personaOpciones = ['', 'DEPENDENCIA', 'DEPENDENCIA E INSTITUCIÓN ACADÉMICA', 'INSTITUCIÓN ACADÉMICA'];
+            editControl = document.createElement('select');
+            editControl.innerHTML = personaOpciones.map((item) => {
+                const label = item || 'SELECCIONE...';
+                return `<option value="${escapeHtml(item)}">${escapeHtml(label)}</option>`;
+            }).join('');
             editControl.value = currentValue;
         }
         else if (field === 'reporte_institucion_educativa') {
@@ -7216,12 +7224,7 @@ const tabs = document.querySelectorAll('#trimestral .tab');
             const row = cell.closest('tr');
             const id = (cell && cell.dataset && cell.dataset.id) || (row && row.dataset && row.dataset.id);
 
-            const isAdminOrSuper =
-                document.body.classList.contains('role-superadmin') ||
-                document.body.classList.contains('role-admin');
-
-            // Permisos: solo admin/superadmin editan todo; otros solo observaciones
-            if (!isAdminOrSuper && field !== 'observaciones') {
+            if (!canCurrentUserSavePendingField(field)) {
                 newValue = (oldValue == null ? '' : String(oldValue));
             } else {
                 if (typeof markPendingEdit === 'function') {
@@ -9284,6 +9287,10 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
           <td>${registro.enlace_correo || ""}</td>
           <td>${registro.enlace_telefono || ""}</td>
         `;
+
+        if (isSuperAdmin()) {
+          enableSuperadminFullRowEditing(row, registro);
+        }
       });
 
       updateStatsFromRegistros(result.data);
@@ -9302,6 +9309,80 @@ async function cargarRegistrosTrimestral(page = TRIM_PAGE, limit = TRIM_LIMIT, q
       showTrimestralNotice('No se pudo conectar con el servidor. Revisa la conexión o intenta actualizar.', 'warn', 8000);
     }
   }
+}
+
+function setSuperadminEditableCell(cell, field, displayValue, options = {}) {
+    if (!cell) return;
+    const extraClass = options.extraClass ? ` ${options.extraClass}` : '';
+    cell.className = `editable-cell${extraClass}`.trim();
+    cell.dataset.field = field;
+    cell.setAttribute('onclick', 'makeEditable(this)');
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('tabindex', '0');
+
+    if (field === 'estado_avance') {
+        cell.innerHTML = renderEstadoAvanceCellContent({
+            id: options.id,
+            estado_avance: options.rawValue
+        });
+        return;
+    }
+
+    const safeDisplay = (typeof escapeHtml === 'function')
+        ? escapeHtml(displayValue)
+        : String(displayValue || '');
+    cell.innerHTML = `${safeDisplay}<span class="edit-icon">✏️</span>`;
+}
+
+function enableSuperadminFullRowEditing(row, registro) {
+    if (!row || !registro) return;
+
+    const estadosRojos = ["CAMBIO LA INSTITUCION ACADEMICA DE INTERES", "PERSONA QUE DESERTO"];
+    const claseEstadoRojo = estadosRojos.includes(registro.estado_avance) ? "estado-rojo" : "";
+    const editableMap = [
+        { index: 2, field: 'periodo_ruta', value: registro.periodo_ruta || "" },
+        { index: 3, field: 'anio', value: registro.anio || registro['año'] || "" },
+        { index: 4, field: 'trimestre', value: registro.trimestre || "" },
+        { index: 5, field: 'id_rusp', value: registro.id_rusp || "" },
+        { index: 6, field: 'primer_apellido', value: registro.primer_apellido || "" },
+        { index: 7, field: 'segundo_apellido', value: registro.segundo_apellido || "" },
+        { index: 8, field: 'nombre', value: registro.nombre || "" },
+        { index: 9, field: 'nombre_completo', value: registro.nombre_completo || computeNombreCompletoValue(registro.primer_apellido, registro.segundo_apellido, registro.nombre) || "" },
+        { index: 10, field: 'sexo', value: registro.sexo || "" },
+        { index: 11, field: 'curp', value: registro.curp || "" },
+        { index: 12, field: 'nivel_puesto', value: humanizarValorCatalogo(registro.nivel_puesto) || "" },
+        { index: 13, field: 'nivel_tabular', value: humanizarValorCatalogo(registro.nivel_tabular) || "" },
+        { index: 14, field: 'ramo_ur', value: registro.ramo_ur || "" },
+        { index: 15, field: 'dependencia', value: registro.dependencia || "" },
+        { index: 16, field: 'correo_institucional', value: registro.correo_institucional || "" },
+        { index: 17, field: 'telefono_institucional', value: registro.telefono_institucional || "" },
+        { index: 18, field: 'nivel_educativo', value: humanizarValorCatalogo(registro.nivel_educativo) || "" },
+        { index: 19, field: 'institucion_educativa', value: humanizarValorCatalogo(registro.institucion_educativa) || "" },
+        { index: 20, field: 'modalidad', value: humanizarValorCatalogo(registro.modalidad) || "" },
+        { index: 21, field: 'estado_avance', value: registro.estado_avance || "", extraClass: claseEstadoRojo, rawValue: registro.estado_avance || "" },
+        { index: 22, field: 'persona_reportada_por', value: registro.persona_reportada_por || "" },
+        { index: 23, field: 'reporte_institucion_educativa', value: registro.reporte_institucion_educativa || "" },
+        { index: 24, field: 'ruta_2026', value: registro.ruta_2026 || computeRuta2026Value(registro.nivel_educativo, registro.reporte_institucion_educativa) || "" },
+        { index: 25, field: 'observaciones', value: registro.observaciones || "-" },
+        { index: 26, field: 'enlace_nombre', value: registro.enlace_nombre || "" },
+        { index: 27, field: 'enlace_primer_apellido', value: registro.enlace_primer_apellido || "" },
+        { index: 28, field: 'enlace_segundo_apellido', value: registro.enlace_segundo_apellido || "" },
+        { index: 29, field: 'enlace_correo', value: registro.enlace_correo || "" },
+        { index: 30, field: 'enlace_telefono', value: registro.enlace_telefono || "" }
+    ];
+
+    editableMap.forEach((entry) => {
+        setSuperadminEditableCell(
+            row.cells[entry.index],
+            entry.field,
+            entry.value,
+            {
+                id: registro.id,
+                extraClass: entry.extraClass,
+                rawValue: entry.rawValue
+            }
+        );
+    });
 }
 async function guardarRegistroTrimestral() {
     const form = document.getElementById('trimestralForm');
@@ -10463,6 +10544,68 @@ function __isEnlaceForSave(){
   return document.body.classList.contains("role-enlace");
 }
 
+const SUPERADMIN_TABLE_EDITABLE_FIELDS = new Set([
+  "periodo_ruta",
+  "anio",
+  "trimestre",
+  "id_rusp",
+  "primer_apellido",
+  "segundo_apellido",
+  "nombre",
+  "nombre_completo",
+  "sexo",
+  "curp",
+  "nivel_puesto",
+  "nivel_tabular",
+  "ramo_ur",
+  "dependencia",
+  "correo_institucional",
+  "telefono_institucional",
+  "nivel_educativo",
+  "institucion_educativa",
+  "modalidad",
+  "estado_avance",
+  "persona_reportada_por",
+  "reporte_institucion_educativa",
+  "ruta_2026",
+  "observaciones",
+  "enlace_nombre",
+  "enlace_primer_apellido",
+  "enlace_segundo_apellido",
+  "enlace_correo",
+  "enlace_telefono"
+]);
+
+const ADMIN_TABLE_EDITABLE_FIELDS = new Set([
+  "estado_avance",
+  "observaciones",
+  "reporte_institucion_educativa",
+  "ruta_2026"
+]);
+
+function __isSuperAdminForSave(){
+  try { if (typeof isSuperAdmin === "function") return !!isSuperAdmin(); } catch(_) {}
+  return document.body.classList.contains("role-superadmin");
+}
+
+function canCurrentUserEditTableField(field){
+  const normalizedField = String(field || "").trim();
+  if (!normalizedField) return false;
+  if (__isSuperAdminForSave()) return SUPERADMIN_TABLE_EDITABLE_FIELDS.has(normalizedField);
+  if (__isAdminForSave()) return ADMIN_TABLE_EDITABLE_FIELDS.has(normalizedField);
+  if (__isEnlaceForSave()) return normalizedField === "observaciones" || normalizedField === "estado_avance";
+  return false;
+}
+
+function canCurrentUserSavePendingField(field){
+  const normalizedField = String(field || "").trim();
+  if (!normalizedField) return false;
+  if (__isSuperAdminForSave()) return SUPERADMIN_TABLE_EDITABLE_FIELDS.has(normalizedField);
+  if (__isAdminForSave()) return ADMIN_TABLE_EDITABLE_FIELDS.has(normalizedField);
+  if (__isEnlaceForSave()) return normalizedField === "observaciones";
+  return false;
+}
+
 function __canSavePendingEdits(){
   return __isAdminForSave() || __isEnlaceForSave();
 }
@@ -10470,13 +10613,11 @@ function __canSavePendingEdits(){
 function __sanitizePendingEditsForRole(edits){
   const list = Array.isArray(edits) ? edits : [];
   const forbiddenHistoryPattern = /(historico|historial|history|estado_historico|cambios_historico)/i;
-  const isEnlace = __isEnlaceForSave();
 
   return list.filter(function(item){
     const field = String(item?.field || '').trim();
     if (!field || forbiddenHistoryPattern.test(field)) return false;
-    if (!isEnlace) return true;
-    return field === 'observaciones';
+    return canCurrentUserSavePendingField(field);
   }).map(function(item){
     return {
       id: Number(item.id),
