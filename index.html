@@ -10750,8 +10750,63 @@ setTimeout(__setSaveButtonsState, 800);
     return { month, year };
   }
 
-  function isCurrentEvidenceMonth(month){
-    return normalizeEvidenceMonth(month) === normalizeEvidenceMonth(getCurrentEvidencePeriod().month);
+  function getMexicoDateParts(date = new Date()){
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Mexico_City",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(date);
+
+    const year = Number(parts.find((part) => part.type === "year")?.value || 0);
+    const month = Number(parts.find((part) => part.type === "month")?.value || 0);
+    const day = Number(parts.find((part) => part.type === "day")?.value || 0);
+
+    return { year, monthIndex: month - 1, day };
+  }
+
+  function isWithinJune2026Exception(date = new Date()){
+    const parts = getMexicoDateParts(date);
+    return parts.year === 2026 && parts.monthIndex === 6 && parts.day >= 1 && parts.day <= 10;
+  }
+
+  function getEvidencePeriodForMonth(month, date = new Date()){
+    const currentPeriod = getCurrentEvidencePeriod();
+    if (normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Junio") && isWithinJune2026Exception(date)) {
+      return { month: "Junio", year: "2026" };
+    }
+    return { month: currentPeriod.month, year: currentPeriod.year };
+  }
+
+  function isAllowedEvidencePeriod(month, year, date = new Date()){
+    const currentPeriod = getCurrentEvidencePeriod();
+    if (
+      normalizeEvidenceMonth(month) === normalizeEvidenceMonth(currentPeriod.month) &&
+      String(year) === String(currentPeriod.year)
+    ) {
+      return true;
+    }
+
+    return (
+      normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Junio") &&
+      String(year) === "2026" &&
+      isWithinJune2026Exception(date)
+    );
+  }
+
+  function getEvidencePeriodValidationMessage(month, year, date = new Date()){
+    if (isAllowedEvidencePeriod(month, year, date)) return "";
+
+    if (
+      normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Junio") &&
+      String(year) === "2026" &&
+      !isWithinJune2026Exception(date)
+    ) {
+      return "El periodo extraordinario para cargar evidencia de junio 2026 concluyó el 10 de julio de 2026.";
+    }
+
+    const currentPeriod = getCurrentEvidencePeriod();
+    return `Solo se pueden subir evidencias del mes actual: ${currentPeriod.month} ${currentPeriod.year}.`;
   }
 
   function getMonthFromCard(card, index){
@@ -10771,12 +10826,12 @@ setTimeout(__setSaveButtonsState, 800);
   }
 
   function updateMonthCardsAvailability(){
-    const period = getCurrentEvidencePeriod();
     const cards = Array.from(document.querySelectorAll(".month-card"));
 
     cards.forEach((card, index) => {
       const month = getMonthFromCard(card, index);
-      const isActive = normalizeEvidenceMonth(month) === normalizeEvidenceMonth(period.month);
+      const period = getEvidencePeriodForMonth(month);
+      const isActive = isAllowedEvidencePeriod(month, period.year);
       const yearLabel = card.querySelector("p");
 
       if (yearLabel) yearLabel.textContent = period.year;
@@ -10785,7 +10840,7 @@ setTimeout(__setSaveButtonsState, 800);
       card.classList.toggle("month-active", isActive);
       card.classList.toggle("month-disabled", !isActive);
       card.setAttribute("aria-disabled", isActive ? "false" : "true");
-      card.setAttribute("title", isActive ? "Mes activo para cargar evidencias" : `Bloqueado. Mes activo: ${period.month} ${period.year}`);
+      card.setAttribute("title", isActive ? "Mes activo para cargar evidencias" : getEvidencePeriodValidationMessage(month, period.year));
       setMonthCardStatus(card, isActive ? "Mes activo" : "Bloqueado");
     });
   }
@@ -10795,22 +10850,23 @@ setTimeout(__setSaveButtonsState, 800);
   window.__evidenciaAnio = window.__evidenciaAnio || "";
   const _open = window.openMonthModal;
   window.openMonthModal = function(month){
-    const period = getCurrentEvidencePeriod();
+    const period = getEvidencePeriodForMonth(month);
     updateMonthCardsAvailability();
 
-    if (!isCurrentEvidenceMonth(month)) {
-      alert(`Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`);
+    const periodValidationMessage = getEvidencePeriodValidationMessage(month, period.year);
+    if (periodValidationMessage) {
+      alert(periodValidationMessage);
       return;
     }
 
     try {
-      window.__evidenciaMes = period.month;
+      window.__evidenciaMes = month;
       window.__evidenciaAnio = period.year;
     } catch(e) {}
 
-    const result = _open ? _open.apply(this, [period.month]) : undefined;
+    const result = _open ? _open.apply(this, [month]) : undefined;
     const title = document.getElementById("modalTitle");
-    if (title) title.textContent = `Registro de Evidencias Mensuales - ${period.month} ${period.year}`;
+    if (title) title.textContent = `Registro de Evidencias Mensuales - ${month} ${period.year}`;
     return result;
   };
 
@@ -10854,11 +10910,27 @@ setTimeout(__setSaveButtonsState, 800);
 
   // 4) Submit global (el form lo llama por onsubmit)
   window.submitEvidencia = async function submitEvidencia(event){
+    const form = document.getElementById("evidenciaForm");
+    const overlay = document.getElementById("loadingOverlay");
+    const loadingText = document.querySelector(".loading-text");
+    const submitBtn = form?.querySelector('button[type="submit"]') || null;
+    const cancelBtn = form?.querySelector('button[type="button"]') || null;
+
+    const resetEvidenceSubmitUi = () => {
+      if (overlay) overlay.classList.remove("active");
+      if (loadingText) loadingText.textContent = "🚀 Procesando...";
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.removeAttribute("aria-busy");
+      }
+      if (cancelBtn) cancelBtn.disabled = false;
+      if (form) form.dataset.submitting = "false";
+    };
+
     try{
       if (event && event.preventDefault) event.preventDefault();
-
-      const form = document.getElementById("evidenciaForm");
       if (!form) throw new Error("No se encontró el formulario de evidencias");
+      if (form.dataset.submitting === "true") return;
 
       // Inputs en tu HTML NO tienen id/name, se leen por orden
       const inputs = Array.from(form.querySelectorAll("input"));
@@ -10867,19 +10939,27 @@ setTimeout(__setSaveButtonsState, 800);
       const segundoApellido = (inputs[2]?.value || "").trim();
       const correo = (inputs[3]?.value || "").trim();
       const file = document.getElementById("pdfFile")?.files?.[0] || null;
-      const period = getCurrentEvidencePeriod();
+      const period = {
+        month: window.__evidenciaMes || getCurrentEvidencePeriod().month,
+        year: window.__evidenciaAnio || getCurrentEvidencePeriod().year
+      };
 
       if (!nombre || !primerApellido || !correo) throw new Error("Completa los datos requeridos del Enlace.");
       if (!file) throw new Error("Selecciona un archivo PDF.");
       if (!String(file.name||"").toLowerCase().endsWith(".pdf")) throw new Error("Solo se permiten archivos PDF.");
-      if (!isCurrentEvidenceMonth(window.__evidenciaMes)) {
-        throw new Error(`Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`);
+      const periodValidationMessage = getEvidencePeriodValidationMessage(period.month, period.year);
+      if (periodValidationMessage) {
+        throw new Error(periodValidationMessage);
       }
 
-      const overlay = document.getElementById("loadingOverlay");
-      const loadingText = document.querySelector(".loading-text");
+      form.dataset.submitting = "true";
       if (overlay) overlay.classList.add("active");
       if (loadingText) loadingText.textContent = "📤 Subiendo evidencia PDF...";
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.setAttribute("aria-busy", "true");
+      }
+      if (cancelBtn) cancelBtn.disabled = false;
 
       const fd = new FormData();
       fd.append("pdf", file, file.name);
@@ -10912,12 +10992,10 @@ setTimeout(__setSaveButtonsState, 800);
 
     } catch(e){
       console.error("❌ submitEvidencia:", e);
+      resetEvidenceSubmitUi();
       alert("❌ No se pudo enviar: " + (e?.message || e));
     } finally {
-      const overlay = document.getElementById("loadingOverlay");
-      const loadingText = document.querySelector(".loading-text");
-      if (overlay) overlay.classList.remove("active");
-      if (loadingText) loadingText.textContent = "🚀 Procesando...";
+      resetEvidenceSubmitUi();
     }
   };
 })();

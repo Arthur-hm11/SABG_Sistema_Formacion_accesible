@@ -78,6 +78,58 @@ function getCurrentEvidencePeriod() {
   return { month, year };
 }
 
+function getMexicoDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = Number(parts.find((part) => part.type === "year")?.value || 0);
+  const month = Number(parts.find((part) => part.type === "month")?.value || 0);
+  const day = Number(parts.find((part) => part.type === "day")?.value || 0);
+
+  return { year, monthIndex: month - 1, day };
+}
+
+function isWithinJune2026Exception(date = new Date()) {
+  const parts = getMexicoDateParts(date);
+  return parts.year === 2026 && parts.monthIndex === 6 && parts.day >= 1 && parts.day <= 10;
+}
+
+function isAllowedEvidencePeriod(month, year, date = new Date()) {
+  const currentPeriod = getCurrentEvidencePeriod();
+
+  if (
+    normalizeText(month) === normalizeText(currentPeriod.month) &&
+    String(year) === String(currentPeriod.year)
+  ) {
+    return true;
+  }
+
+  return (
+    normalizeText(month) === normalizeText("Junio") &&
+    String(year) === "2026" &&
+    isWithinJune2026Exception(date)
+  );
+}
+
+function getEvidencePeriodValidationMessage(month, year, date = new Date()) {
+  if (isAllowedEvidencePeriod(month, year, date)) return "";
+
+  if (
+    normalizeText(month) === normalizeText("Junio") &&
+    String(year) === "2026" &&
+    !isWithinJune2026Exception(date)
+  ) {
+    return "El periodo extraordinario para cargar evidencia de junio 2026 concluyó el 10 de julio de 2026.";
+  }
+
+  const currentPeriod = getCurrentEvidencePeriod();
+  return `Solo se pueden subir evidencias del mes actual: ${currentPeriod.month} ${currentPeriod.year}.`;
+}
+
 function getSafeUploadError(error) {
   const reason = String(
     error?.response?.data?.error ||
@@ -254,10 +306,11 @@ export default async function handler(req, res) {
     const requestedMonth = clean(req.body?.mes, 30);
     const requestedYear = clean(req.body?.anio || period.year, 10);
 
-    if (normalizeText(requestedMonth) !== normalizeText(period.month) || requestedYear !== period.year) {
+    const periodValidationMessage = getEvidencePeriodValidationMessage(requestedMonth, requestedYear);
+    if (periodValidationMessage) {
       return res.status(403).json({
         ok: false,
-        error: `Solo se pueden subir evidencias del mes actual: ${period.month} ${period.year}.`,
+        error: periodValidationMessage,
       });
     }
 
@@ -324,8 +377,8 @@ export default async function handler(req, res) {
       RETURNING id
       `,
       [
-        period.month,
-        period.year,
+        requestedMonth,
+        requestedYear,
         nombre,
         primerApellido,
         segundoApellido,
@@ -347,8 +400,8 @@ export default async function handler(req, res) {
           evidencia_id: insertRes.rows?.[0]?.id || null,
           cuenta_registro: usuarioRegistro,
           dependencia,
-          mes: period.month,
-          anio: period.year,
+          mes: requestedMonth,
+          anio: requestedYear,
           archivo_pdf_nombre: safeName,
           enlace: {
             nombre,
@@ -370,8 +423,8 @@ export default async function handler(req, res) {
       fileId: uploadRes.data.id,
       link: uploadRes.data.webViewLink,
       name: safeName,
-      mes: period.month,
-      anio: period.year,
+      mes: requestedMonth,
+      anio: requestedYear,
     });
   } catch (e) {
     // Multer size limit
