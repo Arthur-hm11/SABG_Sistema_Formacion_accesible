@@ -10779,6 +10779,13 @@ setTimeout(__setSaveButtonsState, 800);
   }
 
   function isAllowedEvidencePeriod(month, year, date = new Date()){
+    if (isWithinJune2026Exception(date)) {
+      return (
+        normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Junio") &&
+        String(year) === "2026"
+      );
+    }
+
     const currentPeriod = getCurrentEvidencePeriod();
     if (
       normalizeEvidenceMonth(month) === normalizeEvidenceMonth(currentPeriod.month) &&

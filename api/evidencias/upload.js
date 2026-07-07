@@ -99,6 +99,13 @@ function isWithinJune2026Exception(date = new Date()) {
 }
 
 function isAllowedEvidencePeriod(month, year, date = new Date()) {
+  if (isWithinJune2026Exception(date)) {
+    return (
+      normalizeText(month) === normalizeText("Junio") &&
+      String(year) === "2026"
+    );
+  }
+
   const currentPeriod = getCurrentEvidencePeriod();
 
   if (
