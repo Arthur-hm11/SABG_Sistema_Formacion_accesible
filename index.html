@@ -10765,39 +10765,44 @@ setTimeout(__setSaveButtonsState, 800);
     return { year, monthIndex: month - 1, day };
   }
 
-  function isWithinJuly2026TemporaryWindow(date = new Date()){
+  function isWithinJune2026Exception(date = new Date()){
     const parts = getMexicoDateParts(date);
     return parts.year === 2026 && parts.monthIndex === 6 && parts.day >= 1 && parts.day <= 10;
   }
 
   function getEvidencePeriodForMonth(month, date = new Date()){
     const currentPeriod = getCurrentEvidencePeriod();
-    if (normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Julio")) {
-      return { month: "Julio", year: "2026" };
+    if (normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Junio") && isWithinJune2026Exception(date)) {
+      return { month: "Junio", year: "2026" };
     }
     return { month: currentPeriod.month, year: currentPeriod.year };
   }
 
   function isAllowedEvidencePeriod(month, year, date = new Date()){
-    const normalizedMonth = normalizeEvidenceMonth(month);
-
-    if (normalizedMonth === normalizeEvidenceMonth("Julio") && String(year) === "2026") {
-      return isWithinJuly2026TemporaryWindow(date);
+    const currentPeriod = getCurrentEvidencePeriod();
+    if (
+      normalizeEvidenceMonth(month) === normalizeEvidenceMonth(currentPeriod.month) &&
+      String(year) === String(currentPeriod.year)
+    ) {
+      return true;
     }
 
-    const currentPeriod = getCurrentEvidencePeriod();
-    return normalizedMonth === normalizeEvidenceMonth(currentPeriod.month) && String(year) === String(currentPeriod.year);
+    return (
+      normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Junio") &&
+      String(year) === "2026" &&
+      isWithinJune2026Exception(date)
+    );
   }
 
   function getEvidencePeriodValidationMessage(month, year, date = new Date()){
     if (isAllowedEvidencePeriod(month, year, date)) return "";
 
     if (
-      normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Julio") &&
+      normalizeEvidenceMonth(month) === normalizeEvidenceMonth("Junio") &&
       String(year) === "2026" &&
-      !isWithinJuly2026TemporaryWindow(date)
+      !isWithinJune2026Exception(date)
     ) {
-      return "El periodo extraordinario para cargar evidencia de julio 2026 concluyó el 10 de julio de 2026.";
+      return "El periodo extraordinario para cargar evidencia de junio 2026 concluyó el 10 de julio de 2026.";
     }
 
     const currentPeriod = getCurrentEvidencePeriod();
