@@ -95,7 +95,7 @@ function getMexicoDateParts(date = new Date()) {
 
 function isWithinJune2026Exception(date = new Date()) {
   const parts = getMexicoDateParts(date);
-  return parts.year === 2026 && parts.monthIndex === 6 && parts.day >= 1 && parts.day <= 10;
+  return parts.year === 2026 && parts.monthIndex === 6 && parts.day >= 1 && parts.day <= 16;
 }
 
 function isAllowedEvidencePeriod(month, year, date = new Date()) {
@@ -130,7 +130,7 @@ function getEvidencePeriodValidationMessage(month, year, date = new Date()) {
     String(year) === "2026" &&
     !isWithinJune2026Exception(date)
   ) {
-    return "El periodo extraordinario para cargar evidencia de junio 2026 concluyó el 10 de julio de 2026.";
+    return "El periodo extraordinario para cargar evidencia de junio 2026 concluyó el 16 de julio de 2026.";
   }
 
   const currentPeriod = getCurrentEvidencePeriod();
