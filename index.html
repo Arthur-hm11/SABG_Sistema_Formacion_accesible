@@ -10920,6 +10920,31 @@ setTimeout(__setSaveButtonsState, 800);
     });
   }
 
+  function clearEvidenceEntryForm() {
+    const form = document.getElementById("evidenciaForm");
+    if (form) {
+      form.reset();
+      form.dataset.submitting = "false";
+      form.querySelectorAll("input, textarea").forEach((field) => {
+        field.value = "";
+      });
+      form.querySelectorAll("button").forEach((button) => {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+      });
+    }
+
+    const pdfInput = document.getElementById("pdfFile");
+    if (pdfInput) pdfInput.value = "";
+
+    const uploadBox = document.getElementById("fileUpload");
+    if (uploadBox) {
+      uploadBox.classList.remove("drag");
+      const label = uploadBox.querySelector("p:nth-of-type(2)");
+      if (label) label.textContent = "Haga clic o arrastre el archivo PDF aquí";
+    }
+  }
+
   // 1) Guardar mes seleccionado y bloquear meses que no sean el actual
   window.__evidenciaMes = window.__evidenciaMes || "";
   window.__evidenciaAnio = window.__evidenciaAnio || "";
@@ -10934,6 +10959,8 @@ setTimeout(__setSaveButtonsState, 800);
       return;
     }
 
+    clearEvidenceEntryForm();
+
     try {
       window.__evidenciaMes = month;
       window.__evidenciaAnio = period.year;
@@ -10942,6 +10969,21 @@ setTimeout(__setSaveButtonsState, 800);
     const result = _open ? _open.apply(this, [month]) : undefined;
     const title = document.getElementById("modalTitle");
     if (title) title.textContent = `Registro de Evidencias Mensuales - ${month} ${period.year}`;
+    setTimeout(clearEvidenceEntryForm, 0);
+    return result;
+  };
+
+  const _closeEvidenceModal = window.closeModal;
+  window.closeModal = function(){
+    let result;
+    if (_closeEvidenceModal) {
+      result = _closeEvidenceModal.apply(this, arguments);
+    } else {
+      document.getElementById("monthModal")?.classList.remove("active");
+    }
+    clearEvidenceEntryForm();
+    window.__evidenciaMes = "";
+    window.__evidenciaAnio = "";
     return result;
   };
 
@@ -11060,10 +11102,9 @@ setTimeout(__setSaveButtonsState, 800);
         throw new Error(data.error || data.message || ("HTTP " + resp.status + " - " + String(data.raw||"").slice(0,200)));
       }
 
+      clearEvidenceEntryForm();
       alert("✅ Evidencia enviada");
-      try { document.getElementById("pdfFile").value = ""; } catch(e) {}
-      setFileLabel(null);
-      try { closeModal(); } catch(e) {}
+      try { window.closeModal(); } catch(e) {}
 
     } catch(e){
       console.error("❌ submitEvidencia:", e);
