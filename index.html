@@ -3373,10 +3373,10 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
                         <h3 id="tablaRegistros" style="color: var(--guinda);">📋 Tabla de Registros - Control DCEVE</h3>
                     </div>
                     <div class="tabla-toolbar">
-                        <select id="filterAnioTrimestral" class="search-box">
+                        <select id="filterAnioTrimestral" class="search-box" autocomplete="off">
                             <option value="">TODOS LOS AÑOS</option>
                         </select>
-                        <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla...">
+                        <input type="text" id="searchTableTrimestral" class="search-box" placeholder="🔍 Buscar en la tabla..." autocomplete="off" value="">
                     </div>
                     <div class="tabla-hint">👉 Para revisar el registro completo, favor de arrastrar la barra de desplazamiento hacia la derecha.</div>
                    <div id="exportButtonsTrimestral" style="margin: 0 0 1rem 0 !important; display:block !important; visibility:visible !important; opacity:1 !important;">
@@ -3927,7 +3927,7 @@ body:not(.role-admin):not(.role-superadmin) #excelUploadBox { display: none !imp
             <span class="modal-close" onclick="closeModal()" role="button" tabindex="0">&times;</span>
             <h2 id="modalTitle" style="color: var(--guinda); margin-bottom: 2rem;">Registro de Evidencias Mensuales</h2>
             
-            <form id="evidenciaForm" onsubmit="submitEvidencia(event)">
+            <form id="evidenciaForm" onsubmit="submitEvidencia(event)" autocomplete="off">
                 <h3 style="color: var(--guinda); margin-bottom: 1.5rem;">📋 Datos del Enlace de Formación Académica que Registra</h3>
                 
                 <div class="form-grid">
@@ -6723,6 +6723,7 @@ async function loginUsuario() {
             stopSessionLifecycle();
             stopMonitoringAutoRefresh();
             clearTrimestralFormState();
+            resetTrimestralFilters();
             window.__pendingNeonEdits = [];
             try { __setSaveButtonsState(); } catch (_) {}
             try {
@@ -6862,7 +6863,8 @@ async function loginUsuario() {
     
         // ✅ Cargar datos reales al abrir la pestaña "Tabla de Registros" (evita que se queden filas de muestra)
         if (sectionId === 'trimestral' && tabId === 'tabla') {
-            try { cargarRegistrosTrimestral(); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
+            resetTrimestralFilters();
+            try { cargarRegistrosTrimestral(1, 50, ''); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
         }
 
         try { sendMonitorHeartbeat(); } catch (_) {}
@@ -6935,6 +6937,11 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         });
 
         document.getElementById(tabId).classList.add('active');
+
+        if (tabId === 'tabla') {
+            resetTrimestralFilters();
+            try { cargarRegistrosTrimestral(1, 50, ''); } catch (e) { console.warn('No se pudieron cargar registros:', e); }
+        }
     }
 
     // ========================================
@@ -7279,7 +7286,30 @@ const tabs = document.querySelectorAll('#trimestral .tab');
         }
     }
 
+    function resetEvidenceForm() {
+        const form = document.getElementById('evidenciaForm');
+        if (form) {
+            form.reset();
+            form.dataset.submitting = 'false';
+            form.querySelectorAll('button').forEach((button) => {
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
+            });
+        }
+
+        const pdfFile = document.getElementById('pdfFile');
+        if (pdfFile) pdfFile.value = '';
+
+        const fileUpload = document.getElementById('fileUpload');
+        if (fileUpload) {
+            fileUpload.classList.remove('drag');
+            const fileLabel = fileUpload.querySelector('p:nth-of-type(2)');
+            if (fileLabel) fileLabel.textContent = 'Haga clic o arrastre el archivo PDF aquí';
+        }
+    }
+
     function openMonthModal(month) {
+        resetEvidenceForm();
         const currentYear = new Intl.DateTimeFormat('es-MX', {
             timeZone: 'America/Mexico_City',
             year: 'numeric'
@@ -7289,6 +7319,9 @@ const tabs = document.querySelectorAll('#trimestral .tab');
     }
 
     function closeModal() {
+        resetEvidenceForm();
+        window.__evidenciaMes = '';
+        window.__evidenciaAnio = '';
         document.getElementById('monthModal').classList.remove('active');
     }
 
@@ -8798,6 +8831,19 @@ let TRIM_LIMIT = 50;
 let TRIM_Q = "";
 let TRIM_YEAR = "";
 
+function resetTrimestralFilters() {
+  TRIM_PAGE = 1;
+  TRIM_LIMIT = 50;
+  TRIM_Q = "";
+  TRIM_YEAR = "";
+
+  const search = document.getElementById('searchTableTrimestral');
+  if (search) search.value = '';
+
+  const year = document.getElementById('filterAnioTrimestral');
+  if (year) year.value = '';
+}
+
 function initTrimestralSearchGlobal() {
   try {
     const table = document.getElementById("registrosTable");
@@ -8871,8 +8917,16 @@ function initTrimestralYearFilter() {
 }
 
 window.addEventListener("load", () => {
+  resetTrimestralFilters();
   initTrimestralSearchGlobal();
   initTrimestralYearFilter();
+});
+
+window.addEventListener("pageshow", (event) => {
+  resetTrimestralFilters();
+  if (event.persisted && document.getElementById('tabla')?.classList.contains('active')) {
+    cargarRegistrosTrimestral(1, 50, '');
+  }
 });
 
 
